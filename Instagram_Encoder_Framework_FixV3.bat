@@ -359,33 +359,32 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
     ::
     set "CRF_PADRAO=18"
     set "CRF_ESCOLHIDO="
-
 :loop_crf
     set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [%CRF_PADRAO%]: "
     if "%CRF_ESCOLHIDO%"=="" set "CRF_ESCOLHIDO=%CRF_PADRAO%"
 
-    set "VAR_TMP=%CRF_ESCOLHIDO%"
-    for /f "tokens=* delims= " %%A in ("%VAR_TMP%") do set "VAR_TMP=%%A"
+    :: remove espacos em branco
+    set "CRF_ESCOLHIDO=%CRF_ESCOLHIDO: =%"
 
-    echo %VAR_TMP% | findstr /r "^[0-9][0-9]*$" >nul || (
-        echo === ERRO: CRF [%VAR_TMP%] deve ser um número inteiro de 0 a 30. Tente novamente. ===
+    :: verifica se e numero inteiro
+    set /a CRF_TEST=%CRF_ESCOLHIDO% >nul 2>&1
+    if errorlevel 1 (
+        echo === ERRO: Valor de CRF invalido. Digite um numero inteiro de 0 a 30. ===
         goto loop_crf
     )
 
-    REM INICIO DA VALIDACAO DE INTERVALO
-    if %VAR_TMP% LSS 0 (
-        echo === ERRO: CRF não pode ser menor que 0. Tente novamente. ===
+    if %CRF_ESCOLHIDO% LSS 0 (
+        echo === ERRO: CRF nao pode ser menor que 0. Tente novamente. ===
         goto loop_crf
     )
-    if %VAR_TMP% GTR 30 (
-        echo === ERRO: CRF não pode ser maior que 30. Tente novamente. ===
+    if %CRF_ESCOLHIDO% GTR 30 (
+        echo === ERRO: CRF nao pode ser maior que 30. Tente novamente. ===
         goto loop_crf
     )
 
-    REM Se chegou aqui, está tudo OK!
-    echo CRF válido escolhido: %CRF_ESCOLHIDO%
-     set "VAR_TMP=%CRF_ESCOLHIDO%"
-     goto :ShowSummary_GetAdvancedParams
+    echo CRF valido escolhido: %CRF_ESCOLHIDO%
+    goto :ShowSummary_GetAdvancedParams
+
     ::--- fim do Bloco CRF ---
 
 :ShowSummary_GetAdvancedParams
@@ -588,7 +587,7 @@ if errorlevel 1 (
     REM /N oculta as opcoes [S,N]? no final do prompt choice
     REM E crucial vereficar os errorlevels do MAIOR para o MENOR,
     REM ou usar IF DEFINED ERRORLEVEL_X ELSE IF DEFINED ERRORLEVEL_Y que e mais robusto,
-    REM mas para este caso simples, vamos apenas ajustar a ordem e a lógica.
+    REM mas para este caso simples, vamos apenas ajustar a ordem e a lÃ³gica.
 
     if errorlevel 2 (
         REM Errorlevel 2 significa que a SEGUNDA opcao (/C SN -> N) foi escolhida.
