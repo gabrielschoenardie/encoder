@@ -148,10 +148,15 @@ set "FFMPEG_CMD=ffmpeg"
 if errorlevel 1 (
     echo.
     echo === ATENCAO: ffmpeg nao encontrado no PATH. ===
-    set /p "FFMPEG_CMD_PATH=C:\ffmpeg\bin\ffmpeg.exe"
+    :loop_ffmpeg
+    set /p "FFMPEG_CMD_PATH=Digite o caminho completo do ffmpeg.exe: "
+    if "%FFMPEG_CMD_PATH%"=="" (
+        echo === ERRO: Caminho nao pode ser vazio. Tente novamente. ===
+        goto loop_ffmpeg
+    )
     if not exist "%FFMPEG_CMD_PATH%" (
-        echo === ERRO: Caminho do ffmpeg.exe invalido! Abortando. ===
-        exit /b 1
+        echo === ERRO: Caminho do ffmpeg.exe invalido! Tente novamente. ===
+        goto loop_ffmpeg
     )
     set "FFMPEG_CMD=%FFMPEG_CMD_PATH%"
 )
