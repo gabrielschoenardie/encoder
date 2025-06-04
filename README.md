@@ -15,15 +15,12 @@ Foi criado para entregar máxima qualidade visual, compatibilidade total com as 
 
 ## 🚀 Funcionalidades Principais
 
-- **Qualidade Hollywood:** Codificação otimizada baseada em padrões de cinema.
-- **Modos CRF e Two-Pass:** Escolha a codificação mais adequada para cada projeto.
-- **Resoluções ideais para Instagram:** Inclui sugestões prontas (1080x1350, 1080x1920, 720p, etc).
-- **Validação de parâmetros:** Garante que apenas configurações compatíveis são usadas.
-- **Prompt interativo:** Sem necessidade de editar código; tudo guiado na execução.
-- **Compatível com Reels, Feed e Stories.**
-- **Log detalhado de processo.**
-- **Mensagens de erro didáticas para usuário.**
-- **Não depende de internet (offline).**
+- **Entrada guiada por prompts**: fácil de usar, sem necessidade de editar o script.
+- **Qualidade Hollywood**: presets e flags otimizados, com controle manual ou automático de parâmetros.
+- **Modo CRF ou Two-Pass**: escolha a codificação que mais se adapta ao seu objetivo.
+- **Validação robusta de entradas**: evita erros comuns e garante máxima compatibilidade.
+- **Compatibilidade máxima com Instagram**: vídeo final sempre pronto para upload, sem surpresas.
+- **Totalmente offline**: não depende de conexão com internet.
 
 ---
 
