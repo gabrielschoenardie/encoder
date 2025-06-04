@@ -153,7 +153,7 @@ if errorlevel 1 (
         echo === ERRO: Caminho do ffmpeg.exe invalido! Abortando. ===
         exit /b 1
     )
-    set "FFMPEG_CMD="%FFMPEG_CMD_PATH%"
+    set "FFMPEG_CMD=%FFMPEG_CMD_PATH%"
 )
 exit /b 0
 
@@ -360,93 +360,32 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
     set "CRF_PADRAO=18"
     set "CRF_ESCOLHIDO="
 
-    :loop_crf
-    set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [!CRF_PADRAO!]: "
-    if "%CRF_ESCOLHIDO%"=="" set "CRF_ESCOLHIDO=!CRF_PADRAO!"
+:loop_crf
+    set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [%CRF_PADRAO%]: "
+    if "%CRF_ESCOLHIDO%"=="" set "CRF_ESCOLHIDO=%CRF_PADRAO%"
 
-    :: Verificar se tem somente digitos
-    set "CRF_VALIDO=SIM"
-    echo DEBUG: CRF_VALIDO IMEDIATAMENTE APOS SET = [!CRF_VALIDO!]
-    echo DEBUG: CRF_ESCOLHIDO antes do FOR = [!CRF_ESCOLHIDO!]
-    pause
+    set "VAR_TMP=%CRF_ESCOLHIDO%"
+    for /f "tokens=* delims= " %%A in ("%VAR_TMP%") do set "VAR_TMP=%%A"
 
-    REM ### TESTE ISOLADO DO FOR ###
-    echo DEBUG: PREPARANDO PARA EXECUTAR O FOR /F...
-    set "TEST_CRF_VALUE=!CRF_ESCOLHIDO!"
-    echo DEBUG: TEST_CRF_VALUE = [!TEST_CRF_VALUE!]
-    pause
-
-    REM Tente o FOR com uma variavel temporaria para ver se ajuda
-    for /f "delims=0123456789" %%x in ("!TEST_CRF_VALUE!") do (
-        echo DEBUG: DENTRO DO FOR - ALGO ESTA ERRADO SE ENTROU PARA "!TEST_CRF_VALUE!"
-        set "CRF_VALIDO=NAO"
-        pause
-    )
-    echo DEBUG: APOS O FOR. CRF_VALIDO = [!CRF_VALIDO!]
-    pause
-    REM ### FIM DO TESTE ISOLADO DO FOR ###
-
-    REM ### NOVO TRATAMENTO DA CONDICAO CRF_VALIDO ###
-    echo DEBUG: Verificando CRF_VALIDO. Valor = [!CRF_VALIDO!]
-    pause
-    if /I "!CRF_VALIDO!"=="NAO" goto :CRF_Error_NotInteger
-    if /I "!CRF_VALIDO!"=="SIM" goto :CRF_CheckIfEmpty
-
-    REM Fallback - nao deveria chegar aqui se CRF_VALIDO for SIM ou NAO
-    echo DEBUG: ERRO INESPERADO - CRF_VALIDO nao e SIM nem NAO: [!CRF_VALIDO!]
-    pause
-    goto :loop_crf
-
-:CRF_Error_NotInteger
-    echo === ERRO: CRF [!CRF_ESCOLHIDO!] deve ser um numero inteiro. (somente digitos). Tente novamente. ===
-    goto loop_crf
-
-    REM Se chegou aqui, CRF_VALIDO e "SIM" (ou seja, !CRF_ESCOLHIDO! contem apenas digitos)
-    REM Agora verifique se nao esta vazio (caso o padrao seja alterado para vazio no futuro)
-:CRF_CheckIfEmpty
-    echo DEBUG: CRF_VALIDO E SIM. Verificando se CRF_ESCOLHIDO esta vazio.
-    pause
-    if "!CRF_ESCOLHIDO!"=="" (
-        echo === ERRO: CRF nao pode ser vazio. Tente novamente. ===
+    echo %VAR_TMP% | findstr /r "^[0-9][0-9]*$" >nul || (
+        echo === ERRO: CRF [%VAR_TMP%] deve ser um número inteiro de 0 a 30. Tente novamente. ===
         goto loop_crf
     )
 
-    REM Se chegou aqui, CRF_ESCOLHIDO contem apenas digitos e nao esta vazio.
-    REM Agora podemos prosseguir com a validacao de intervalo.
-    echo DEBUG: Validacao de digitos passou. Prosseguindo para validacao de intervalo.
-    set "TEMP_CRF=!CRF_ESCOLHIDO!"
-    pause
-
-    REM ### INICIO DA VALIDACAO NUMERICA DE INTERVALO ###
-    set "CRF_NUMERIC_CHECK_PASSED=FALSE"
-
-    if defined TEMP_CRF (
-        if "!TEMP_CRF!" GEQ "0" (
-            if "!TEMP_CRF!" LEQ "30" (
-                echo DEBUG: CRF [!TEMP_CRF!] ESTA DENTRO DO INTERVALO
-                set "CRF_NUMERIC_CHECK_PASSED=TRUE"
-            ) else (
-                echo DEBUG: CRF [!TEMP_CRF!] MAIOR QUE O LIMITE SUPERIOR.
-            )
-        ) else (
-            echo DEBUG: CRF [!TEMP_CRF!] MENOR QUE 0.
-        )
-    ) else (
-        echo DEBUG: TEMP_CRF nao esta definido (nao deveria acontecer aqui).
-    )
-    REM A variavel CRF_NUMERIC_CHECK_PASSED so e definida como FALSE explicitamente se uma condicao de erro for atingida
-    REM no "else" da verificacao de intervalo, se necessario, ou mantem o FALSE inicial.
-    echo DEBUG: CRF_NUMERIC_CHECK_PASSED apos validacao de intervalo = [!CRF_NUMERIC_CHECK_PASSED!]
-    pause
-
-    if /I "!CRF_NUMERIC_CHECK_PASSED!"=="TRUE" (
-        echo DEBUG: CRF [!TEMP_CRF!] e totalmente valido.
-        pause
-    ) else (
-        echo === ERRO: CRF [!TEMP_CRF!] fora do intervalo valido (0-30) ou invalido. Tente novamente. ===
+    REM INICIO DA VALIDACAO DE INTERVALO
+    if %VAR_TMP% LSS 0 (
+        echo === ERRO: CRF não pode ser menor que 0. Tente novamente. ===
         goto loop_crf
     )
-    goto :ShowSummary_GetAdvancedParams
+    if %VAR_TMP% GTR 30 (
+        echo === ERRO: CRF não pode ser maior que 30. Tente novamente. ===
+        goto loop_crf
+    )
+
+    REM Se chegou aqui, está tudo OK!
+    echo CRF válido escolhido: %CRF_ESCOLHIDO%
+     set "VAR_TMP=%CRF_ESCOLHIDO%"
+     goto :ShowSummary_GetAdvancedParams
     ::--- fim do Bloco CRF ---
 
 :ShowSummary_GetAdvancedParams
@@ -649,7 +588,7 @@ if errorlevel 1 (
     REM /N oculta as opcoes [S,N]? no final do prompt choice
     REM E crucial vereficar os errorlevels do MAIOR para o MENOR,
     REM ou usar IF DEFINED ERRORLEVEL_X ELSE IF DEFINED ERRORLEVEL_Y que e mais robusto,
-    REM mas para este caso simples, vamos apenas ajustar a ordem e a lÃ³gica.
+    REM mas para este caso simples, vamos apenas ajustar a ordem e a lógica.
 
     if errorlevel 2 (
         REM Errorlevel 2 significa que a SEGUNDA opcao (/C SN -> N) foi escolhida.
