@@ -34,6 +34,18 @@ Foi criado para entregar máxima qualidade visual, compatibilidade total com as 
   [Baixe aqui](https://ffmpeg.org/download.html)
 
 ---
+## 🛠️ Parâmetros Técnicos & Presets
+CRF recomendado: 17–22
+Modos suportados: 30fps
+CRF: equilíbrio entre qualidade e tamanho
+Two-Pass: controle exato de bitrate e tamanho final
+Resoluções padrão Instagram:
+1080x1920 (Stories/Reels)
+1920x1080 (Horizontal)
+Audio: AAC, 128kbps
+GOP (keyint): Ajustado para melhor playback nas redes
+Preset FFmpeg: slow/medium (ajustável no script)
+Flags extras: Compatibilidade máxima garantida
 
 ## 📦 Instalação
 
