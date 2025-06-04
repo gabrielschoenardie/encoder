@@ -371,6 +371,13 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
     :: remove espacos em branco
     set "CRF_ESCOLHIDO=%CRF_ESCOLHIDO: =%"
 
+    :: garante que ha apenas digitos
+    echo %CRF_ESCOLHIDO% | findstr /R "^[0-9][0-9]*$" >nul
+    if errorlevel 1 (
+        echo === ERRO: Valor de CRF invalido. Digite apenas numeros. ===
+        goto loop_crf
+    )
+
     :: verifica se e numero inteiro
     set /a CRF_TEST=%CRF_ESCOLHIDO% >nul 2>&1
     if errorlevel 1 (
