@@ -62,3 +62,20 @@
         [Vídeo MP4 otimizado para Instagram]
                       |
              [Upload manual e sucesso garantido]
+
+---
+
+## 🚀 Guia Rápido de Uso
+
+1. Certifique-se de ter o **FFmpeg** instalado e configurado no `PATH`.
+2. Clone este repositório ou baixe o script `InstagramEncoderV3.bat`.
+3. Abra o terminal do Windows, navegue até a pasta do script e execute `Instagram_Encoder_Framework_FixV3.bat`.
+4. Siga os prompts interativos para definir resolução, modo de encode e demais parâmetros.
+5. Seu vídeo otimizado será salvo na mesma pasta, pronto para upload no Instagram.
+
+### Dicas Extras
+
+- Utilize o modo **CRF** para qualidade visual equilibrada.
+- Se precisar de controle total sobre o tamanho final do arquivo, opte pelo modo **Two-Pass**.
+- Para resultados consistentes, mantenha suas fontes de vídeo em formatos profissionais (ProRes, DNxHD ou H.264 sem compressão adicional).
+
