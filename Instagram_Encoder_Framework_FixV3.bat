@@ -52,26 +52,14 @@ call :LogEntry "[OK] Resolucao escolhida: !VIDEO_ESCALA!"
 ::-----------------------------
 :: 6. Escolher Modo de Encoding (2PASS ou CRF)
 ::-----------------------------
-echo DEBUG: Antes de chamar :GetEncodingMode
-pause
-call :GetEncodingMode
-echo DEBUG: Retornou de :GetEncodingMode. ENCODE_MODE aqui e [%ENCODE_MODE%]
-pause
 
-echo DEBUG: Antes de chamar :LogEntry para modo de encoding
-pause
+call :GetEncodingMode
 call :LogEntry "[OK] Modo de encoding escolhido: !ENCODE_MODE!"
-echo DEBUG: Retornou de :LogEntry para modo de encoding
-pause
 
 ::-----------------------------
 :: 7. Configurar Parametros Avancados
 ::-----------------------------
-echo DEBUG: Antes de chamar :GetAdvancedParams
-pause
 call :GetAdvancedParams
-echo DEBUG: Retornou de :GetAdvancedParams (se nao houve erro dentro dela)
-pause
 if errorlevel 1 (
     call :LogEntry "[ERRO] Falha em GetAdvancedParams. Abortando."
     goto :EOF
@@ -249,8 +237,6 @@ exit /b 0
 ::   Pergunta se o usuario quer codificar em Two-Pass (2PASS) ou CRF (CRF).
 ::-----------------------------------------------------------------------------
 :GetEncodingMode
-echo DEBUG: Entrou em :GetEncodingMode
-pause
 echo.
 echo Deseja codificar em 2-PASS (otimizado para bitrate) ou CRF (controle de qualidade)?
 echo   D = 2-PASS (duas passagens, gera logs intermediarios)
@@ -268,15 +254,11 @@ if /I "%ENCODE_MODE%"=="D" (
     echo === ERRO: Opcao invalida. Digite 'D' ou 'C'. ===
     goto loop_enc_mode
 )
-echo DEBUG: :GetEncodingMode vai sair. ENCODE_MODE = [%ENCODE_MODE%]
-pause
+
 exit /b 0
 
 ::-----------------------------------------------------------------------------
 :GetAdvancedParams
-echo DEBUG: Entrou no INICIO de :GetAdvancedParams. ENCODE_MODE = [%ENCODE_MODE%]
-pause
-
 ::   Coleta todos os parametros avancados, aceitando ENTER para padrao,
 ::   sem jamais encerrar o .bat antes do esperado.
 ::   1) Preset x264
@@ -309,9 +291,6 @@ set "BITRATE_AUDIO_ESCOLHIDO="
 set /p "BITRATE_AUDIO_ESCOLHIDO=Bitrate de Audio (ex: 128k, 192k, 256k) [%BITRATE_AUDIO_PADRAO%]: "
 if "%BITRATE_AUDIO_ESCOLHIDO%"=="" set "BITRATE_AUDIO_ESCOLHIDO=%BITRATE_AUDIO_PADRAO%"
 
-echo DEBUG: Verificando ENCODE_MODE ANTES do IF principal em GetAdvancedParams. Valor: [%ENCODE_MODE%]
-pause
-
 REM ### ESTRUTURA IF SIMPLIFICAD COM GOTO ###
 if /I "%ENCODE_MODE%"=="2PASS" goto :Process2PASS_Params
 if /I "%ENCODE_MODE%"=="CRF" goto :ProcessCRF_Params
@@ -322,44 +301,29 @@ pause
 goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
 
 :Process2PASS_Params
-    echo DEBUG: Entrou em :Process2PASS_Params.
-    pause
-
     ::--- 3) inicio do Bloco 2PASS ---
-    echo DEBUG: Adicionando Prompt para Bitrate de Video Alvo...
-    pause
     :: 3.1) Bitrate de Video Alvo
     set "BITRATE_VIDEO_ALVO_PADRAO=15M"
     set "BITRATE_VIDEO_ALVO_ESCOLHIDO="
     set /p "BITRATE_VIDEO_ALVO_ESCOLHIDO=Bitrate de Video Alvo (ex: 10M, 15M) [%BITRATE_VIDEO_ALVO_PADRAO%]: "
     if "%BITRATE_VIDEO_ALVO_ESCOLHIDO%"=="" set "BITRATE_VIDEO_ALVO_ESCOLHIDO=!BITRATE_VIDEO_ALVO_PADRAO!"
-    echo DEBUG: BITRATE_VIDEO_ALVO_ESCOLHIDO = [!BITRATE_VIDEO_ALVO_ESCOLHIDO!]
-    pause
 
    :: 3.2) Bitrate de Video Maximo
     set "BITRATE_VIDEO_MAX_PADRAO=25M"
     set "BITRATE_VIDEO_MAX_ESCOLHIDO="
     set /p "BITRATE_VIDEO_MAX_ESCOLHIDO=Bitrate de Video Maximo (ex: 20M, 25M) [%BITRATE_VIDEO_MAX_PADRAO%]: "
     if "%BITRATE_VIDEO_MAX_ESCOLHIDO%"=="" set "BITRATE_VIDEO_MAX_ESCOLHIDO=!BITRATE_VIDEO_MAX_PADRAO!"
-    echo DEBUG: BITRATE_VIDEO_MAX_ESCOLHIDO = [!BITRATE_VIDEO_MAX_ESCOLHIDO!]
-    pause
 
    :: 3.3) Bufsize VBV
     set "BUFSIZE_VIDEO_PADRAO=30M"
     set "BUFSIZE_VIDEO_ESCOLHIDO="
     set /p "BUFSIZE_VIDEO_ESCOLHIDO=Bufsize de Video (ex: 20M, 30M, 40M) [%BUFSIZE_VIDEO_PADRAO%]: "
     if "%BUFSIZE_VIDEO_ESCOLHIDO%"=="" set "BUFSIZE_VIDEO_ESCOLHIDO=!BUFSIZE_VIDEO_PADRAO!"
-    echo DEBUG: BUFSIZE_VIDEO_ESCOLHIDO = [!BUFSIZE_VIDEO_ESCOLHIDO!]
 
-    echo DEBUG: Fim das perguntas do 2PASS. Saltando para o resumo.
-    pause
     goto :ShowSummary_GetAdvancedParams
     ::--- fim do Bloco 2PASS ---
 
 :ProcessCRF_Params
-    echo DEBUG: Entrou em :ProcessCRF_Params - ENCODE_MODE = [%ENCODE_MODE%]
-    echo DEBUG: Press any key to continue...
-    pause
     ::
     ::--- 4) Modo CRF: solicitar CRF entre 0 e 30
     ::
@@ -368,9 +332,6 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
 :loop_crf
     set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [!CRF_PADRAO!]: "
     if "!CRF_ESCOLHIDO!"=="" set "CRF_ESCOLHIDO=!CRF_PADRAO!"
-
-    echo DEBUG: Valor digitado: [!CRF_ESCOLHIDO!]
-    
     :: Validacao super simples - apenas aceita valores conhecidos
     if "!CRF_ESCOLHIDO!"=="0" goto :crf_ok
     if "!CRF_ESCOLHIDO!"=="1" goto :crf_ok
@@ -412,15 +373,11 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
 
 :crf_ok
     echo CRF valido escolhido: !CRF_ESCOLHIDO!
-    echo DEBUG: Validation passou, continuando...
-    pause
     goto :ShowSummary_GetAdvancedParams
 
 :ShowSummary_GetAdvancedParams
 ::--- 5) Mostrar resumo dos parametros e aguardar ENTER
 echo.
-echo DEBUG: Chegou ao ponto de mostrar o resumo.
-pause
 echo Revisando configuracoes escolhidas:
 echo   FFmpeg           : !FFMPEG_CMD!
 echo   Entrada          : !ARQUIVO_ENTRADA!
@@ -429,16 +386,16 @@ echo   Resolucao        : !VIDEO_ESCALA! (30 fps)
 echo   Modo Encoding    : !ENCODE_MODE!
 echo   Preset x264      : !PRESET_X264_ESCOLHIDO!
 if /I "%ENCODE_MODE%"=="2PASS" (
-    echo   Bitrate Video Alvo   : !BITRATE_VIDEO_ALVO_ESCOLHIDO!
-    echo   Bitrate Video Maximo : !BITRATE_VIDEO_MAX_ESCOLHIDO!
-    echo   Bufsize VBV          : !BUFSIZE_VIDEO_ESCOLHIDO!
+echo   Bitrate Video Alvo   : !BITRATE_VIDEO_ALVO_ESCOLHIDO!
+echo   Bitrate Video Maximo : !BITRATE_VIDEO_MAX_ESCOLHIDO!
+echo   Bufsize VBV          : !BUFSIZE_VIDEO_ESCOLHIDO!
 )
 if /I "%ENCODE_MODE%"=="CRF" (
-    echo   CRF                  : !CRF_ESCOLHIDO!
+echo   CRF                  : !CRF_ESCOLHIDO!
 )
-echo   Bitrate Audio         : !BITRATE_AUDIO_ESCOLHIDO!
+echo   Bitrate Audio        : !BITRATE_AUDIO_ESCOLHIDO!
 if /I "%ENCODE_MODE%"=="2PASS" (
-    echo   Logs de Passagem     : !ARQUIVO_LOG_PASSAGEM!-*.log
+echo   Logs de Passagem     : !ARQUIVO_LOG_PASSAGEM!-*.log
 )
 echo Pressione qualquer tecla para continuar com a codificacao...
 pause >nul
@@ -603,7 +560,6 @@ set "DELETAR_LOGS=N" :: Define um padrao seguro inicial
 
 where choice >nul 2>&1
 if errorlevel 1 (
-    echo DEBUG: choice.exe nao encontrado, usando set /p.
     set /p "RESPOSTA_USUARIO=Digite S para sim ou N para nao (padrao N):"
     if /I "%RESPOSTA_USUARIO:~0,1%"=="S" (
         set "DELETAR_LOGS=S"
@@ -611,7 +567,6 @@ if errorlevel 1 (
         set "DELETAR_LOGS=N" :: Garante N se nao for S, ou se for vazio (ja que o padrao e N)
     )
 ) else (
-    echo DEBUG: Usando choice.exe
     choice /C SN /N /M "Deseja deletar os arquivos de log? [S/N]"
     REM /N oculta as opcoes [S,N]? no final do prompt choice
     REM E crucial vereficar os errorlevels do MAIOR para o MENOR,
@@ -620,18 +575,13 @@ if errorlevel 1 (
 
     if errorlevel 2 (
         REM Errorlevel 2 significa que a SEGUNDA opcao (/C SN -> N) foi escolhida.
-        echo DEBUG: Choice - Opcao N detectada.
         set "DELETAR_LOGS=N"
     ) else (
         REM Se nao for errorlevel 2 (ou maior), so pode ser errorlevel 1
         REM (PRIMEIRA opcao /C SN -> S) ou 0 (Ctrl+C, que manteria o padrao N)
-        echo DEBUG: Choice - Opcao S detectada.
         set "DELETAR_LOGS=S"
     )
 )
-
-echo DEBUG: DELETAR_LOGS defenido como: [!DELETAR_LOGS!]
-pause :: Pause para depuracao
 
 if /I "%DELETAR_LOGS%"=="S" (
     echo Deletando arquivos de log...
