@@ -1,4 +1,4 @@
-@echo on
+@echo off
 setlocal enabledelayedexpansion
 
 :: ----------------------------------------------------------------------------
@@ -357,7 +357,8 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
     ::--- fim do Bloco 2PASS ---
 
 :ProcessCRF_Params
-    echo DEBUG: Entrou em :ProcessCRF_Params.
+    echo DEBUG: Entrou em :ProcessCRF_Params - ENCODE_MODE = [%ENCODE_MODE%]
+    echo DEBUG: Press any key to continue...
     pause
     ::
     ::--- 4) Modo CRF: solicitar CRF entre 0 e 30
@@ -365,39 +366,55 @@ goto :ShowSummary_GetAdvancedParams :: Ou talvez um goto :EOF para sair com erro
     set "CRF_PADRAO=18"
     set "CRF_ESCOLHIDO="
 :loop_crf
-    set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [%CRF_PADRAO%]: "
-    if "%CRF_ESCOLHIDO%"=="" set "CRF_ESCOLHIDO=%CRF_PADRAO%"
+    set /p "CRF_ESCOLHIDO=Qual CRF usar (0-30) [!CRF_PADRAO!]: "
+    if "!CRF_ESCOLHIDO!"=="" set "CRF_ESCOLHIDO=!CRF_PADRAO!"
 
-    :: remove espacos em branco
-    set "CRF_ESCOLHIDO=%CRF_ESCOLHIDO: =%"
+    echo DEBUG: Valor digitado: [!CRF_ESCOLHIDO!]
+    
+    :: Validacao super simples - apenas aceita valores conhecidos
+    if "!CRF_ESCOLHIDO!"=="0" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="1" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="2" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="3" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="4" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="5" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="6" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="7" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="8" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="9" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="10" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="11" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="12" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="13" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="14" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="15" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="16" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="17" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="18" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="19" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="20" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="21" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="22" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="23" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="24" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="25" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="26" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="27" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="28" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="29" goto :crf_ok
+    if "!CRF_ESCOLHIDO!"=="30" goto :crf_ok
+    
+    :: Se chegou aqui, valor invalido
+    echo === ERRO: Valor de CRF invalido. Digite um numero de 0 a 30. ===
+    echo Valores aceitos: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+    pause
+    goto loop_crf
 
-    :: garante que ha apenas digitos
-    echo %CRF_ESCOLHIDO% | findstr /R "^[0-9][0-9]*$" >nul
-    if errorlevel 1 (
-        echo === ERRO: Valor de CRF invalido. Digite apenas numeros. ===
-        goto loop_crf
-    )
-
-    :: verifica se e numero inteiro
-    set /a CRF_TEST=%CRF_ESCOLHIDO% >nul 2>&1
-    if errorlevel 1 (
-        echo === ERRO: Valor de CRF invalido. Digite um numero inteiro de 0 a 30. ===
-        goto loop_crf
-    )
-
-    if %CRF_ESCOLHIDO% LSS 0 (
-        echo === ERRO: CRF nao pode ser menor que 0. Tente novamente. ===
-        goto loop_crf
-    )
-    if %CRF_ESCOLHIDO% GTR 30 (
-        echo === ERRO: CRF nao pode ser maior que 30. Tente novamente. ===
-        goto loop_crf
-    )
-
-    echo CRF valido escolhido: %CRF_ESCOLHIDO%
+:crf_ok
+    echo CRF valido escolhido: !CRF_ESCOLHIDO!
+    echo DEBUG: Validation passou, continuando...
+    pause
     goto :ShowSummary_GetAdvancedParams
-
-    ::--- fim do Bloco CRF ---
 
 :ShowSummary_GetAdvancedParams
 ::--- 5) Mostrar resumo dos parametros e aguardar ENTER
