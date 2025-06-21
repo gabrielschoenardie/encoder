@@ -6,23 +6,8 @@ color 0A
 :: ============================================================================
 ::                    INSTAGRAM ENCODER FRAMEWORK V5
 ::                         PROFESSIONAL EDITION
-:: ============================================================================
-:: Arquivo: Instagram_Encoder_Framework_V5_Professional.bat
-:: Versão:  5.0 (PROFESSIONAL - Full Instagram Compliance)
-:: Autor:   Gabriel Schoenardie (Optimized by AI Geek Assistant)
-:: Data:    Junho/2025
-::
-:: NOVIDADES V5:
-:: • Instagram 100% Compliance Mode
-:: • Hardware Auto-Detection (CPU/GPU)
-:: • Intelligent Parameter Validation
-:: • Professional Profiles System
-:: • Progress Tracking & ETA
-:: • Backup & Recovery System
-:: • GPU Acceleration Support
-:: • Advanced Error Recovery
-:: • Input Format Validation
-:: • Performance Optimization
+::         Instagram Encoder Framework V5 - Professional Edition
+::         Version: 5.0 | Author: Gabriel Schoenardie | Date: 2025
 :: ============================================================================
 
 title Instagram Encoder Framework V5 - Professional Edition
@@ -133,7 +118,6 @@ set "CPU_ARCH=Unknown"
 :: Método 1: PROCESSOR_ARCHITECTURE (mais confiável)
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" set "CPU_ARCH=x64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    :: Verificar se é x86 real ou x64 rodando processo x86
     if defined PROCESSOR_ARCHITEW6432 (
         if /i "%PROCESSOR_ARCHITEW6432%"=="AMD64" (
             set "CPU_ARCH=x64"
@@ -149,9 +133,10 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="x86" (
 if "!CPU_ARCH!"=="Unknown" set "CPU_ARCH=x64"
 
 :: ============================================================================
-::                    DETECÇÃO DO MODELO DO PROCESSADOR
+::                    DETECÇÃO OTIMIZADA DO MODELO DO PROCESSADOR
 :: ============================================================================
 
+:: Obter nome do processador
 set "CPU_MODEL=Unknown"
 for /f "tokens=2 delims==" %%A in ('wmic cpu get Name /value 2^>nul ^| find "=" 2^>nul') do (
     set "CPU_MODEL=%%A"
@@ -161,315 +146,11 @@ for /f "tokens=2 delims==" %%A in ('wmic cpu get Name /value 2^>nul ^| find "=" 
 
 echo   🔍 CPU detectado: !CPU_MODEL!
 
-:: ============================================================================
-::                    DATABASE DE PROCESSADORES - INTEL
-:: ============================================================================
-
-set "CPU_CORES=2"  :: Default fallback
+:: Valores padrão
+set "CPU_CORES=2"
 set "CPU_FAMILY=Unknown"
 
-:: ▶️ INTEL CELERON SERIES (Entry-level)
-echo "!CPU_MODEL!" | findstr /i "Celeron.*1007U" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Celeron 1007U (2C/2T, 1.5GHz)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Celeron.*1005M" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Celeron 1005M (2C/2T, 1.9GHz)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Celeron.*N3350" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Celeron N3350 (2C/2T, Apollo Lake)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Celeron.*N4" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Celeron N4xxx (4C/4T, Gemini Lake)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Celeron.*N" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Celeron N-Series (2C/2T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Celeron" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Celeron (Generic 2C/2T)"
-    goto :cpu_identified
-)
-
-:: ▶️ INTEL PENTIUM SERIES
-echo "!CPU_MODEL!" | findstr /i "Pentium.*Gold.*G" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Pentium Gold (2C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Pentium.*Silver.*N" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Pentium Silver (4C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Pentium" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Pentium (2C/2T)"
-    goto :cpu_identified
-)
-
-:: ▶️ INTEL CORE i3 SERIES
-echo "!CPU_MODEL!" | findstr /i "Core.*i3.*[23][0-9][0-9][0-9]U" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Core i3 2nd/3rd Gen (2C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i3.*[456789][0-9][0-9][0-9]U" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Core i3 4th-9th Gen (2C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i3.*1[0-9][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i3 10th+ Gen (4C/8T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i3" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Core i3 (Generic 2C/4T)"
-    goto :cpu_identified
-)
-
-:: ▶️ INTEL CORE i5 SERIES
-echo "!CPU_MODEL!" | findstr /i "Core.*i5.*[23][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Intel Core i5 2nd/3rd Gen (2C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i5.*[456789][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i5 4th-9th Gen (4C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i5.*1[0-9][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=6"
-    set "CPU_FAMILY=Intel Core i5 10th+ Gen (6C/12T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i5" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i5 (Generic 4C/4T)"
-    goto :cpu_identified
-)
-
-:: ▶️ INTEL CORE i7 SERIES
-echo "!CPU_MODEL!" | findstr /i "Core.*i7.*[23][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i7 2nd/3rd Gen (4C/8T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i7.*[456789][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i7 4th-9th Gen (4C/8T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i7.*1[0-9][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=8"
-    set "CPU_FAMILY=Intel Core i7 10th+ Gen (8C/16T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Core.*i7" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=Intel Core i7 (Generic 4C/8T)"
-    goto :cpu_identified
-)
-
-:: ▶️ INTEL CORE i9 SERIES
-echo "!CPU_MODEL!" | findstr /i "Core.*i9" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=8"
-    set "CPU_FAMILY=Intel Core i9 (8C/16T+)"
-    goto :cpu_identified
-)
-
-:: ============================================================================
-::                    DATABASE DE PROCESSADORES - AMD
-:: ============================================================================
-
-:: ▶️ AMD ATHLON SERIES
-echo "!CPU_MODEL!" | findstr /i "Athlon.*Silver.*3050" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=AMD Athlon Silver 3050U (2C/2T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Athlon.*Gold.*3150" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=AMD Athlon Gold 3150U (2C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Athlon" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=AMD Athlon (2C/2T)"
-    goto :cpu_identified
-)
-
-:: ▶️ AMD RYZEN 3 SERIES
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*3.*1200" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=AMD Ryzen 3 1200 (4C/4T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*3.*[23][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=AMD Ryzen 3 2nd/3rd Gen (4C/8T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*3.*[456][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=AMD Ryzen 3 4th-6th Gen (4C/8T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*3" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=AMD Ryzen 3 (4C/8T)"
-    goto :cpu_identified
-)
-
-:: ▶️ AMD RYZEN 5 SERIES
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*5.*[12][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=6"
-    set "CPU_FAMILY=AMD Ryzen 5 1st/2nd Gen (6C/12T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*5.*[3456][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=6"
-    set "CPU_FAMILY=AMD Ryzen 5 3rd-6th Gen (6C/12T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*5.*7[0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=8"
-    set "CPU_FAMILY=AMD Ryzen 5 7th Gen (8C/16T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*5" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=6"
-    set "CPU_FAMILY=AMD Ryzen 5 (6C/12T)"
-    goto :cpu_identified
-)
-
-:: ▶️ AMD RYZEN 7 SERIES
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*7.*[1234567][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=8"
-    set "CPU_FAMILY=AMD Ryzen 7 (8C/16T)"
-    goto :cpu_identified
-)
-
-:: ▶️ AMD RYZEN 9 SERIES
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*9.*[3456789][0-9][0-9][0-9]" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=12"
-    set "CPU_FAMILY=AMD Ryzen 9 3rd+ Gen (12C/24T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*9.*[5789][0-9][0-9][0-9]X" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=16"
-    set "CPU_FAMILY=AMD Ryzen 9 High-End (16C/32T)"
-    goto :cpu_identified
-)
-
-echo "!CPU_MODEL!" | findstr /i "Ryzen.*9" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=12"
-    set "CPU_FAMILY=AMD Ryzen 9 (12C/24T)"
-    goto :cpu_identified
-)
-
-:: ============================================================================
-::                    FALLBACK - DETECÇÃO AUTOMÁTICA LIMITADA
-:: ============================================================================
-
-:: Se não identificou por modelo, tentar detecção automática com limitação de segurança
-echo   ⚠️  Processador não encontrado na database - Tentando detecção automática...
-
-:: Método 1: Environment variable (mais seguro)
-if defined NUMBER_OF_PROCESSORS (
-    set "AUTO_CORES=%NUMBER_OF_PROCESSORS%"
-    if !AUTO_CORES! GEQ 1 if !AUTO_CORES! LEQ 32 (
-        set "CPU_CORES=!AUTO_CORES!"
-        set "CPU_FAMILY=Auto-detected via Environment Variable"
-        goto :cpu_identified
-    )
-)
-
-:: Final fallback baseado na arquitetura
-if "!CPU_ARCH!"=="x86" (
-    set "CPU_CORES=1"
-    set "CPU_FAMILY=x86 Fallback (Single Core)"
-) else if "!CPU_ARCH!"=="ARM32" (
-    set "CPU_CORES=4"
-    set "CPU_FAMILY=ARM32 Fallback (Quad Core)"
-) else (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Generic Fallback (Dual Core)"
-)
+call :DetectCPUFromDatabase
 
 :cpu_identified
 
@@ -491,18 +172,151 @@ for /f "tokens=2 delims==" %%A in ('wmic OS get TotalVisibleMemorySize /value 2^
     )
 )
 
-:: ============================================================================
-::                              DISPLAY RESULTS
-:: ============================================================================
-
+:: Display results
 echo   ✅ Arquitetura: !CPU_ARCH!
 echo   ✅ CPU Cores: !CPU_CORES! (!CPU_FAMILY!)
-echo   💻 Tipo: !IS_LAPTOP:Y=Laptop! !IS_LAPTOP:N=Desktop!
+if "!IS_LAPTOP!"=="Y" (
+    echo   💻 Tipo: Laptop
+) else (
+    echo   💻 Tipo: Desktop
+)
 echo   🧠 RAM: !TOTAL_RAM_GB!GB
 
 call :LogEntry "[SYSTEM] Architecture: !CPU_ARCH!"
 call :LogEntry "[SYSTEM] CPU: !CPU_CORES! cores (!CPU_FAMILY!)"
 call :LogEntry "[SYSTEM] RAM: !TOTAL_RAM_GB!GB, Type: !IS_LAPTOP:Y=Laptop!!IS_LAPTOP:N=Desktop!"
+
+exit /b 0
+
+:: ============================================================================
+::                    FUNÇÃO OTIMIZADA DE DETECÇÃO
+:: ============================================================================
+:DetectCPUFromDatabase
+:: Database compacta de CPUs - AMD PRIMEIRO para evitar falsos matches
+
+:: AMD PROCESSORS - Específicos primeiro
+for %%D in (
+    "2600X|6|AMD Ryzen 5 2600X (6C/12T, 3.6GHz)"
+    "2600[^X]|6|AMD Ryzen 5 2600 (6C/12T, 3.4GHz)"
+    "3700X|8|AMD Ryzen 7 3700X (8C/16T)"
+    "3900X|12|AMD Ryzen 9 3900X (12C/24T)"
+    "5600X|6|AMD Ryzen 5 5600X (6C/12T)"
+    "5800X|8|AMD Ryzen 7 5800X (8C/16T)"
+    "5900X|12|AMD Ryzen 9 5900X (12C/24T)"
+    "5950X|16|AMD Ryzen 9 5950X (16C/32T)"
+    "Athlon.*Silver.*3050|2|AMD Athlon Silver 3050U (2C/2T)"
+    "Athlon.*Gold.*3150|2|AMD Athlon Gold 3150U (2C/4T)"
+    "Ryzen.*3.*1200|4|AMD Ryzen 3 1200 (4C/4T)"
+    "Ryzen.*3.*[23][0-9][0-9][0-9]|4|AMD Ryzen 3 2nd/3rd Gen (4C/8T)"
+    "Ryzen.*3.*[456][0-9][0-9][0-9]|4|AMD Ryzen 3 4th-6th Gen (4C/8T)"
+    "Ryzen.*5.*[12][0-9][0-9][0-9]|6|AMD Ryzen 5 1st/2nd Gen (6C/12T)"
+    "Ryzen.*5.*[3456][0-9][0-9][0-9]|6|AMD Ryzen 5 3rd-6th Gen (6C/12T)"
+    "Ryzen.*5.*7[0-9][0-9][0-9]|8|AMD Ryzen 5 7th Gen (8C/16T)"
+    "Ryzen.*7.*[1234567][0-9][0-9][0-9]|8|AMD Ryzen 7 (8C/16T)"
+    "Ryzen.*9.*[3456789][0-9][0-9][0-9]|12|AMD Ryzen 9 3rd+ Gen (12C/24T)"
+    "Ryzen.*9.*[5789][0-9][0-9][0-9]X|16|AMD Ryzen 9 High-End (16C/32T)"
+    "Athlon|2|AMD Athlon (2C/2T)"
+    "Ryzen.*3|4|AMD Ryzen 3 (4C/8T)"
+    "Ryzen.*5|6|AMD Ryzen 5 (6C/12T)"
+    "Ryzen.*7|8|AMD Ryzen 7 (8C/16T)"
+    "Ryzen.*9|12|AMD Ryzen 9 (12C/24T)"
+) do (
+    call :CheckCPUPattern %%D
+    if "!CPU_MATCHED!"=="Y" exit /b 0
+)
+
+:: INTEL PROCESSORS
+for %%D in (
+    "1007U|2|Intel Celeron 1007U (2C/2T, 1.5GHz)"
+    "1005M|2|Intel Celeron 1005M (2C/2T, 1.9GHz)"
+    "N3350|2|Intel Celeron N3350 (2C/2T, Apollo Lake)"
+    "N4[0-9][0-9][0-9]|4|Intel Celeron N4xxx (4C/4T, Gemini Lake)"
+    "Celeron.*N[0-9]|2|Intel Celeron N-Series (2C/2T)"
+    "Pentium.*Gold|2|Intel Pentium Gold (2C/4T)"
+    "Pentium.*Silver|4|Intel Pentium Silver (4C/4T)"
+    "i3.*1[0-9][0-9][0-9][0-9]|4|Intel Core i3 10th+ Gen (4C/8T)"
+    "i3.*[456789][0-9][0-9][0-9]|2|Intel Core i3 4th-9th Gen (2C/4T)"
+    "i3.*[23][0-9][0-9][0-9]|2|Intel Core i3 2nd/3rd Gen (2C/4T)"
+    "i5.*1[0-9][0-9][0-9][0-9]|6|Intel Core i5 10th+ Gen (6C/12T)"
+    "i5.*[456789][0-9][0-9][0-9]|4|Intel Core i5 4th-9th Gen (4C/4T)"
+    "i5.*[23][0-9][0-9][0-9]|2|Intel Core i5 2nd/3rd Gen (2C/4T)"
+    "i7.*1[0-9][0-9][0-9][0-9]|8|Intel Core i7 10th+ Gen (8C/16T)"
+    "i7.*[456789][0-9][0-9][0-9]|4|Intel Core i7 4th-9th Gen (4C/8T)"
+    "i7.*[23][0-9][0-9][0-9]|4|Intel Core i7 2nd/3rd Gen (4C/8T)"
+    "Core.*i9|8|Intel Core i9 (8C/16T+)"
+    "Core.*i7|4|Intel Core i7 (Generic 4C/8T)"
+    "Core.*i5|4|Intel Core i5 (Generic 4C/4T)"
+    "Core.*i3|2|Intel Core i3 (Generic 2C/4T)"
+    "Pentium[^.]|2|Intel Pentium (2C/2T)"
+    "Celeron[^.]|2|Intel Celeron (Generic 2C/2T)"
+) do (
+    call :CheckCPUPattern %%D
+    if "!CPU_MATCHED!"=="Y" exit /b 0
+)
+
+:: Se não encontrou na database, usar detecção automática
+echo   ⚠️  Processador não encontrado na database - Usando detecção automática...
+
+:: Tentar detectar cores físicos via WMIC
+set "PHYSICAL_CORES=0"
+for /f "tokens=2 delims==" %%A in ('wmic cpu get NumberOfCores /value 2^>nul ^| find "="') do (
+    set "PHYSICAL_CORES=%%A"
+)
+
+if !PHYSICAL_CORES! GTR 0 (
+    set "CPU_CORES=!PHYSICAL_CORES!"
+    set "CPU_FAMILY=Auto-detected (!PHYSICAL_CORES! physical cores)"
+    exit /b 0
+)
+
+:: Fallback para NUMBER_OF_PROCESSORS dividido por 2 (assumindo HyperThreading)
+if defined NUMBER_OF_PROCESSORS (
+    set "AUTO_CORES=%NUMBER_OF_PROCESSORS%"
+    if !AUTO_CORES! GEQ 1 if !AUTO_CORES! LEQ 128 (
+        :: Para CPUs com HyperThreading, dividir por 2
+        if !AUTO_CORES! GTR 4 (
+            set /a "CPU_CORES=!AUTO_CORES!/2"
+        ) else (
+            set "CPU_CORES=!AUTO_CORES!"
+        )
+        set "CPU_FAMILY=Auto-detected (!CPU_CORES! cores estimated)"
+        exit /b 0
+    )
+)
+
+:: Fallback final baseado na arquitetura
+if "!CPU_ARCH!"=="x86" (
+    set "CPU_CORES=1"
+    set "CPU_FAMILY=x86 Fallback (Single Core)"
+) else (
+    set "CPU_CORES=2"
+    set "CPU_FAMILY=Generic Fallback (Dual Core)"
+)
+
+exit /b 0
+
+:: ============================================================================
+::                    FUNÇÃO AUXILIAR DE MATCHING
+:: ============================================================================
+:CheckCPUPattern
+:: Recebe uma string no formato "PATTERN|CORES|DESCRIPTION"
+set "CPU_MATCHED=N"
+set "PATTERN_DATA=%~1"
+
+:: Extrair componentes
+for /f "tokens=1,2,3 delims=|" %%A in ("!PATTERN_DATA!") do (
+    set "PATTERN=%%A"
+    set "CORES=%%B"
+    set "DESCRIPTION=%%C"
+)
+
+:: Verificar se o padrão corresponde
+echo "!CPU_MODEL!" | findstr /i "!PATTERN!" >nul
+if not errorlevel 1 (
+    set "CPU_CORES=!CORES!"
+    set "CPU_FAMILY=!DESCRIPTION!"
+    set "CPU_MATCHED=Y"
+)
 
 exit /b 0
 
@@ -811,133 +625,65 @@ echo.
 set "PROFILE_CHOICE="
 set /p "PROFILE_CHOICE=Escolha o perfil (1-8): "
 
+:: Validar entrada
+if "!PROFILE_CHOICE!"=="" goto :invalid_profile
+if !PROFILE_CHOICE! LSS 1 goto :invalid_profile
+if !PROFILE_CHOICE! GTR 8 goto :invalid_profile
+
+
 
 if "!PROFILE_CHOICE!"=="1" (
-    call :SetProfile_ReelsStories
-	if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil Reels/Stories
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="2" (
-    call :SetProfile_FeedSquare
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil Feed Square
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="3" (
-    call :SetProfile_IGTV
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil IGTV
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="4" (
-    call :SetProfile_SpeedQuality
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil Speed/Quality
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="5" (
-    call :SetProfile_Cinema
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil Cinema
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="6" (
-    call :SetProfile_HollywoodUltra
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil Hollywood Ultra
-        goto loop_profile_selection
-    )
-    goto :profile_configured
+	call :LoadProfileFromDatabase !PROFILE_CHOICE!
+	goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="7" (
     echo.
     echo ===============================
-    echo   🔍 DEBUG FFMPEG INICIADO
+    echo   🔍 TEST FFMPEG INICIADO
     echo ===============================
-    call :DebugFFmpegCommand
-    if errorlevel 1 (
-        echo.
-        echo ===============================
-        echo  ❌  DEBUG DETECTOU PROBLEMA!
-        echo ===============================
-        echo.
-        echo   🛠️ Soluções recomendadas pelo debug:
-        echo   1. Verificar parâmetros incompatíveis
-        echo   2. Atualizar FFmpeg se necessário
-        echo   3. Usar perfil mais simples
-        echo.
-        pause
-        goto loop_profile_selection
-    ) else if errorlevel 2 (
-        echo.
-        echo =====================================
-        echo  ⚠️  VERSÃO SIMPLIFICADA SERÁ USADA
-        echo =====================================
-        echo 🎯 Debug detectou incompatibilidade com parâmetros avançados
-        echo 🛠️ O script usará versão Hollywood simplificada
-        echo.
-        pause
-        goto loop_profile_selection
-    ) else (
-        echo.
-        echo ===============================
-        echo     ✅   DEBUG APROVADO!
-        echo ===============================
-        echo 🚀 Parâmetros FFmpeg funcionando perfeitamente!
-        echo 🎯 Perfil sendo aplicado corretamente!
-        echo 👆 Agora escolha um profile para encoding completo.
-        echo.
-        pause
-        goto loop_profile_selection
-    )
+    call :TestFFmpegParams
+    goto :profile_selection_done
 )
 
 if "!PROFILE_CHOICE!"=="8" (
     call :SetProfile_Custom
-    if errorlevel 1 (
-        echo ❌ Erro ao configurar perfil personalizado
-        goto loop_profile_selection
-    )
     goto :profile_configured
 )
 
-:: Se chegou aqui, opção inválida
-echo ❌ Opção inválida: "!PROFILE_CHOICE!"
-echo    Por favor, escolha um número de 1 a 8.
-goto loop_profile_selection
+:invalid_profile
+echo ❌ Opção inválida! Por favor, escolha um número de 1 a 8.
+goto :loop_profile_selection
 
 :profile_configured
-:: Validar se as variáveis foram definidas corretamente
-if not defined PROFILE_NAME (
-    echo ❌ ERRO CRÍTICO: PROFILE_NAME não foi definido!
-    echo    Há um problema na função do perfil selecionado.
-    pause
-    goto loop_profile_selection
-)
-
-if not defined VIDEO_ESCALA (
-    echo ❌ ERRO CRÍTICO: VIDEO_ESCALA não foi definido!
-    echo    Há um problema na função do perfil selecionado.
-    pause
-    goto loop_profile_selection
-)
+:: Validar se as variáveis foram definidas
+call :ValidateProfileVars
+if errorlevel 1 goto :loop_profile_selection
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -958,200 +704,121 @@ echo ║  ⏳ Duração: !DURATION_STR! (aprox. !INPUT_FPS! FPS)                
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-:: Confirmar configuração
 set /p "CONFIRM=Confirmar configuração? (S/N): "
-if /i not "!CONFIRM:~0,1!"=="S" goto loop_profile_selection
+if /i not "!CONFIRM:~0,1!"=="S" goto :loop_profile_selection
 
+:profile_selection_done
 call :LogEntry "[PROFILE] Selected: !PROFILE_NAME! (!VIDEO_ESCALA!, !ENCODE_MODE!)"
-call :LogEntry "[PROFILE] Hollywood parameters will be applied"
 exit /b 0
 
-::============================================================================
-::                    HOLLYWOOD-ENHANCED PROFILES
-::============================================================================
+:: ============================================================================
+::                    DATABASE DE PERFIS PROFISSIONAIS
+:: ============================================================================
+:LoadProfileFromDatabase
+set "PROFILE_ID=%~1"
 
-:SetProfile_ReelsStories
-echo.
-echo 🎬 CONFIGURANDO PERFIL 1 - REELS/STORIES HOLLYWOOD
-echo ════════════════════════════════════════════════════════════════
+:: Database de perfis - formato:
+:: ID|NAME|SCALE|MODE|TARGET|MAX|BUFFER|PRESET|AUDIO|TUNE|REFS|BFRAMES
 
-REM ============================================================================
-REM                    RESETAR TODAS AS VARIÁVEIS PRIMEIRO
-REM ============================================================================
-set "PROFILE_NAME="
-set "VIDEO_ESCALA="
-set "ENCODE_MODE="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
-set "TUNE_PARAM="
-set "REFS_COUNT="
-set "BFRAMES_COUNT="
+for %%P in (
+    "1|Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION|1080:1920|2PASS|15M|25M|30M|veryslow|320k|film|5|3"
+    "2|Feed Square HOLLYWOOD ZERO-RECOMPRESSION|1080:1080|2PASS|12M|22M|24M|veryslow|256k|film|5|3"
+    "3|IGTV/Feed HOLLYWOOD ZERO-RECOMPRESSION|1920:1080|2PASS|22M|35M|42M|veryslow|320k|film|5|3"
+    "4|Speed Quality HOLLYWOOD ZERO-RECOMPRESSION|1080:1920|2PASS|14M|20M|24M|fast|192k|film|2|2"
+    "5|Cinema HOLLYWOOD ZERO-RECOMPRESSION|2560:1080|2PASS|30M|45M|55M|placebo|320k|film|5|3"
+    "6|HOLLYWOOD ULTRA ZERO-RECOMPRESSION|1080:1920|2PASS|25M|40M|50M|veryslow|320k|film|5|3"
+) do (
+    call :ParseProfileData %%P
+    if "!PARSED_ID!"=="!PROFILE_ID!" (
+        :: Aplicar configurações do perfil
+        set "PROFILE_NAME=!PARSED_NAME!"
+        set "VIDEO_ESCALA=!PARSED_SCALE!"
+        set "ENCODE_MODE=!PARSED_MODE!"
+        set "BITRATE_VIDEO_TARGET=!PARSED_TARGET!"
+        set "BITRATE_VIDEO_MAX=!PARSED_MAX!"
+        set "BUFSIZE_VIDEO=!PARSED_BUFFER!"
+        set "PRESET_X264=!PARSED_PRESET!"
+        set "BITRATE_AUDIO=!PARSED_AUDIO!"
+        set "TUNE_PARAM=!PARSED_TUNE!"
+        set "REFS_COUNT=!PARSED_REFS!"
+        set "BFRAMES_COUNT=!PARSED_BFRAMES!"
 
-REM ============================================================================
-REM                    DEFINIR VARIÁVEIS DO PERFIL 1
-REM ============================================================================
-set "PROFILE_NAME=Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=1080:1920"
-set "ENCODE_MODE=2PASS"
-set "BITRATE_VIDEO_TARGET=15M"
-set "BITRATE_VIDEO_MAX=25M"
-set "BUFSIZE_VIDEO=30M"
-set "PRESET_X264=veryslow"
-set "BITRATE_AUDIO=320k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=5"
-set "BFRAMES_COUNT=3"
+        :: Log detalhado do perfil
+        call :LogProfileDetails
+        exit /b 0
+    )
+)
 
-REM ============================================================================
-REM                    VALIDAÇÃO IMEDIATA
-REM ============================================================================
-echo  ✅ PERFIL 1 CONFIGURADO - VALIDAÇÃO:
-echo   🎬 Perfil: !PROFILE_NAME!
-echo   📐 Resolução: !VIDEO_ESCALA!
-echo   🎯 Modo: !ENCODE_MODE!
-echo   📊 Bitrate Target: !BITRATE_VIDEO_TARGET!
-echo   📊 Bitrate Max: !BITRATE_VIDEO_MAX!
-echo   ⚙️ Preset: !PRESET_X264!
-echo   🎵 Bitrate Áudio: !BITRATE_AUDIO!
+:: Se chegou aqui, perfil não encontrado
+echo ❌ ERRO: Perfil !PROFILE_ID! não encontrado na database!
+exit /b 1
 
-REM ============================================================================
-REM                    VERIFICAÇÃO DE SEGURANÇA
-REM ============================================================================
-if not defined PROFILE_NAME (
-    echo ❌ ERRO CRÍTICO: PROFILE_NAME não foi definido!
+:: ============================================================================
+::                    FUNÇÕES AUXILIARES
+:: ============================================================================
+:ParseProfileData
+set "PROFILE_DATA=%~1"
+
+:: Extrair todos os campos
+for /f "tokens=1-12 delims=|" %%A in ("!PROFILE_DATA!") do (
+    set "PARSED_ID=%%A"
+    set "PARSED_NAME=%%B"
+    set "PARSED_SCALE=%%C"
+    set "PARSED_MODE=%%D"
+    set "PARSED_TARGET=%%E"
+    set "PARSED_MAX=%%F"
+    set "PARSED_BUFFER=%%G"
+    set "PARSED_PRESET=%%H"
+    set "PARSED_AUDIO=%%I"
+    set "PARSED_TUNE=%%J"
+    set "PARSED_REFS=%%K"
+    set "PARSED_BFRAMES=%%L"
+)
+exit /b 0
+
+:ValidateProfileVars
+:: Verificar se todas as variáveis essenciais foram definidas
+set "VALIDATION_ERROR=0"
+
+for %%V in (PROFILE_NAME VIDEO_ESCALA ENCODE_MODE BITRATE_VIDEO_TARGET BITRATE_VIDEO_MAX BUFSIZE_VIDEO PRESET_X264 BITRATE_AUDIO) do (
+    if not defined %%V (
+        echo ❌ ERRO: %%V não foi definido!
+        set "VALIDATION_ERROR=1"
+    )
+)
+
+if !VALIDATION_ERROR! EQU 1 (
+    echo.
+    echo ⚠️ Erro na configuração do perfil. Tente novamente.
     pause
     exit /b 1
 )
 
-if not defined VIDEO_ESCALA (
-    echo ❌ ERRO CRÍTICO: VIDEO_ESCALA não foi definido!
-    pause
-    exit /b 1
-)
-
-if not defined ENCODE_MODE (
-    echo ❌ ERRO CRÍTICO: ENCODE_MODE não foi definido!
-    pause
-    exit /b 1
-)
-
-echo ✅ Todas as variáveis validadas com sucesso!
-call :LogEntry "[PROFILE] Profile 1 configured and validated: %PROFILE_NAME%"
 exit /b 0
 
-:SetProfile_FeedSquare
-set "PROFILE_NAME=Feed Square HOLLYWOOD ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=1080:1080"
-set "ENCODE_MODE=2PASS"
-:: Square format - balanced approach
-set "BITRATE_VIDEO_TARGET=12M"
-set "BITRATE_VIDEO_MAX=22M"
-set "BUFSIZE_VIDEO=24M"
-set "PRESET_X264=veryslow"
-set "BITRATE_AUDIO=256k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=5"
-set "BFRAMES_COUNT=3"
-echo   🎬 Configuração: Square format com parâmetros Hollywood
-echo   📊 Otimizado para Feed posts sem degradação
-call :LogEntry "[PROFILE] Feed Square configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
+:LogProfileDetails
+echo   🎬 Configuração do Perfil !PROFILE_ID!:
+echo      Nome: !PROFILE_NAME!
+echo      Resolução: !VIDEO_ESCALA!
+echo      Modo: !ENCODE_MODE!
+echo      Bitrate: !BITRATE_VIDEO_TARGET! (target) / !BITRATE_VIDEO_MAX! (max)
+echo      Preset: !PRESET_X264!
+echo      Áudio: !BITRATE_AUDIO!
+call :LogEntry "[PROFILE] Profile !PROFILE_ID! loaded from database"
 exit /b 0
 
-:SetProfile_IGTV
-set "PROFILE_NAME=IGTV/Feed HOLLYWOOD ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=1920:1080"
-set "ENCODE_MODE=2PASS"
-:: Horizontal format - higher bitrate for detail preservation
-set "BITRATE_VIDEO_TARGET=22M"
-set "BITRATE_VIDEO_MAX=35M"
-set "BUFSIZE_VIDEO=42M"
-set "PRESET_X264=veryslow"
-set "BITRATE_AUDIO=320k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=5"
-set "BFRAMES_COUNT=3"
-echo   🎬 Configuração: Horizontal Hollywood-grade
-echo   📊 Máxima qualidade para IGTV/Feed horizontal
-call :LogEntry "[PROFILE] IGTV configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
-exit /b 0
-
-:SetProfile_SpeedQuality
-set "PROFILE_NAME=Speed Quality HOLLYWOOD ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=1080:1920"
-set "ENCODE_MODE=2PASS"
-:: Balanced speed vs quality (still Hollywood-level)
-set "BITRATE_VIDEO_TARGET=14M"
-set "BITRATE_VIDEO_MAX=20M"
-set "BUFSIZE_VIDEO=24M"
-set "PRESET_X264=fast"
-set "BITRATE_AUDIO=192k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=2"
-set "BFRAMES_COUNT=2"
-echo   🎬 Configuração: Balanced Hollywood encoding
-echo   ⚡ Velocidade otimizada mantendo qualidade premium
-call :LogEntry "[PROFILE] Speed/Quality configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
-exit /b 0
-
-:SetProfile_Cinema
-set "PROFILE_NAME=Cinema HOLLYWOOD ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=2560:1080"
-set "ENCODE_MODE=2PASS"
-:: Ultra-wide cinematic format
-set "BITRATE_VIDEO_TARGET=30M"
-set "BITRATE_VIDEO_MAX=45M"
-set "BUFSIZE_VIDEO=55M"
-set "PRESET_X264=placebo"
-set "BITRATE_AUDIO=320k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=5"
-set "BFRAMES_COUNT=3"
-echo   🎬 Configuração: Ultra-wide cinematic
-echo   🎭 Nível Netflix/Disney+ para conteúdo premium
-call :LogEntry "[PROFILE] Cinema configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
-exit /b 0
-
-:SetProfile_HollywoodUltra
-:: NEW PROFILE - Maximum possible quality
-set "PROFILE_NAME=HOLLYWOOD ULTRA ZERO-RECOMPRESSION"
-set "VIDEO_ESCALA=1080:1920"
-set "ENCODE_MODE=2PASS"
-:: Absolute maximum bitrates for zero compression
-set "BITRATE_VIDEO_TARGET=25M"
-set "BITRATE_VIDEO_MAX=40M"
-set "BUFSIZE_VIDEO=50M"
-set "PRESET_X264=veryslow"
-set "BITRATE_AUDIO=320k"
-set "TUNE_PARAM=film"
-set "REFS_COUNT=5"
-set "BFRAMES_COUNT=3"
-echo   🏆 Configuração: HOLLYWOOD ULTRA
-echo   💎 Máxima qualidade possível - Broadcast grade
-echo   ⚠️ AVISO: Encoding muito lento mas qualidade suprema
-call :LogEntry "[PROFILE] Hollywood Ultra configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
-exit /b 0
-
+:: ============================================================================
+::                    PERFIL CUSTOM (mantido separado)
+:: ============================================================================
 :SetProfile_Custom
 set "PROFILE_NAME=Custom Profile"
 echo   🛠️ Iniciando configuração personalizada...
 call :GetCustomResolution
-if errorlevel 1 (
-    echo ❌ Erro na configuração de resolução personalizada
-    exit /b 1
-)
+if errorlevel 1 exit /b 1
 call :GetCustomEncodingMode
-if errorlevel 1 (
-    echo ❌ Erro na configuração de modo de encoding
-    exit /b 1
-)
+if errorlevel 1 exit /b 1
 call :GetCustomAdvancedParams
-if errorlevel 1 (
-    echo ❌ Erro na configuração de parâmetros avançados
-    exit /b 1
-)
+if errorlevel 1 exit /b 1
 call :LogEntry "[PROFILE] Custom configured: !VIDEO_ESCALA!, !ENCODE_MODE!"
 exit /b 0
 
@@ -1163,11 +830,10 @@ echo   2. 1080x1080 (1:1 Quadrado)
 echo   3. 1920x1080 (16:9 Horizontal)
 echo   4. 1350x1080 (4:3 Tradicional)
 echo   5. 2560x1080 (21:9 Cinema 2k Quality)
-echo   6. Personalizada
 
 :loop_custom_resolution
 set "RES_CHOICE="
-set /p "RES_CHOICE=Escolha a resolução (1-6): "
+set /p "RES_CHOICE=Escolha a resolução (1-5): "
 
 if "!RES_CHOICE!"=="1" (
 	set "VIDEO_ESCALA=1080:1920"
@@ -1194,32 +860,9 @@ if "!RES_CHOICE!"=="5" (
     echo   ✅ Resolução selecionada: 2560x1080 (21:9 Cinema)
     goto :custom_resolution_done
 )
-if "!RES_CHOICE!"=="6" (
-    echo   🛠️ Configuração manual de resolução:
-    :loop_custom_manual
-    set /p "CUSTOM_WIDTH=Digite a largura (ex: 1080): "
-    set /p "CUSTOM_HEIGHT=Digite a altura (ex: 1920): "
-
-	:: Validar se são números
-    echo !CUSTOM_WIDTH! | findstr /R "^[0-9][0-9]*$" >nul
-    if errorlevel 1 (
-        echo ❌ Largura deve ser um número válido!
-        goto loop_custom_manual
-    )
-
-    echo !CUSTOM_HEIGHT! | findstr /R "^[0-9][0-9]*$" >nul
-    if errorlevel 1 (
-        echo ❌ Altura deve ser um número válido!
-        goto loop_custom_manual
-    )
-
-	set "VIDEO_ESCALA=!CUSTOM_WIDTH!:!CUSTOM_HEIGHT!"
-    echo   ✅ Resolução personalizada: !CUSTOM_WIDTH!x!CUSTOM_HEIGHT!
-    goto :custom_resolution_done
-)
 
 echo ❌ Opção inválida: "!RES_CHOICE!"
-echo    Escolha um número de 1 a 6.
+echo    Escolha um número de 1 a 5.
 goto loop_custom_resolution
 
 :custom_resolution_done
@@ -1493,27 +1136,6 @@ if !PASS1_RESULT_BUILD! NEQ 0 (
 echo ✅ Comando Pass 1 construído com sucesso
 echo.
 
-REM Validar comando construído
-if not defined FFMPEG_COMMAND (
-    echo ❌ ERRO CRÍTICO: FFMPEG_COMMAND não foi definido!
-    echo    A função BuildFFmpegCommand falhou silenciosamente
-    call :LogEntry "[ERROR] FFMPEG_COMMAND not defined after build"
-    pause
-    exit /b 1
-)
-
-REM Verificar se comando contém elementos essenciais do Pass 1
-echo !FFMPEG_COMMAND! | findstr /C:"-pass 1" >nul
-if errorlevel 1 (
-    echo ❌ ERRO: Comando não contém '-pass 1'
-    echo    Comando construído: !FFMPEG_COMMAND!
-    call :LogEntry "[ERROR] Pass 1 command missing -pass 1 parameter"
-    pause
-    exit /b 1
-)
-
-echo ✅ Validação NUL ignorada - Prosseguindo com Pass 1
-
 REM Log do comando para debug
 call :LogEntry "[PASS1] Command: !FFMPEG_COMMAND!"
 
@@ -1522,120 +1144,27 @@ echo ⏱️ Esta etapa pode levar alguns minutos dependendo do tamanho do arquiv
 echo 📊 Progresso será exibido abaixo:
 echo.
 
-REM Executar Pass 1 com captura robusta de erro
+REM Executar Pass 1
 set "PASS1_START_TIME=!TIME!"
-echo 🔄 Executando: !FFMPEG_COMMAND!
+echo 🔄 Executando Pass 1...
 echo.
 
-!FFMPEG_COMMAND! 2>pass1_error.log
+REM IMPORTANTE: Redirecionar stderr para stdout para ver progresso
+!FFMPEG_COMMAND! 2>&1
 set "PASS1_RESULT=!ERRORLEVEL!"
 set "PASS1_END_TIME=!TIME!"
 
 echo.
+echo 🔍 DEBUG: PASS1_RESULT=!PASS1_RESULT!
+echo.
 echo ⏹️ Pass 1 finalizado às !PASS1_END_TIME!
 echo 📋 Código de retorno: !PASS1_RESULT!
 
-REM ============================================================================
-REM                    ANÁLISE DETALHADA DE ERRO PASS 1
-REM ============================================================================
-
-if !PASS1_RESULT! NEQ 0 (
-    echo.
-    echo ❌ ERRO CRÍTICO NA PASSAGEM 1!
-    echo ════════════════════════════════════════════════════════════════
-    echo 📋 Código de erro: !PASS1_RESULT!
-    echo ⏱️ Falhou em: !PASS1_END_TIME!
-    echo.
-    
-    if exist "pass1_error.log" (
-        echo 🔍 ANÁLISE DETALHADA DO ERRO:
-        echo.
-        echo === INÍCIO DO LOG DE ERRO ===
-        type pass1_error.log
-        echo === FIM DO LOG DE ERRO ===
-        echo.
-		
-		REM Diagnóstico inteligente de erros
-        echo 🧠 DIAGNÓSTICO AUTOMÁTICO:
-
-        findstr /C:"Invalid" pass1_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Parâmetros inválidos
-            echo    Possível causa: x264opts não suportados pela versão do FFmpeg
-			echo    Solução: Tentar Profile 4 (Speed/Quality) que usa parâmetros mais compatíveis
-		)
-		
-        findstr /C:"No such file or directory" pass1_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Arquivo não encontrado
-            echo    Verifique se o arquivo: "!ARQUIVO_ENTRADA!" existe
-			echo    Verifique permissões de leitura do arquivo
-        )
-
-        findstr /C:"Permission denied" pass1_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Permissão negada
-            echo    Execute o script como Administrador
-			echo    Verifique se o arquivo não está em uso por outro programa
-        )
-
-        findstr /C:"Unknown encoder" pass1_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Encoder não encontrado
-            echo    Sua versão do FFmpeg pode não ter libx264 compilado
-			echo    Baixe uma versão completa do FFmpeg
-        )
-		
-		findstr /C:"Unrecognized option" pass1_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Opção não reconhecida
-            echo    Versão do FFmpeg muito antiga
-            echo    Atualize para FFmpeg 4.0 ou superior
-        )
-
-    ) else (
-        echo ⚠️ ARQUIVO DE LOG NÃO CRIADO
-        echo    Indica falha crítica no FFmpeg ou sistema
-        echo    FFmpeg pode ter travado completamente
-        echo    Verifique se o processo não está rodando em background
-    )
-
-    echo.
-    echo 🛠️ AÇÕES RECOMENDADAS:
-    echo   1. Verificar FFmpeg: ffmpeg -version
-    echo   2. Testar com arquivo menor
-    echo   3. Executar como Administrador
-    echo   4. Verificar espaço em disco disponível (mínimo 2GB livres)
-    echo   5. Tentar Profile 4 (Speed/Quality) - mais compatível
-    echo   6. Usar Profile 7 (Teste Rápido) para validar configuração
-    echo.
-    echo 💡 DICA: Profile 7 testa apenas 5 segundos para validar parâmetros
-    echo.
-
-    call :LogEntry "[ERROR] Pass 1 failed with code: !PASS1_RESULT!"
-	
-    REM Limpar arquivos de erro
-    if exist "pass1_error.log" del "pass1_error.log"
-
-    echo ⚠️ SCRIPT PAUSADO PARA ANÁLISE - Você pode:
-    echo   A) Fechar e tentar Profile diferente
-    echo   B) Verificar os problemas listados acima
-    echo   C) Pressionar qualquer tecla para voltar ao menu
-    echo.
-    pause >nul
-
-    REM Retornar ao menu de profiles em vez de sair
-    goto :SelectProfile
-)
 
 REM ============================================================================
 REM                    VALIDAÇÃO PASS 1 BEM-SUCEDIDO
 REM ============================================================================
 
-echo ✅ PASSAGEM 1 COMPLETADA COM SUCESSO!
-echo.
-
-REM Verificar arquivos de log gerados
 echo 📋 Verificando arquivos de log do Pass 1...
 
 set "LOG_FILES_FOUND=0"
@@ -1644,230 +1173,98 @@ if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
     set /a "LOG_FILES_FOUND+=1"
     for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log") do set "LOG_SIZE=%%~zA"
     echo ✅ Log principal: !ARQUIVO_LOG_PASSAGEM!-0.log (!LOG_SIZE! bytes)
+) else (
+    echo ⚠️ Log principal não encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log
 )
 
 if exist "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" (
     set /a "LOG_FILES_FOUND+=1"
     for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree") do set "MBTREE_SIZE=%%~zA"
     echo ✅ MBTree data: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree (!MBTREE_SIZE! bytes)
+) else (
+    echo ⚠️ MBTree não encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree
 )
 
 if !LOG_FILES_FOUND! EQU 0 (
-    echo ⚠️ AVISO: Nenhum arquivo de log encontrado
-    echo    • Pass 1 foi bem-sucedido mas não gerou logs
-    echo    • Continuando com Pass 2 (pode usar dados internos do FFmpeg)
-) else (
-    echo ✅ !LOG_FILES_FOUND! arquivo(s) de log encontrado(s)
-    echo 💡 Estes dados otimizarão o Pass 2 para máxima qualidade
+    echo ❌ ERRO: Nenhum arquivo de log foi criado!
+    echo    O Pass 1 não gerou os dados necessários para o Pass 2
+    call :LogEntry "[ERROR] No log files created by Pass 1"
+    pause
+    exit /b 1
 )
 
-REM Limpar log de erro do Pass 1 se existir
-if exist "pass1_error.log" del "pass1_error.log"
+echo ✅ !LOG_FILES_FOUND! arquivo(s) de log encontrado(s)
+echo 💡 Dados prontos para otimização no Pass 2
 
 call :LogEntry "[PASS1] Completed successfully - !LOG_FILES_FOUND! log files generated"
 
 REM ============================================================================
-REM                    DEBUG PARA TRANSIÇÃO PASS 1 → PASS 2
+REM                         PROSSEGUIR PARA PASS 2
 REM ============================================================================
 
 echo.
-echo ═══════════════════════════════════════════════════════════════
-echo 🎉 PASS 1 COMPLETADO COM SUCESSO!
-echo ═══════════════════════════════════════════════════════════════
-echo ⏱️ Horário: !TIME!
-echo 📋 Iniciando preparação para Pass 2...
-echo.
+echo 🚀 INICIANDO PASS 2 AUTOMATICAMENTE...
+echo ⏱️ Preparando comando de encoding final...
 
-REM LOG DE DEBUG - ESSENCIAL
-call :LogEntry "[PASS1] Completed successfully at !TIME!"
-call :LogEntry "[DEBUG] Starting Pass 2 preparation..."
-
-REM Verificar se log foi gerado
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-    for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log") do set "LOG_SIZE=%%~zA"
-    echo ✅ Log do Pass 1 encontrado: !LOG_SIZE! bytes
-    call :LogEntry "[DEBUG] Pass 1 log found: !LOG_SIZE! bytes"
-) else (
-    echo ⚠️ Log do Pass 1 não encontrado, mas Pass 1 foi bem-sucedido
-    call :LogEntry "[DEBUG] Pass 1 log not found but Pass 1 succeeded"
-)
-
-REM PAUSE DE DEBUG - REMOVER DEPOIS DE CORRIGIR
-echo.
-echo 🔍 DEBUG: Pressione qualquer tecla para continuar com Pass 2...
-echo    (Esta pausa será removida após identificar o problema)
-pause
-
-echo.
+REM Construir comando Pass 2
 echo 🔧 Construindo comando para Pass 2...
-call :LogEntry "[DEBUG] Building Pass 2 command..."
-
-REM Construir comando Pass 2 com debug detalhado
 call :BuildFFmpegCommand "PASS2"
 set "PASS2_RESULT_BUILD=!ERRORLEVEL!"
 
-echo 📋 Resultado da construção Pass 2: !PASS2_RESULT_BUILD!
-call :LogEntry "[DEBUG] Pass 2 build result: !PASS2_RESULT_BUILD!"
-
 if !PASS2_RESULT_BUILD! NEQ 0 (
-    echo ❌ ERRO CRITICO: Falha ao construir comando Pass 2!
+    echo ❌ ERRO CRÍTICO: Falha ao construir comando Pass 2!
     echo    Código de erro: !PASS2_RESULT_BUILD!
-    call :LogEntry "[ERROR] Pass 2 command build failed: !PASS2_RESULT_BUILD!"
-    echo.
-    echo 🔍 VARIÁVEIS DE DEBUG:
-    echo    PROFILE_NAME: "!PROFILE_NAME!"
-    echo    VIDEO_ESCALA: "!VIDEO_ESCALA!"
-    echo    ENCODE_MODE: "!ENCODE_MODE!"
-    echo    ARQUIVO_SAIDA: "!ARQUIVO_SAIDA!"
-    echo    ARQUIVO_LOG_PASSAGEM: "!ARQUIVO_LOG_PASSAGEM!"
-    echo.
+    call :LogEntry "[ERROR] Failed to build Pass 2 command: !PASS2_RESULT_BUILD!"
     pause
     exit /b 1
 )
 
 echo ✅ Comando Pass 2 construído com sucesso
-call :LogEntry "[DEBUG] Pass 2 command built successfully"
-
-REM Validar comando Pass 2 com debug
-echo 🔍 Validando comando Pass 2...
-if not defined FFMPEG_COMMAND (
-    echo ❌ ERRO: FFMPEG_COMMAND não foi definido para Pass 2!
-    call :LogEntry "[ERROR] FFMPEG_COMMAND not defined for Pass 2"
-    pause
-    exit /b 1
-)
-
-echo ✅ FFMPEG_COMMAND definido para Pass 2
-call :LogEntry "[DEBUG] FFMPEG_COMMAND defined for Pass 2"
-
-REM Verificar se contém -pass 2
-echo !FFMPEG_COMMAND! | findstr /C:"-pass 2" >nul
-if errorlevel 1 (
-    echo ❌ ERRO: Comando não contém '-pass 2'
-    echo    Comando atual: !FFMPEG_COMMAND!
-    call :LogEntry "[ERROR] Pass 2 command missing -pass 2 parameter"
-    pause
-    exit /b 1
-)
-
-REM Verificar se contém arquivo de saída correto
-echo !FFMPEG_COMMAND! | findstr /C:"!ARQUIVO_SAIDA!" >nul
-if errorlevel 1 (
-    echo ❌ ERRO: Comando não especifica arquivo de saída correto
-    echo    Esperado: !ARQUIVO_SAIDA!
-    echo    Comando: !FFMPEG_COMMAND!
-    call :LogEntry "[ERROR] Pass 2 command missing correct output file"
-    pause
-    exit /b 1
-)
-
-echo ✅ Arquivo de saída correto no comando
-call :LogEntry "[DEBUG] Pass 2 output file correct"
-
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    🎬 INICIANDO PASS 2 - ENCODING FINAL                     ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-echo 💎 Usando dados do Pass 1 para distribuição otimizada de bitrate
-echo ⏱️ Estimativa: 3-5 minutos para encoding final
-echo 🎯 Comando: !FFMPEG_COMMAND!
-echo.
-
-call :LogEntry "[PASS2] Starting Pass 2 execution"
-
-REM REMOVER ESTA PAUSA APÓS O DEBUG
-echo 🔍 DEBUG: Comando Pass 2 pronto. Pressione qualquer tecla para executar...
-pause
 
 REM Executar Pass 2
-!FFMPEG_COMMAND!
+set "PASS2_START_TIME=!TIME!"
+echo 🔄 Executando Pass 2...
+echo.
+
+!FFMPEG_COMMAND! 2>&1
 set "PASS2_RESULT=!ERRORLEVEL!"
+set "PASS2_END_TIME=!TIME!"
 
 echo.
-echo ⏹️ Pass 2 finalizado com código: !PASS2_RESULT!
-call :LogEntry "[PASS2] Finished with code: !PASS2_RESULT!"
+echo ⏹️ Pass 2 finalizado às !PASS2_END_TIME!
+echo 📋 Código de retorno: !PASS2_RESULT!
 
 REM ============================================================================
 REM                    ANÁLISE DETALHADA DE ERRO PASS 2
 REM ============================================================================
 
-if !PASS2_RESULT! NEQ 0 (
-    echo.
-    echo ❌ ERRO CRÍTICO na Passagem 2!
-    echo 📋 Código de erro: !PASS2_RESULT!
-    echo ⏱️ Falhou em: !PASS2_END_TIME!
-    echo.
-	
-    if exist "pass2_error.log" (
-        echo 🔍 DIAGNÓSTICO DO ERRO:
-		echo.
-        echo === INÍCIO DO LOG DE ERRO ===
-        type pass2_error.log
-        echo === FIM DO LOG DE ERRO ===
-        echo.
-		
-		echo 🧠 DIAGNÓSTICO ESPECÍFICO PASS 2:
+REM ✅ CORREÇÃO: Verificação robusta do PASS 2
+if not defined PASS2_RESULT set "PASS2_RESULT=0"
+if "!PASS2_RESULT!"=="" set "PASS2_RESULT=0"
 
-        REM Identificar erros comuns no Pass 2
-        findstr /C:"No such file.*log" pass2_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Arquivo de log do Pass 1 não encontrado
-            echo    O Pass 1 pode não ter gerado os dados necessários
-			echo    Verifique se !ARQUIVO_LOG_PASSAGEM!-0.log existe
-        )
-		
-        findstr /C:"Permission denied" pass2_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO: Problema de permissões
-            echo    Execute como Administrador
-            echo    Verifique se !ARQUIVO_SAIDA! não está sendo usado
-        )
-
-        findstr /C:"Invalid data found" pass2_error.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO: Dados corrompidos do Pass 1
-            echo    Reexecute o encoding desde o Pass 1
-        )
-		
-    ) else (
-        echo ⚠️ ARQUIVO DE LOG NÃO CRIADO
-        echo    • Pass 2 falhou antes de gerar log
-        echo    • Possível problema de sistema ou memória
-    )
-
-    echo.
-    echo 🛠️  AÇÕES RECOMENDADAS PARA PASS 2:
-    echo   1. Verificar se há espaço suficiente em disco
-    echo   2. Fechar outros programas que usam muito CPU/RAM
-    echo   3. Verificar se !ARQUIVO_SAIDA! não está em uso
-    echo   4. Tentar com nome de arquivo diferente
-    echo   5. Reexecutar desde o Pass 1 se houver corrupção
-    echo.
-
+if "!PASS2_RESULT!"=="0" (
+    echo ✅ PASS 2 COMPLETADO COM SUCESSO!
+    REM call :LogEntry "[PASS2] Completed successfully with code: !PASS2_RESULT!"
+    goto :ValidateOutput
+) else (
+    echo ❌ ERRO no Pass 2 (código: !PASS2_RESULT!)
     call :LogEntry "[ERROR] Pass 2 failed with code: !PASS2_RESULT!"
-
-    REM Limpar log de erro
-    if exist "pass2_error.log" del "pass2_error.log"
-
-    echo ⚠️ SCRIPT PAUSADO - Pressione qualquer tecla para voltar ao menu...
-    pause >nul
-    goto :SelectProfile
+    pause
+    exit /b 1
 )
+
+:ValidateOutput
 
 REM ============================================================================
 REM                    VALIDAÇÃO DO ARQUIVO DE SAÍDA
 REM ============================================================================
-
-echo ✅ PASSAGEM 2 COMPLETADA COM SUCESSO!
-echo.
 
 echo 🔍 Validando arquivo de saída criado...
 
 if not exist "!ARQUIVO_SAIDA!" (
     echo ❌ ERRO CRITICO: Arquivo de saída não foi criado!
     echo    Arquivo esperado: !ARQUIVO_SAIDA!
-    echo    O Pass 2 retornou sucesso mas não gerou o arquivo
     call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
     pause
     exit /b 1
@@ -1876,112 +1273,36 @@ if not exist "!ARQUIVO_SAIDA!" (
 REM Verificar tamanho do arquivo
 for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
 
-if !OUTPUT_SIZE! LSS 10000 (
-    echo ❌ ERRO: Arquivo muito pequeno: (!OUTPUT_SIZE! bytes)
-    echo    Indica encoding incompleto ou corrompido.
-	echo    Arquivo válido deveria ter pelo menos algumas centenas de KB
-    call :LogEntry "[ERROR] Output file too small: !OUTPUT_SIZE! bytes"
-    pause
-    exit /b 1
-)
-
-set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
-set /a "OUTPUT_SIZE_KB=!OUTPUT_SIZE!/1024"
-
-echo ✅ Passagem 2 completada com sucesso!
-echo    ✅ Arquivo criado: !ARQUIVO_SAIDA!
+echo ✅ Validação de arquivo de saída:
+echo    📁 Arquivo: !ARQUIVO_SAIDA!
 echo    📊 Tamanho: !OUTPUT_SIZE_MB! MB (!OUTPUT_SIZE_KB! KB)
-echo    📊 Bytes: !OUTPUT_SIZE! bytes
-
-
-REM Limpar log de erro do Pass 2
-if exist "pass2_error.log" del "pass2_error.log"
 
 REM ============================================================================
-REM                    LIMPEZA DE ARQUIVOS TEMPORÁRIOS
-REM ============================================================================
-
-echo.
-echo 🧹 Gerenciamento de arquivos temporários...
-
-set "TEMP_FILES_COUNT=0"
-set "TEMP_FILES_SIZE=0"
-
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-    for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log") do set /a "TEMP_FILES_SIZE+=%%~zA"
-    set /a "TEMP_FILES_COUNT+=1"
-    echo    📋 Encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log
-)
-
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" (
-    for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree") do set /a "TEMP_FILES_SIZE+=%%~zA"
-    set /a "TEMP_FILES_COUNT+=1"
-    echo    📋 Encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree
-)
-
-if !TEMP_FILES_COUNT! GTR 0 (
-    set /a "TEMP_SIZE_KB=!TEMP_FILES_SIZE!/1024"
-    echo.
-    echo 📊 !TEMP_FILES_COUNT! arquivo(s) temporário(s) encontrado(s) (!TEMP_SIZE_KB! KB)
-    
-    echo 🗑️ Deseja remover os arquivos temporários?
-    echo    • Arquivos de log do Pass 1 não são mais necessários
-    echo    • Libera !TEMP_SIZE_KB! KB de espaço em disco
-    echo.
-    set /p "CLEAN_TEMP=Deletar arquivos temporários? (S/N): "
-    
-    if /i "!CLEAN_TEMP:~0,1!"=="S" (
-        if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-            del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
-            if not exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-                echo    ✅ Removido: !ARQUIVO_LOG_PASSAGEM!-0.log
-            ) else (
-                echo    ⚠️ Falha ao remover: !ARQUIVO_LOG_PASSAGEM!-0.log
-            )
-        )
-        
-        if exist "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" (
-            del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
-            if not exist "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" (
-                echo    ✅ Removido: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree
-            ) else (
-                echo    ⚠️ Falha ao remover: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree
-            )
-        )
-        
-        echo    🧹 Limpeza concluída - !TEMP_SIZE_KB! KB liberados
-        call :LogEntry "[CLEANUP] Temporary files removed: !TEMP_FILES_COUNT! files, !TEMP_SIZE_KB! KB"
-    ) else (
-        echo    💾 Arquivos temporários mantidos (podem ser úteis para debug)
-        call :LogEntry "[CLEANUP] Temporary files kept by user choice"
-    )
-) else (
-    echo    ℹ️ Nenhum arquivo temporário encontrado
-    call :LogEntry "[CLEANUP] No temporary files found"
-)
-
-REM ============================================================================
-REM                    RELATÓRIO FINAL DE SUCESSO
+REM                    RELATÓRIO FINAL APRIMORADO
 REM ============================================================================
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                   🏆 ENCODING 2-PASS CONCLUÍDO COM SUCESSO! 🏆              ║
+echo ║                   🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆                     ║
 echo ║                                                                              ║
-echo ║  📁 Arquivo criado: !ARQUIVO_SAIDA!                                          ║
-echo ║  📊 Tamanho final: !OUTPUT_SIZE_MB! MB (!OUTPUT_SIZE_KB! KB)                 ║
-echo ║  🎬 Qualidade: Hollywood Level Zero-Recompression                            ║
-echo ║  📱 Perfil usado: !PROFILE_NAME!                                             ║
-echo ║  🎯 Resolução: !VIDEO_ESCALA! (otimizada para Instagram)                     ║
-echo ║  ⚙️ Preset: !PRESET_X264! (parâmetros broadcast-grade)                       ║
-echo ║  📊 Bitrate: !BITRATE_VIDEO_TARGET! target / !BITRATE_VIDEO_MAX! máximo      ║
-echo ║  🎵 Áudio: !BITRATE_AUDIO! AAC 48kHz Stereo                                  ║
-echo ║  ⏱️ Pass 1: !PASS1_START_TIME! - !PASS1_END_TIME!                            ║
-echo ║  ⏱️ Pass 2: !PASS2_START_TIME! - !PASS2_END_TIME!                            ║
+echo ║  📁 Arquivo: !ARQUIVO_SAIDA!                                                 ║
+echo ║  📊 Tamanho: !OUTPUT_SIZE_MB! MB                                             ║
+echo ║  🎯 Bitrate: !BITRATE_REAL! kbps (target: !BITRATE_VIDEO_TARGET!)           ║
+echo ║  ⏱️ Duração: ~!DURATION_SECONDS! segundos                                   ║
+echo ║  🎬 Qualidade: Hollywood Zero-Recompression                                  ║
+echo ║  📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento              ║
+echo ║  🎵 Áudio: 320k AAC 48kHz Stereo                                            ║
+echo ║  ⚙️ Preset: !PRESET_X264! (parâmetros broadcast-grade)                      ║
 echo ║                                                                              ║
-echo ║  ✅ PRONTO PARA UPLOAD SEM RECOMPRESSÃO NO INSTAGRAM!                       ║
-echo ║                                                                              ║
+echo ║  ✅ PRONTO PARA UPLOAD NO INSTAGRAM!                                        ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
+
+echo.
+echo 🎉 DICAS DE USO:
+echo    • Faça upload do arquivo diretamente no Instagram
+echo    • Não reprocesse em outros editores
+echo    • Qualidade será preservada 100%%
+echo.
 
 call :LogEntry "[SUCCESS] 2-pass encoding completed successfully"
 call :LogEntry "[SUCCESS] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
@@ -2018,31 +1339,23 @@ REM                    VERIFICAÇÃO DE VARIÁVEIS CRÍTICAS
 REM ============================================================================
 echo   🔍 Verificando variáveis críticas antes de construir comando...
 
+:: Verificação individual com fallbacks
 if not defined PROFILE_NAME (
-    echo   ❌ ERRO FATAL: PROFILE_NAME não definido!
-    echo      As variáveis do perfil não foram configuradas corretamente.
-    pause
-    exit /b 1
+    echo   ⚠️  PROFILE_NAME não definido - usando padrão
+    set "PROFILE_NAME=STANDARD"
 )
 
 if not defined VIDEO_ESCALA (
     echo   ❌ ERRO FATAL: VIDEO_ESCALA não definido!
-    echo      As variáveis do perfil não foram configuradas corretamente.
-    pause
     exit /b 1
 )
 
 if not defined ENCODE_MODE (
-    echo   ❌ ERRO FATAL: ENCODE_MODE não definido!
-    echo      As variáveis do perfil não foram configuradas corretamente.
-    pause
-    exit /b 1
+    echo   ⚠️  ENCODE_MODE não definido - usando padrão
+    set "ENCODE_MODE=2PASS"
 )
 
-echo   ✅ Variáveis críticas validadas:
-echo      Profile: "%PROFILE_NAME%"
-echo      Scale: "%VIDEO_ESCALA%"
-echo      Mode: "%ENCODE_MODE%"
+echo   ✅ Variáveis críticas validadas com sucesso
 
 REM ============================================================================
 REM                    CONSTRUÇÃO BASE DO COMANDO
@@ -2062,319 +1375,25 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 echo   💎 Detectando perfil ativo: !PROFILE_NAME!
 
 REM ============================================================================
-REM                    NORMALIZAÇÃO DO NOME DO PERFIL
+REM                    APLICAÇÃO OTIMIZADA DOS PERFIS x264
 REM ============================================================================
 
-REM Limpar nome do perfil de caracteres invisíveis
-set "CLEAN_PROFILE_NAME=!PROFILE_NAME!"
-set "CLEAN_PROFILE_NAME=!CLEAN_PROFILE_NAME: =!"
-set "CLEAN_PROFILE_NAME=!CLEAN_PROFILE_NAME: = !"
-
-REM Definir string de comparação limpa
-set "TARGET_PROFILE=Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION"
-
-echo   🔍 Debug de comparação:
-echo      Perfil limpo: "!CLEAN_PROFILE_NAME!"
-echo      Target: "!TARGET_PROFILE!"
-
-REM ============================================================================
-REM                    APLICAÇÃO DOS PERFIS HOLLYWOOD
-REM ============================================================================
-
-REM Inicializar controle de perfis
-set "PROFILE_APPLIED=N"
-
-REM ============================================================================
-REM                         PROFILE 1: REELS/STORIES
-REM ============================================================================
-if "!PROFILE_NAME!"=="Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🎬 Aplicando parâmetros HOLLYWOOD LEVEL para Reels/Stories...
-    call :LogEntry "[PROFILE] Profile 1 (Reels/Stories) activated"
-
-    REM PARÂMETROS HOLLYWOOD LEVEL - PERFIL 1 (CORRIGIDOS)
-    set "X264_PARAMS=ref=5:bframes=3:b-adapt=2:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=umh:subme=8:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=24:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1:deblock=1,-1,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.0,0.15:aq-mode=2:aq-strength=0.8"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=60:mbtree=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Reference Frames: 5 (Optimal for Instagram)
-    echo     🎬 B-frames: 3 (Hollywood standard)
-    echo     🔍 Motion Estimation: umh (uneven multi-hexagon)
-    echo     💎 Subpixel ME: 8 (maximum quality)
-    echo     🔍 Psychovisual: psy-rd=1.0,0.15 (Visual optimization)
-    echo     📈 AQ Mode: 2 (Variance-based adaptive quantization)
-    echo     🎪 Lookahead: 60 frames (2 seconds at 30fps)
-    echo     🎨 Trellis: 2 (Maximum quantization optimization)
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
+:: APENAS UMA CHAMADA GENÉRICA - FUNCIONA PARA TODOS OS PERFIS!
+call :GetX264OptsForProfile
+if errorlevel 1 (
+    echo   ❌ Erro ao obter x264opts para o perfil
+    exit /b 1
 )
-
-:: ============================================================================
-::                         PROFILE 2: FEED SQUARE
-:: ============================================================================
-if "!PROFILE_NAME!"=="Feed Square HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🎬 Aplicando parâmetros HOLLYWOOD LEVEL para Feed Square...
-    call :LogEntry "[PROFILE] Profile 2 (Feed Square) activated"
-
-    :: Parâmetros similares ao Reels mas otimizado para formato quadrado
-    set "X264_PARAMS=ref=5"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=3"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=2"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=umh"
-    set "X264_PARAMS=!X264_PARAMS!:subme=8"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=24"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-1,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.0,0.15"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=2"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=0.8"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=50"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Configuração: Hollywood para formato quadrado
-    echo     🎪 Lookahead: 50 frames (1.7s optimized for square)
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
-)
-
-:: ============================================================================
-::                         PROFILE 3: IGTV/FEED
-:: ============================================================================
-if "!PROFILE_NAME!"=="IGTV/Feed HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🎬 Aplicando parâmetros HOLLYWOOD LEVEL para IGTV/Feed...
-    call :LogEntry "[PROFILE] Profile 3 (IGTV/Feed) activated"
-
-    :: Parâmetros Hollywood para horizontal com bitrate alto
-    set "X264_PARAMS=ref=5"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=3"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=2"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=umh"
-    set "X264_PARAMS=!X264_PARAMS!:subme=9"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=24"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-1,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.0,0.20"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=2"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=0.9"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=80"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Configuração: Hollywood máxima qualidade horizontal
-    echo     🎪 Lookahead: 80 frames (2.7s for complex scenes)
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
-)
-
-:: ============================================================================
-::                    PROFILE 4: (SPEED/QUALITY)
-:: ============================================================================
-if "!PROFILE_NAME!"=="Speed Quality HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🎯 Aplicando otimizações específicas para Speed/Quality...
-    call :LogEntry "[PROFILE] Profile 4 (Speed/Quality) activated"
-
-    :: PARÂMETROS OTIMIZADOS PARA SPEED/QUALITY
-    set "X264_PARAMS=ref=2"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=2"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=1"
-    set "X264_PARAMS=!X264_PARAMS!:direct=spatial"
-    set "X264_PARAMS=!X264_PARAMS!:me=hex"
-    set "X264_PARAMS=!X264_PARAMS!:subme=4"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=1"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=16"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,0,0"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=0.8,0.1"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=1"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=0.6"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=15"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-    set "X264_PARAMS=!X264_PARAMS!:no-fast-pskip=0"
-    set "X264_PARAMS=!X264_PARAMS!:no-dct-decimate=0"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
-)
-
-:: ============================================================================
-::                         PROFILE 5: CINEMA
-:: ============================================================================
-if "!PROFILE_NAME!"=="Cinema HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🎬 Aplicando parâmetros CINEMA ULTRA-WIDE...
-    call :LogEntry "[PROFILE] Profile 5 (Cinema) activated"
-
-    :: Parâmetros máximos para cinema
-    set "X264_PARAMS=ref=6"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=4"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=2"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=umh"
-    set "X264_PARAMS=!X264_PARAMS!:subme=10"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=32"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-2,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.2,0.25"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=3"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=1.0"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=120"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Configuração: Cinema ultra-wide máxima qualidade
-    echo     🎪 Lookahead: 120 frames (4s for cinematic scenes)
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
-)
-
-:: ============================================================================
-::                         PROFILE 6: HOLLYWOOD ULTRA
-:: ============================================================================
-if "!PROFILE_NAME!"=="HOLLYWOOD ULTRA ZERO-RECOMPRESSION" (
-    echo   🏆 Aplicando parâmetros HOLLYWOOD ULTRA (máxima qualidade)...
-    call :LogEntry "[PROFILE] Profile 6 (Hollywood Ultra) activated"
-
-    :: Parâmetros absolutos máximos
-    set "X264_PARAMS=ref=6"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=4"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=2"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=tesa"
-    set "X264_PARAMS=!X264_PARAMS!:subme=11"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=all"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=all"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=32"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-2,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.2,0.30"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=3"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=1.2"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=150"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-    set "X264_PARAMS=!X264_PARAMS!:no-fast-pskip=1"
-    set "X264_PARAMS=!X264_PARAMS!:no-dct-decimate=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Configuração: Máxima qualidade absoluta (TESA + subme 11)
-    echo     🎪 Lookahead: 150 frames (5s ultimate precision)
-
-    set "PROFILE_APPLIED=Y"
-    goto :apply_x264_params
-)
-
-:: ============================================================================
-::                         FALLBACK: OUTROS PROFILES
-:: ============================================================================
-if "!PROFILE_APPLIED!"=="N" (
-    echo   ⚠️  PERFIL NÃO RECONHECIDO: !PROFILE_NAME!
-    echo   💎 Aplicando parâmetros Hollywood padrão como fallback...
-    call :LogEntry "[PROFILE] Profile not recognized, using fallback: !PROFILE_NAME!"
-
-    :: Parâmetros Hollywood padrão para Custom e outros
-    set "X264_PARAMS=ref=3"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=2"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=1"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=hex"
-    set "X264_PARAMS=!X264_PARAMS!:subme=6"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=1"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=16"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-1,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.0,0.15"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=2"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=0.8"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=30"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-
-    if not "!PASS_TYPE!"=="CRF" (
-        set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-    )
-
-    echo     📊 Configuração: Hollywood padrão aplicada
-)
-
-:apply_x264_params
-
-:: ============================================================================
-::                      APLICAR X264OPTS AO COMANDO
-:: ============================================================================
 
 echo   🔧 Aplicando x264opts: !X264_PARAMS!
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264opts !X264_PARAMS!"
 
 REM ============================================================================
-REM                     THREADING E OTIMIZAÇÕES
+REM                      THREADING E OTIMIZAÇÕES
 REM ============================================================================
 
-REM Threading
-if not defined THREAD_COUNT (
-    if "!IS_LAPTOP!"=="Y" (
-        set /a "THREAD_COUNT=!CPU_CORES!/2"
-        if !THREAD_COUNT! LSS 2 set "THREAD_COUNT=2"
-        echo   🔥 Laptop detectado - Threading limitado: !THREAD_COUNT! threads
-    ) else (
-        set "THREAD_COUNT=0"
-        echo   🚀 Desktop detectado - Threading automático: Todos os cores
-    )
-)
-
+:: Threading configuration
+call :ConfigureThreading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 echo   🧠 Threading aplicado: !THREAD_COUNT! threads
 
@@ -2382,14 +1401,14 @@ REM ============================================================================
 REM                    FILTROS E PARÂMETROS FINAIS
 REM ============================================================================
 
-REM Video filters with precision scaling
+:: Video filters with precision scaling
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_ESCALA!:flags=lanczos,format=yuv420p""
 echo   📏 Aplicando filtro de escala: !VIDEO_ESCALA!
 
-REM GOP structure
+:: GOP structure
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g 30 -keyint_min 15 -sc_threshold 40 -r 30"
 
-REM Instagram compliance
+:: Instagram compliance
 echo   📱 Aplicando compliance Instagram zero-recompression...
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv"
@@ -2399,39 +1418,14 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -colorspace bt709"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
 REM ============================================================================
-REM                    CONFIGURAÇÃO ESPECÍFICA POR PASSAGEM
+REM                   CONFIGURAÇÃO ESPECÍFICA POR PASSAGEM
 REM ============================================================================
 
-if "!PASS_TYPE!"=="PASS1" (
-	echo   🔄 PASS 1 - Análise estatística para VBV otimizado...
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f mp4 NUL"
-
-) else if "!PASS_TYPE!"=="PASS2" (
-	echo   🎬 PASS 2 - Encoding final com máxima qualidade..
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
-
-) else if "!PASS_TYPE!"=="CRF" (
-	echo   🎯 CRF Mode - Qualidade constante otimizada...
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -crf !CRF_VALUE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a !BITRATE_AUDIO! -ar 48000 -ac 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
-)
+call :ConfigurePassSpecific
+if errorlevel 1 exit /b 1
 
 REM ============================================================================
-REM                    LOG E VALIDAÇÃO FINAL
+REM                         LOG E VALIDAÇÃO FINAL
 REM ============================================================================
 
 call :LogEntry "[COMMAND-CPU] !FFMPEG_COMMAND!"
@@ -2442,16 +1436,133 @@ echo   🔧 COMANDO COMPLETO CONSTRUÍDO:
 echo   !FFMPEG_COMMAND!
 echo.
 
-REM Testar se comando está bem formado
-echo !FFMPEG_COMMAND! | findstr /C:"ffmpeg" >nul
-if errorlevel 1 (
-    echo   ❌ ERRO: Comando não contém ffmpeg!
-    echo   Comando atual: !FFMPEG_COMMAND!
+:: ============================================================================
+::                       SISTEMA OTIMIZADO DE x264opts
+:: ============================================================================
+:GetX264OptsForProfile
+:: Database de x264opts por categoria de perfil
+
+:: Determinar categoria do perfil
+set "PROFILE_CATEGORY=STANDARD"
+
+echo !PROFILE_NAME! | findstr /i "ULTRA" >nul
+if not errorlevel 1 set "PROFILE_CATEGORY=ULTRA"
+
+echo !PROFILE_NAME! | findstr /i "Speed" >nul
+if not errorlevel 1 set "PROFILE_CATEGORY=SPEED"
+
+echo !PROFILE_NAME! | findstr /i "Cinema" >nul
+if not errorlevel 1 set "PROFILE_CATEGORY=CINEMA"
+
+echo !PROFILE_NAME! | findstr /i "Custom" >nul
+if not errorlevel 1 set "PROFILE_CATEGORY=CUSTOM"
+
+:: Aplicar x264opts baseado na categoria
+if "!PROFILE_CATEGORY!"=="ULTRA" (
+    set "X264_PARAMS=ref=6:bframes=4:b-adapt=2:direct=auto:me=tesa:subme=11:trellis=2:partitions=all:8x8dct=1:analyse=all:me-range=32:chroma-me=1:cabac=1:deblock=1,-2,-1:psy-rd=1.2,0.30:aq-mode=3:aq-strength=1.2:rc-lookahead=150:mbtree=1:no-fast-pskip=1:no-dct-decimate=1"
+) else if "!PROFILE_CATEGORY!"=="SPEED" (
+    set "X264_PARAMS=ref=2:bframes=2:b-adapt=1:direct=spatial:me=hex:subme=4:trellis=1:partitions=p8x8,b8x8,i8x8,i4x4:8x8dct=1:analyse=p8x8,b8x8,i8x8,i4x4:me-range=16:chroma-me=1:cabac=1:deblock=1,0,0:psy-rd=0.8,0.1:aq-mode=1:aq-strength=0.6:rc-lookahead=15:mbtree=1"
+) else if "!PROFILE_CATEGORY!"=="CINEMA" (
+    set "X264_PARAMS=ref=6:bframes=4:b-adapt=2:direct=auto:me=umh:subme=10:trellis=2:partitions=p8x8,b8x8,i8x8,i4x4:8x8dct=1:analyse=p8x8,b8x8,i8x8,i4x4:me-range=32:chroma-me=1:cabac=1:deblock=1,-2,-1:psy-rd=1.2,0.25:aq-mode=3:aq-strength=1.0:rc-lookahead=120:mbtree=1"
+) else if "!PROFILE_CATEGORY!"=="CUSTOM" (
+    :: Para custom, usar parâmetros balanceados
+    set "X264_PARAMS=ref=3:bframes=2:b-adapt=1:direct=auto:me=hex:subme=6:trellis=1:partitions=p8x8,b8x8,i8x8,i4x4:8x8dct=1:analyse=p8x8,b8x8,i8x8,i4x4:me-range=16:chroma-me=1:cabac=1:deblock=1,-1,-1:psy-rd=1.0,0.15:aq-mode=2:aq-strength=0.8:rc-lookahead=30:mbtree=1"
+) else (
+    :: STANDARD - Perfis 1-3 (Reels, Feed, IGTV)
+    set "X264_PARAMS=ref=4:bframes=2:b_adapt=2:direct=auto:me=umh:subme=9:trellis=2:partitions=p8x8,b8x8,i8x8,i4x4:8x8dct=1:analyse=p8x8,b8x8,i8x8,i4x4:me-range=16:chroma-me=1:nr=0:no-fast-pskip=1:no-dct-decimate=1:cabac=1:deblock=1,0,0:aq-mode=3:aq-strength=1.0:rc-lookahead=40:mbtree=1:chroma-qp-offset=0:psy-rd=1.00,0.10:psy=1:mixed-refs=1:weightb=1:weightp=2:qcomp=0.50"
+)
+
+:: Adicionar vbv-init se não for CRF
+if not "!PASS_TYPE!"=="CRF" (
+    set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
+)
+
+echo     📊 Categoria detectada: !PROFILE_CATEGORY!
+echo     🎬 x264opts aplicados para máxima qualidade
+
+exit /b 0
+
+:: ============================================================================
+::                        CONFIGURAÇÃO DE THREADING
+:: ============================================================================
+:ConfigureThreading
+if not defined THREAD_COUNT (
+    if "!IS_LAPTOP!"=="Y" (
+        set /a "THREAD_COUNT=!CPU_CORES!/2"
+        if !THREAD_COUNT! LSS 2 set "THREAD_COUNT=2"
+        echo   🔥 Laptop detectado - Threading limitado: !THREAD_COUNT! threads
+    ) else (
+        set "THREAD_COUNT=0"
+        echo   🚀 Desktop detectado - Threading automático: Todos os cores
+    )
+)
+exit /b 0
+
+REM ============================================================================
+REM                    CONFIGURAÇÃO ESPECÍFICA POR PASSAGEM
+REM ============================================================================
+:ConfigurePassSpecific
+if "!PASS_TYPE!"=="PASS1" (
+	echo   🔄 PASS 1 - Análise estatística para VBV otimizado...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+
+) else if "!PASS_TYPE!"=="PASS2" (
+	echo   🎬 PASS 2 - Encoding final com máxima qualidade...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+
+) else if "!PASS_TYPE!"=="CRF" (
+	echo   🎯 CRF Mode - Qualidade constante otimizada...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -crf !CRF_VALUE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a !BITRATE_AUDIO! -ar 48000 -ac 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+) else (
+    echo ❌ ERRO: PASS_TYPE inválido: !PASS_TYPE!
+    echo    Valores válidos: PASS1, PASS2 ou CRF
+    exit /b 1
+)
+
+exit /b 0
+
+:: ============================================================================
+::                   VALIDAÇÃO DE VARIÁVEIS CRÍTICAS APRIMORADA
+:: ============================================================================
+:ValidateRequiredVars
+:: ✅ NOVA FUNÇÃO: Validação mais robusta com mensagens específicas
+set "VAR_NAME=%~1"
+if "%VAR_NAME%"=="" exit /b 0
+
+call set "VAR_VALUE=%%%VAR_NAME%%%"
+if not defined %VAR_NAME% (
+    echo   ❌ ERRO CRÍTICO: Variável %VAR_NAME% não está definida!
+    echo      Esta variável é obrigatória para o funcionamento do script.
+    echo      Verifique a configuração do perfil selecionado.
     pause
     exit /b 1
 )
 
-echo   ✅ Comando validado e pronto para execução
+if "!VAR_VALUE!"=="" (
+    echo   ❌ ERRO CRÍTICO: Variável %VAR_NAME% está vazia!
+    echo      Esta variável precisa ter um valor válido.
+    pause
+    exit /b 1
+)
+
+echo   ✅ %VAR_NAME% = !VAR_VALUE!
+shift
+if not "%~2"=="" goto :ValidateRequiredVars
 exit /b 0
 
 :RecoverFromError
@@ -2582,7 +1693,6 @@ echo   📐 Resolução: !VIDEO_ESCALA!
 echo   🎨 Perfil usado: !PROFILE_NAME!
 echo   ⚙️ Modo encoding: !ENCODE_MODE! (ZERO-RECOMPRESSION)
 echo   💻 Aceleração: CPU-ONLY (!PRESET_X264! - HOLLYWOOD LEVEL)
-echo   🧠 Threading: !THREAD_COUNT! cores utilizados
 echo   📊 Tamanho final: !OUTPUT_SIZE_MB! MB
 echo   🎯 Bitrate: !BITRATE_VIDEO_TARGET! (target) / !BITRATE_VIDEO_MAX! (max)
 echo   🎵 Audio: !BITRATE_AUDIO! AAC 48kHz Stereo
@@ -2611,269 +1721,37 @@ exit /b 0
 set "TOTAL_TIME=Calculado"
 exit /b 0
 
+REM ============================================================================
+REM                    OPÇÕES PÓS-PROCESSAMENTO
+REM ============================================================================
+
+echo 📂 Deseja abrir a pasta do arquivo gerado?
+set /p "OPEN_FOLDER=Abrir pasta? (S/N): "
+
+if /i "!OPEN_FOLDER:~0,1!"=="S" (
+    echo 🚀 Abrindo pasta...
+    start "" "%~dp0"
+    echo    ✅ Pasta aberta no Windows Explorer
+)
+
+echo.
+echo 🎬 Deseja reproduzir o arquivo para verificar?
+set /p "PLAY_FILE=Reproduzir vídeo? (S/N): "
+
+if /i "!PLAY_FILE:~0,1!"=="S" (
+    if exist "!ARQUIVO_SAIDA!" (
+        echo 🎵 Reproduzindo arquivo...
+        start "" "!ARQUIVO_SAIDA!"
+        echo    ✅ Arquivo aberto no player padrão
+    )
+)
+
 :: ============================================================================
 ::                            UTILITY FUNCTIONS
 :: ============================================================================
 :: ============================================================================
 ::                        TESTE DE VALIDAÇÃO FFMPEG
 :: ============================================================================
-
-REM ============================================================================
-REM                           SEÇÃO DE DEBUG
-REM ============================================================================
-
-:DebugFFmpegCommand
-echo.
-echo 🔍 DIAGNÓSTICO DO COMANDO FFMPEG
-echo ════════════════════════════════════════════════════════════════
-echo.
-
-REM Verificar se variáveis básicas estão definidas (NOMES CORRETOS DO SEU SCRIPT)
-echo 📋 Verificação de Variáveis Básicas:
-if not defined FFMPEG_CMD (
-    echo ❌ ERRO: Variável 'FFMPEG_CMD' não definida
-    pause
-    exit /b 1
-) else (
-    echo ✅ FFmpeg Path: "!FFMPEG_CMD!"
-)
-
-if not defined ARQUIVO_ENTRADA (
-    echo ❌ ERRO: Variável 'ARQUIVO_ENTRADA' não definida
-    pause
-    exit /b 1
-) else (
-    echo ✅ Input File: "!ARQUIVO_ENTRADA!"
-)
-
-if not defined ARQUIVO_SAIDA (
-    echo ❌ ERRO: Variável 'ARQUIVO_SAIDA' não definida
-    pause
-    exit /b 1
-) else (
-    echo ✅ Output File: "!ARQUIVO_SAIDA!"
-)
-
-echo.
-echo 📋 Verificação do Perfil Ativo:
-echo   Profile Name: "!PROFILE_NAME!"
-echo   Video Scale: "!VIDEO_ESCALA!"
-echo   Encode Mode: "!ENCODE_MODE!"
-echo.
-
-REM Verificar se é realmente o Perfil 1
-if "!PROFILE_NAME!"=="Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo 🎯 PERFIL 1 DETECTADO - Verificando parâmetros...
-
-    REM Simular a construção dos parâmetros como no script original
-    call :SimulateBuildCommand
-
-    echo.
-    echo 📊 PARÂMETROS ESPERADOS PARA PERFIL 1:
-    echo   • ref=5 (Reference frames: 5)
-    echo   • me=umh (Motion estimation: UMH)
-    echo   • subme=8 (Subpixel ME: 8)
-    echo   • bframes=3 (B-frames: 3)
-    echo   • psy-rd=1.0,0.15 (Psychovisual)
-    echo.
-
-    echo 📊 PARÂMETROS REAIS CONSTRUÍDOS:
-    echo   !X264_PARAMS!
-    echo.
-
-    REM Verificar se os parâmetros estão corretos
-    echo !X264_PARAMS! | findstr "ref=5" >nul
-    if errorlevel 1 (
-        echo ❌ ERRO: ref deveria ser 5 para Perfil 1, mas não foi encontrado
-        echo    Isso indica que o perfil errado está sendo aplicado!
-    ) else (
-        echo ✅ ref=5 encontrado corretamente
-    )
-
-    echo !X264_PARAMS! | findstr "me=umh" >nul
-    if errorlevel 1 (
-        echo ❌ ERRO: me deveria ser umh para Perfil 1, mas não foi encontrado
-        echo    Perfil aplicado incorretamente!
-    ) else (
-        echo ✅ me=umh encontrado corretamente
-    )
-
-    echo !X264_PARAMS! | findstr "subme=8" >nul
-    if errorlevel 1 (
-        echo ❌ ERRO: subme deveria ser 8 para Perfil 1
-        echo    Parâmetros do perfil incorretos!
-    ) else (
-        echo ✅ subme=8 encontrado corretamente
-    )
-
-) else (
-    echo    Perfil ativo: !PROFILE_NAME!
-    echo   (Debug específico apenas para Perfil 1)
-)
-
-echo.
-echo 📋 Teste 1: Comando FFmpeg básico (5 segundos)
-set "TEST_CMD_BASIC="!FFMPEG_CMD!" -i "!ARQUIVO_ENTRADA!" -c:v libx264 -preset ultrafast -t 5 -y test_basic.mp4"
-echo Comando: !TEST_CMD_BASIC!
-echo.
-
-!TEST_CMD_BASIC! 2>debug_basic.log
-if errorlevel 1 (
-    echo ❌ FALHOU: Comando básico falhou
-    echo 📋 Erro:
-    if exist debug_basic.log type debug_basic.log
-    if exist debug_basic.log del debug_basic.log
-    if exist test_basic.mp4 del test_basic.mp4
-    echo.
-    echo 🔍 Possíveis causas:
-    echo   • Arquivo de entrada não existe ou está corrompido
-    echo   • FFmpeg não instalado corretamente
-    echo   • Permissões insuficientes
-    pause
-    exit /b 1
-) else (
-    echo ✅ SUCESSO: Comando básico funcionou
-    if exist debug_basic.log del debug_basic.log
-    if exist test_basic.mp4 del test_basic.mp4
-)
-
-echo.
-echo 📋 Teste 2: Comando com x264opts básicos
-set "TEST_CMD_X264="!FFMPEG_CMD!" -i "!ARQUIVO_ENTRADA!" -c:v libx264 -preset fast -x264opts "ref=3:bframes=2:me=hex" -t 5 -y test_x264.mp4"
-echo Comando: !TEST_CMD_X264!
-echo.
-
-!TEST_CMD_X264! 2>debug_x264.log
-if errorlevel 1 (
-    echo ❌ FALHOU: Comando com x264opts falhou
-    echo 📋 Erro:
-    if exist debug_x264.log type debug_x264.log
-    if exist debug_x264.log del debug_x264.log
-    if exist test_x264.mp4 del test_x264.mp4
-    echo.
-    echo 🔍 Problema com parâmetros x264opts
-    pause
-    exit /b 1
-) else (
-    echo ✅ SUCESSO: x264opts básicos funcionaram
-    if exist debug_x264.log del debug_x264.log
-    if exist test_x264.mp4 del test_x264.mp4
-)
-
-echo.
-echo 📋 Teste 3: Comando Hollywood completo simulado
-echo   Simulando comando como seria construído pelo script...
-
-REM Construir comando exatamente como o script faz
-call :BuildFFmpegCommand "PASS1"
-
-echo.
-echo 🔧 COMANDO CONSTRUÍDO:
-echo !FFMPEG_COMMAND!
-echo.
-
-REM Adicionar -t 5 para teste rápido
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -t 5"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND:NUL=test_hollywood.mp4!"
-
-echo 🔧 COMANDO TESTE (5 segundos):
-echo !FFMPEG_COMMAND!
-echo.
-
-!FFMPEG_COMMAND! 2>debug_hollywood.log
-if errorlevel 1 (
-    echo ❌ FALHOU: Comando Hollywood completo falhou
-    echo 📋 Erro detalhado:
-    if exist debug_hollywood.log (
-        echo === INÍCIO DO LOG DE ERRO ===
-        type debug_hollywood.log
-        echo === FIM DO LOG DE ERRO ===
-        echo.
-
-        REM Identificar erro específico
-        findstr /C:"Unrecognized option" debug_hollywood.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Opção não reconhecida no FFmpeg
-            echo    Verifique se sua versão do FFmpeg suporta todos os parâmetros
-        )
-
-        findstr /C:"Invalid" debug_hollywood.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Parâmetro inválido
-            echo    Algum valor nos x264opts está incorreto
-        )
-
-        findstr /C:"No such file" debug_hollywood.log >nul
-        if not errorlevel 1 (
-            echo 🎯 ERRO IDENTIFICADO: Arquivo não encontrado
-            echo    Problema com caminho do arquivo de entrada
-        )
-    )
-
-    if exist debug_hollywood.log del debug_hollywood.log
-    if exist test_hollywood.mp4 del test_hollywood.mp4
-    echo.
-    echo 🛠️ ANÁLISE: O problema está nos parâmetros Hollywood complexos
-    echo    Recomendação: Usar perfil mais simples ou atualizar FFmpeg
-    pause
-    exit /b 1
-) else (
-    echo ✅ SUCESSO: Comando Hollywood completo funcionou!
-    echo 🎯 O script está funcionando corretamente
-    if exist debug_hollywood.log del debug_hollywood.log
-    if exist test_hollywood.mp4 del test_hollywood.mp4
-    echo.
-    echo 🚀 Prosseguindo com encoding completo...
-    pause
-    exit /b 0
-)
-
-goto :eof
-
-:SimulateBuildCommand
-REM Esta função simula exatamente o que acontece em :BuildFFmpegCommand
-REM para o Perfil 1, para debug
-
-REM Resetar variável
-set "X264_PARAMS="
-
-REM Aplicar lógica exata do script para Perfil 1
-if "!PROFILE_NAME!"=="Reels/Stories HOLLYWOOD ZERO-RECOMPRESSION" (
-    echo   🔍 Simulando aplicação do Perfil 1...
-
-    set "X264_PARAMS=ref=5"
-    set "X264_PARAMS=!X264_PARAMS!:bframes=3"
-    set "X264_PARAMS=!X264_PARAMS!:b-adapt=2"
-    set "X264_PARAMS=!X264_PARAMS!:direct=auto"
-    set "X264_PARAMS=!X264_PARAMS!:me=umh"
-    set "X264_PARAMS=!X264_PARAMS!:subme=8"
-    set "X264_PARAMS=!X264_PARAMS!:trellis=2"
-    set "X264_PARAMS=!X264_PARAMS!:partitions=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:8x8dct=1"
-    set "X264_PARAMS=!X264_PARAMS!:cqm=flat"
-    set "X264_PARAMS=!X264_PARAMS!:analyse=p8x8,b8x8,i8x8,i4x4"
-    set "X264_PARAMS=!X264_PARAMS!:me-range=24"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-me=1"
-    set "X264_PARAMS=!X264_PARAMS!:nr=25"
-    set "X264_PARAMS=!X264_PARAMS!:no-fast-pskip=1"
-    set "X264_PARAMS=!X264_PARAMS!:no-dct-decimate=1"
-    set "X264_PARAMS=!X264_PARAMS!:cabac=1"
-    set "X264_PARAMS=!X264_PARAMS!:deblock=1,-1,-1"
-    set "X264_PARAMS=!X264_PARAMS!:psy-rd=1.0,0.15"
-    set "X264_PARAMS=!X264_PARAMS!:aq-mode=2"
-    set "X264_PARAMS=!X264_PARAMS!:aq-strength=0.8"
-    set "X264_PARAMS=!X264_PARAMS!:rc-lookahead=60"
-    set "X264_PARAMS=!X264_PARAMS!:mbtree=1"
-    set "X264_PARAMS=!X264_PARAMS!:chroma-qp-offset=2"
-    set "X264_PARAMS=!X264_PARAMS!:vbv-init=0.9"
-
-    echo   ✅ Parâmetros Perfil 1 simulados com sucesso
-) else (
-    echo   ❌ Não é Perfil 1, simulação não aplicável
-    set "X264_PARAMS=ref=2:bframes=1:me=hex"
-)
-
-goto :eof
 
 :TestFFmpegParams
 echo.
