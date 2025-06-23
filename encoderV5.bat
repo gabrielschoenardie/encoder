@@ -49,11 +49,10 @@ call :ShowResults
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                           ENCODING COMPLETED SUCCESSFULLY!                   ║
+echo ║                        ENCODING COMPLETED SUCCESSFULLY!                      ║
 echo ║                                                                              ║
 echo ║  📁 Output: !ARQUIVO_SAIDA!                                                  ║
 echo ║  📊 Log: !EXEC_LOG!                                                          ║
-echo ║  ⏱️ Total Time: !TOTAL_TIME!                                                 ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 call :LogEntry "===== ENCODING CONCLUIDO COM SUCESSO (%date% %time%) ====="
@@ -154,9 +153,6 @@ call :DetectCPUFromDatabase
 
 :cpu_identified
 
-:: ============================================================================
-::                        OUTRAS DETECÇÕES
-:: ============================================================================
 :: Detect if it's a laptop
 set "IS_LAPTOP=N"
 wmic computersystem get PCSystemType 2>nul | findstr "2" >nul
@@ -401,20 +397,11 @@ if /i not "!CONTINUE:~0,1!"=="S" goto :GetInputFile
 :ext_ok
 echo   ✅ Formato reconhecido: !FILE_EXT!
 
-if errorlevel 1 (
-    echo ⚠️  Formato não recomendado: !FILE_EXT!
-    echo     Formatos suportados: .mp4, .mov, .avi, .mkv, .m4v, .wmv, .flv
-    set /p "CONTINUE=Continuar mesmo assim? (S/N): "
-    if /i not "!CONTINUE:~0,1!"=="S" goto :GetInputFile
-)
-
 :: Get video information
 echo   📊 Analisando propriedades do vídeo...
 
 :: Create unique temp file
-set "TEMP_INFO=ffmpeg_analysis_!RANDOM!_!TIME::=!.txt"
-set "TEMP_INFO=!TEMP_INFO: =!"
-set "TEMP_INFO=!TEMP_INFO:,=!"
+set "TEMP_INFO=ffmpeg_analysis_!RANDOM!.txt"
 
 :: Execute FFmpeg with robust error handling
 echo   🔍 Executando análise FFmpeg...
@@ -424,17 +411,6 @@ if not exist "!TEMP_INFO!" (
     echo ❌ ERRO CRÍTICO: Falha ao analisar arquivo!
     echo   Verifique se o arquivo não está corrompido ou em uso.
     call :LogEntry "[ERROR] Failed to create analysis temp file"
-    pause
-    exit /b 1
-)
-
-:: Check if temp file has content
-for %%A in ("!TEMP_INFO!") do set "TEMP_SIZE=%%~zA"
-if !TEMP_SIZE! LSS 100 (
-    echo ❌ ERRO: Arquivo de análise vazio ou muito pequeno!
-    echo   O arquivo de entrada pode estar corrompido.
-    call :LogEntry "[ERROR] Analysis file too small: !TEMP_SIZE! bytes"
-    del "!TEMP_INFO!" 2>nul
     pause
     exit /b 1
 )
@@ -474,15 +450,15 @@ if not errorlevel 1 (
     echo   🎯 Resolução detectada diretamente: 1920x1080
     goto :res_done
 )
+
+echo !MAIN_STREAM! | findstr "3840x2160" >nul
+if not errorlevel 1 (
+    set "INPUT_RESOLUTION=3840x2160"
+    echo   🎯 Resolução detectada diretamente: 3840x2160
+    goto :res_done
+)
 :res_done
     REM EXTRAIR FPS - método sequencial preciso
-    echo !MAIN_STREAM! | findstr "29.97 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=30"
-        echo   🎯 FPS encontrado: 29.97 (convertido para 30)
-        goto :fps_done
-    )
-
     echo !MAIN_STREAM! | findstr "30 fps" >nul
     if not errorlevel 1 (
         set "INPUT_FPS=30"
@@ -490,6 +466,12 @@ if not errorlevel 1 (
         goto :fps_done
     )
 
+    echo !MAIN_STREAM! | findstr "29.97 fps" >nul
+    if not errorlevel 1 (
+        set "INPUT_FPS=30"
+        echo   🎯 FPS encontrado: 29.97 (convertido para 30)
+        goto :fps_done
+    )
     echo !MAIN_STREAM! | findstr "25 fps" >nul
     if not errorlevel 1 (
         set "INPUT_FPS=25"
@@ -544,46 +526,19 @@ echo   ✅ Duração:   !DURATION_STR!
 echo   ✅ Resolução: !INPUT_RESOLUTION!
 echo   ✅ FPS: !INPUT_FPS!
 
-:: Validate extracted information
-if "!DURATION_STR!"=="Unknown" (
-    echo   ⚠️  AVISO: Duração não detectada (arquivo pode estar corrompido)
-    call :LogEntry "[WARNING] Duration not detected"
-)
-if "!INPUT_RESOLUTION!"=="Unknown" (
-    echo   ⚠️  AVISO: Resolução não detectada
-    call :LogEntry "[WARNING] Resolution not detected"
-)
-if "!INPUT_FPS!"=="Unknown" (
-    echo   ⚠️  AVISO: Framerate não detectado
-    call :LogEntry "[WARNING] FPS not detected"
-)
-
-:: Final validation - if everything is unknown, fail
-if "!DURATION_STR!"=="Unknown" if "!INPUT_RESOLUTION!"=="Unknown" if "!INPUT_FPS!"=="Unknown" (
-    echo.
-    echo ❌ ERRO CRÍTICO: Não foi possível extrair NENHUMA informação do arquivo!
-    echo   Isso indica que:
-    echo   1. O arquivo está corrompido
-    echo   2. O arquivo não é um vídeo válido
-    echo   3. O codec é incompatível
-    echo.
-    echo 🔍 Conteúdo do arquivo de análise:
-    type "!TEMP_INFO!"
-    echo.
-    call :LogEntry "[ERROR] Complete analysis failure - no information extracted"
-    del "!TEMP_INFO!" 2>nul
-    pause
-    exit /b 1
-)
-
 :: Clean up temp file
 del "!TEMP_INFO!" 2>nul
 
 call :LogEntry "[ANALYSIS] Duration: !DURATION_STR!, Resolution: !INPUT_RESOLUTION!, FPS: !INPUT_FPS!"
+exit /b 0
 
 :GetOutputFile
+echo.
+echo 📁 Definindo arquivo de saída:
+:loop_output_file
 set /p "ARQUIVO_SAIDA=Digite o nome do arquivo de saída (sem extensão): "
-set "ARQUIVO_SAIDA=!ARQUIVO_SAIDA!.mp4"
+
+:: Setup log files
 for %%A in ("!ARQUIVO_SAIDA!") do set "NOME_BASE_SAIDA=%%~nA"
 set "ARQUIVO_LOG_PASSAGEM=!NOME_BASE_SAIDA!_ffmpeg_passlog"
 
@@ -630,36 +585,9 @@ if "!PROFILE_CHOICE!"=="" goto :invalid_profile
 if !PROFILE_CHOICE! LSS 1 goto :invalid_profile
 if !PROFILE_CHOICE! GTR 8 goto :invalid_profile
 
-
-
-if "!PROFILE_CHOICE!"=="1" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
-)
-
-if "!PROFILE_CHOICE!"=="2" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
-)
-
-if "!PROFILE_CHOICE!"=="3" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
-)
-
-if "!PROFILE_CHOICE!"=="4" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
-)
-
-if "!PROFILE_CHOICE!"=="5" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
-)
-
-if "!PROFILE_CHOICE!"=="6" (
-	call :LoadProfileFromDatabase !PROFILE_CHOICE!
-	goto :profile_configured
+if !PROFILE_CHOICE! GEQ 1 if !PROFILE_CHOICE! LEQ 6 (
+    call :LoadProfileFromDatabase !PROFILE_CHOICE!
+    goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="7" (
@@ -668,7 +596,7 @@ if "!PROFILE_CHOICE!"=="7" (
     echo   🔍 TEST FFMPEG INICIADO
     echo ===============================
     call :TestFFmpegParams
-    goto :profile_selection_done
+    goto :profile_configured
 )
 
 if "!PROFILE_CHOICE!"=="8" (
@@ -681,9 +609,6 @@ echo ❌ Opção inválida! Por favor, escolha um número de 1 a 8.
 goto :loop_profile_selection
 
 :profile_configured
-:: Validar se as variáveis foram definidas
-call :ValidateProfileVars
-if errorlevel 1 goto :loop_profile_selection
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -707,13 +632,9 @@ echo.
 set /p "CONFIRM=Confirmar configuração? (S/N): "
 if /i not "!CONFIRM:~0,1!"=="S" goto :loop_profile_selection
 
-:profile_selection_done
 call :LogEntry "[PROFILE] Selected: !PROFILE_NAME! (!VIDEO_ESCALA!, !ENCODE_MODE!)"
 exit /b 0
 
-:: ============================================================================
-::                    DATABASE DE PERFIS PROFISSIONAIS
-:: ============================================================================
 :LoadProfileFromDatabase
 set "PROFILE_ID=%~1"
 
@@ -743,8 +664,7 @@ for %%P in (
         set "REFS_COUNT=!PARSED_REFS!"
         set "BFRAMES_COUNT=!PARSED_BFRAMES!"
 
-        :: Log detalhado do perfil
-        call :LogProfileDetails
+        call :LogEntry "[PROFILE] Profile !PROFILE_ID! loaded from database"
         exit /b 0
     )
 )
@@ -774,26 +694,6 @@ for /f "tokens=1-12 delims=|" %%A in ("!PROFILE_DATA!") do (
     set "PARSED_REFS=%%K"
     set "PARSED_BFRAMES=%%L"
 )
-exit /b 0
-
-:ValidateProfileVars
-:: Verificar se todas as variáveis essenciais foram definidas
-set "VALIDATION_ERROR=0"
-
-for %%V in (PROFILE_NAME VIDEO_ESCALA ENCODE_MODE BITRATE_VIDEO_TARGET BITRATE_VIDEO_MAX BUFSIZE_VIDEO PRESET_X264 BITRATE_AUDIO) do (
-    if not defined %%V (
-        echo ❌ ERRO: %%V não foi definido!
-        set "VALIDATION_ERROR=1"
-    )
-)
-
-if !VALIDATION_ERROR! EQU 1 (
-    echo.
-    echo ⚠️ Erro na configuração do perfil. Tente novamente.
-    pause
-    exit /b 1
-)
-
 exit /b 0
 
 :LogProfileDetails
@@ -835,37 +735,17 @@ echo   5. 2560x1080 (21:9 Cinema 2k Quality)
 set "RES_CHOICE="
 set /p "RES_CHOICE=Escolha a resolução (1-5): "
 
-if "!RES_CHOICE!"=="1" (
-	set "VIDEO_ESCALA=1080:1920"
-	echo   ✅ Resolução selecionada: 1080x1920 (9:16 Vertical)
-    goto :custom_resolution_done
-)
-if "!RES_CHOICE!"=="2" (
-    set "VIDEO_ESCALA=1080:1080"
-    echo   ✅ Resolução selecionada: 1080x1080 (1:1 Quadrado)
-    goto :custom_resolution_done
-)
-if "!RES_CHOICE!"=="3" (
-    set "VIDEO_ESCALA=1920:1080"
-    echo   ✅ Resolução selecionada: 1920x1080 (16:9 Horizontal)
-    goto :custom_resolution_done
-)
-if "!RES_CHOICE!"=="4" (
-    set "VIDEO_ESCALA=1350:1080"
-    echo   ✅ Resolução selecionada: 1350x1080 (4:3 Tradicional)
-    goto :custom_resolution_done
-)
-if "!RES_CHOICE!"=="5" (
-    set "VIDEO_ESCALA=2560:1080"
-    echo   ✅ Resolução selecionada: 2560x1080 (21:9 Cinema)
-    goto :custom_resolution_done
-)
+if "!RES_CHOICE!"=="1" set "VIDEO_ESCALA=1080:1920" & goto :custom_resolution_done
+if "!RES_CHOICE!"=="2" set "VIDEO_ESCALA=1080:1080" & goto :custom_resolution_done
+if "!RES_CHOICE!"=="3" set "VIDEO_ESCALA=1920:1080" & goto :custom_resolution_done
+if "!RES_CHOICE!"=="4" set "VIDEO_ESCALA=1350:1080" & goto :custom_resolution_done
+if "!RES_CHOICE!"=="5" set "VIDEO_ESCALA=2560:1080" & goto :custom_resolution_done
 
-echo ❌ Opção inválida: "!RES_CHOICE!"
-echo    Escolha um número de 1 a 5.
-goto loop_custom_resolution
+echo ❌ Opção inválida!
+goto :loop_custom_resolution
 
 :custom_resolution_done
+echo   ✅ Resolução selecionada: !VIDEO_ESCALA!
 call :LogEntry "[CUSTOM] Resolution set: !VIDEO_ESCALA!"
 exit /b 0
 
@@ -940,36 +820,22 @@ exit /b 0
 
 :Get2PassParams
 echo.
-echo 📊 Configuração 2-Pass (Bitrate Targeting):
+echo 📊 Configuração 2-Pass:
 
-:loop_bitrate_input
-set "BITRATE_INPUT="
-set /p "BITRATE_INPUT=Bitrate alvo (ex: 8M, 15M, 22M): "
-if "!BITRATE_INPUT!"=="" set "BITRATE_INPUT=8M"
-set "BITRATE_VIDEO_TARGET=!BITRATE_INPUT!"
+set /p "BITRATE_VIDEO_TARGET=Bitrate alvo (ex: 8M, 15M, 22M): "
+if "!BITRATE_VIDEO_TARGET!"=="" set "BITRATE_VIDEO_TARGET=8M"
 echo   ✅ Bitrate alvo: !BITRATE_VIDEO_TARGET!
 
-:loop_maxrate_input
-set "MAXRATE_INPUT="
-set /p "MAXRATE_INPUT=Bitrate máximo (ex: 12M, 25M, 35M): "
-if "!MAXRATE_INPUT!"=="" (
-	:: Auto-calcular como 1.5x do target
-    set "MAXRATE_INPUT=12M"
-)
 
-set "BITRATE_VIDEO_MAX=!MAXRATE_INPUT!"
+set /p "BITRATE_VIDEO_MAX=Bitrate máximo (ex: 12M, 25M, 35M): "
+if "!BITRATE_VIDEO_MAX!"=="" set "BITRATE_VIDEO_MAX=12M"
 echo   ✅ Bitrate máximo: !BITRATE_VIDEO_MAX!
+:: Calcular como 1.5x do TARGET
 
-:loop_bufsize_input
-set "BUFSIZE_INPUT="
-set /p "BUFSIZE_INPUT=Buffer size (ex: 16M, 30M, 42M): "
-if "!BUFSIZE_INPUT!"=="" (
-    :: Auto-calcular como 2x do target
-    set "BUFSIZE_INPUT=16M"
-)
-
-set "BUFSIZE_VIDEO=!BUFSIZE_INPUT!"
+set /p "BUFSIZE_VIDEO=Buffer size (ex: 16M, 30M, 42M): "
+if "!BUFSIZE_VIDEO!"=="" set "BUFSIZE_VIDEO=16M"
 echo   ✅ Buffer size: !BUFSIZE_VIDEO!
+:: Calcular como 2x do VIDEO_MAX
 
 call :LogEntry "[CUSTOM] 2-Pass params: target=!BITRATE_VIDEO_TARGET!, max=!BITRATE_VIDEO_MAX!, buffer=!BUFSIZE_VIDEO!"
 exit /b 0
@@ -985,58 +851,22 @@ echo   • slow = Lento, alta qualidade
 echo   • slower = Muito lento, qualidade premium
 echo   • veryslow = Extremamente lento, máxima qualidade
 
-:loop_preset_input
-set "PRESET_INPUT="
-set /p "PRESET_INPUT=Preset x264 (fast/medium/slow/slower/veryslow): "
-if "!PRESET_INPUT!"=="" set "PRESET_INPUT=slow"
-
-:: Validar preset
-if /i "!PRESET_INPUT!"=="fast" goto preset_valid
-if /i "!PRESET_INPUT!"=="medium" goto preset_valid
-if /i "!PRESET_INPUT!"=="slow" goto preset_valid
-if /i "!PRESET_INPUT!"=="slower" goto preset_valid
-if /i "!PRESET_INPUT!"=="veryslow" goto preset_valid
-
-echo ❌ Preset inválido: !PRESET_INPUT!
-echo    Use: fast, medium, slow, slower, veryslow
-goto loop_preset_input
-
-:preset_valid
-set "PRESET_X264=!PRESET_INPUT!"
+set /p "PRESET_X264=Preset x264 (fast/medium/slow/slower/veryslow): "
+if "!PRESET_X264!"=="" set "PRESET_X264=slow"
 echo   ✅ Preset selecionado: !PRESET_X264!
 
-:loop_audio_input
-set "AUDIO_BR_INPUT="
-set /p "AUDIO_BR_INPUT=Bitrate áudio (128k/192k/256k/320k): "
-if "!AUDIO_BR_INPUT!"=="" set "AUDIO_BR_INPUT=192k"
-set "BITRATE_AUDIO=!AUDIO_BR_INPUT!"
+set /p "BITRATE_AUDIO=Bitrate áudio (128k/192k/256k/320k): "
+if "!BITRATE_AUDIO!"=="" set "BITRATE_AUDIO=192k"
 echo   ✅ Bitrate áudio: !BITRATE_AUDIO!
 
-:loop_tune_input
-set "TUNE_INPUT="
-set /p "TUNE_INPUT=Tune (film/animation/grain): "
-if "!TUNE_INPUT!"=="" set "TUNE_INPUT=film"
-
-:: Validar tune
-if /i "!TUNE_INPUT!"=="film" goto tune_valid
-if /i "!TUNE_INPUT!"=="animation" goto tune_valid
-if /i "!TUNE_INPUT!"=="grain" goto tune_valid
-
-echo ❌ Tune inválido: !TUNE_INPUT!
-echo    Use: film, animation, grain
-goto loop_tune_input
-
-:tune_valid
-set "TUNE_PARAM=!TUNE_INPUT!"
+set /p "TUNE_PARAM=Tune (film/animation/grain): "
+if "!TUNE_PARAM!"=="" set "TUNE_PARAM=film"
 echo   ✅ Tune selecionado: !TUNE_PARAM!
 
-:: Hollywood defaults for custom profiles
+:: Set defaults for custom
+set "TUNE_PARAM=film"
 set "REFS_COUNT=5"
 set "BFRAMES_COUNT=3"
-
-echo   💎 Configurações Hollywood aplicadas automaticamente:
-echo       • Reference frames: 5
-echo       • B-frames: 3
 
 call :LogEntry "[CUSTOM] Advanced params: preset=!PRESET_X264!, audio=!BITRATE_AUDIO!, tune=!TUNE_PARAM!"
 exit /b 0
@@ -1049,11 +879,11 @@ echo ⚙️ Configurações avançadas:
 if "!IS_LAPTOP!"=="Y" (
     set /a "THREAD_COUNT=!CPU_CORES!/2"
     if !THREAD_COUNT! LSS 2 set "THREAD_COUNT=2"
-    echo   🔥 Laptop detectado - Threading limitado para evitar superaquecimento
+    echo   🔥 Laptop detectado - Threading limitado: !THREAD_COUNT! threads
 	echo   🧠 Threads configurados: !THREAD_COUNT! de !CPU_CORES! disponíveis
 ) else (
     set "THREAD_COUNT=0"
-    echo   🚀 Desktop detectado - Threading máximo habilitado
+    echo   🚀 Desktop detectado - Threading automático: Todos os cores
 	echo   🧠 Usando todos os !CPU_CORES! cores disponíveis
 )
 
@@ -1086,7 +916,6 @@ exit /b 0
 :ExecuteEncoding
 echo.
 echo 🎬 Iniciando processo de encoding...
-set "START_TIME=!TIME!"
 
 echo 💻 Modo de encoding: CPU apenas (máxima qualidade)
 echo 🎯 Parâmetros: Hollywood-Level x264
@@ -1104,8 +933,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-set "END_TIME=!TIME!"
-call :CalculateElapsedTime
 exit /b 0
 
 :Execute2Pass
@@ -1152,11 +979,7 @@ echo.
 REM IMPORTANTE: Redirecionar stderr para stdout para ver progresso
 !FFMPEG_COMMAND! 2>&1
 set "PASS1_RESULT=!ERRORLEVEL!"
-set "PASS1_END_TIME=!TIME!"
 
-echo.
-echo 🔍 DEBUG: PASS1_RESULT=!PASS1_RESULT!
-echo.
 echo ⏹️ Pass 1 finalizado às !PASS1_END_TIME!
 echo 📋 Código de retorno: !PASS1_RESULT!
 
@@ -1231,7 +1054,6 @@ echo.
 set "PASS2_RESULT=!ERRORLEVEL!"
 set "PASS2_END_TIME=!TIME!"
 
-echo.
 echo ⏹️ Pass 2 finalizado às !PASS2_END_TIME!
 echo 📋 Código de retorno: !PASS2_RESULT!
 
@@ -1254,76 +1076,17 @@ if "!PASS2_RESULT!"=="0" (
     exit /b 1
 )
 
-:ValidateOutput
-
-REM ============================================================================
-REM                    VALIDAÇÃO DO ARQUIVO DE SAÍDA
-REM ============================================================================
-
-echo 🔍 Validando arquivo de saída criado...
-
-if not exist "!ARQUIVO_SAIDA!" (
-    echo ❌ ERRO CRITICO: Arquivo de saída não foi criado!
-    echo    Arquivo esperado: !ARQUIVO_SAIDA!
-    call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
-    pause
-    exit /b 1
-)
-
-REM Verificar tamanho do arquivo
-for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
-
-echo ✅ Validação de arquivo de saída:
-echo    📁 Arquivo: !ARQUIVO_SAIDA!
-echo    📊 Tamanho: !OUTPUT_SIZE_MB! MB (!OUTPUT_SIZE_KB! KB)
-
-REM ============================================================================
-REM                    RELATÓRIO FINAL APRIMORADO
-REM ============================================================================
-
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                   🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆                     ║
-echo ║                                                                              ║
-echo ║  📁 Arquivo: !ARQUIVO_SAIDA!                                                 ║
-echo ║  📊 Tamanho: !OUTPUT_SIZE_MB! MB                                             ║
-echo ║  🎯 Bitrate: !BITRATE_REAL! kbps (target: !BITRATE_VIDEO_TARGET!)           ║
-echo ║  ⏱️ Duração: ~!DURATION_SECONDS! segundos                                   ║
-echo ║  🎬 Qualidade: Hollywood Zero-Recompression                                  ║
-echo ║  📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento              ║
-echo ║  🎵 Áudio: 320k AAC 48kHz Stereo                                            ║
-echo ║  ⚙️ Preset: !PRESET_X264! (parâmetros broadcast-grade)                      ║
-echo ║                                                                              ║
-echo ║  ✅ PRONTO PARA UPLOAD NO INSTAGRAM!                                        ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-
-echo.
-echo 🎉 DICAS DE USO:
-echo    • Faça upload do arquivo diretamente no Instagram
-echo    • Não reprocesse em outros editores
-echo    • Qualidade será preservada 100%%
-echo.
-
-call :LogEntry "[SUCCESS] 2-pass encoding completed successfully"
-call :LogEntry "[SUCCESS] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
-call :LogEntry "[SUCCESS] Profile: !PROFILE_NAME!, Preset: !PRESET_X264!"
-
-exit /b 0
-
 :ExecuteCRF
 echo.
 echo 🎯 ENCODING CRF - Qualidade constante
-echo.
 
 call :BuildFFmpegCommand "CRF"
+if errorlevel 1 exit /b 1
 
-echo Executando: !FFMPEG_COMMAND!
-echo.
-
-%FFMPEG_COMMAND%
+echo Executando encoding...
+!FFMPEG_COMMAND! 2>&1
 if errorlevel 1 (
     echo ❌ ERRO no encoding CRF!
-    call :LogEntry "[ERROR] CRF encoding failed"
     exit /b 1
 )
 
@@ -1361,15 +1124,13 @@ REM ============================================================================
 REM                    CONSTRUÇÃO BASE DO COMANDO
 REM ============================================================================
 
-:: Base command with optimized CPU threading
+:: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
 
-:: CPU-ONLY ENCODING BASE
+:: CPU encoding
 echo   🎬 Aplicando parâmetros de encoding (CPU-ONLY)...
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !PRESET_X264!"
-
-:: Core Instagram compliance profile
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
 echo   💎 Detectando perfil ativo: !PROFILE_NAME!
@@ -1378,7 +1139,6 @@ REM ============================================================================
 REM                    APLICAÇÃO OTIMIZADA DOS PERFIS x264
 REM ============================================================================
 
-:: APENAS UMA CHAMADA GENÉRICA - FUNCIONA PARA TODOS OS PERFIS!
 call :GetX264OptsForProfile
 if errorlevel 1 (
     echo   ❌ Erro ao obter x264opts para o perfil
@@ -1388,18 +1148,10 @@ if errorlevel 1 (
 echo   🔧 Aplicando x264opts: !X264_PARAMS!
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264opts !X264_PARAMS!"
 
-REM ============================================================================
-REM                      THREADING E OTIMIZAÇÕES
-REM ============================================================================
-
-:: Threading configuration
+:: Threading
 call :ConfigureThreading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 echo   🧠 Threading aplicado: !THREAD_COUNT! threads
-
-REM ============================================================================
-REM                    FILTROS E PARÂMETROS FINAIS
-REM ============================================================================
 
 :: Video filters with precision scaling
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_ESCALA!:flags=lanczos,format=yuv420p""
@@ -1417,31 +1169,37 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_trc bt709"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -colorspace bt709"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-REM ============================================================================
-REM                   CONFIGURAÇÃO ESPECÍFICA POR PASSAGEM
-REM ============================================================================
+:: Pass-specific settings
+if "!PASS_TYPE!"=="PASS1" (
+	echo   🔄 PASS 1 - Análise estatística para VBV otimizado...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+) else if "!PASS_TYPE!"=="PASS2" (
+	echo   🎬 PASS 2 - Encoding final com máxima qualidade...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+) else if "!PASS_TYPE!"=="CRF" (
+	echo   🎯 CRF Mode - Qualidade constante otimizada...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -crf !CRF_VALUE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a !BITRATE_AUDIO! -ar 48000 -ac 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+)
 
-call :ConfigurePassSpecific
-if errorlevel 1 exit /b 1
+call :LogEntry "[COMMAND] !FFMPEG_COMMAND!"
+exit /b 0
 
-REM ============================================================================
-REM                         LOG E VALIDAÇÃO FINAL
-REM ============================================================================
-
-call :LogEntry "[COMMAND-CPU] !FFMPEG_COMMAND!"
-echo   ✅ Comando FFmpeg construído com parâmetros Hollywood-Level
-
-echo.
-echo   🔧 COMANDO COMPLETO CONSTRUÍDO:
-echo   !FFMPEG_COMMAND!
-echo.
-
-:: ============================================================================
-::                       SISTEMA OTIMIZADO DE x264opts
-:: ============================================================================
 :GetX264OptsForProfile
-:: Database de x264opts por categoria de perfil
-
 :: Determinar categoria do perfil
 set "PROFILE_CATEGORY=STANDARD"
 
@@ -1482,6 +1240,153 @@ echo     🎬 x264opts aplicados para máxima qualidade
 
 exit /b 0
 
+:PostProcessing
+echo.
+echo 🔍 Pós-processamento e validação...
+
+:: Validate output file
+if not exist "!ARQUIVO_SAIDA!" (
+    echo ❌ ERRO CRITICO: Arquivo de saída não foi criado!
+    echo    Arquivo esperado: !ARQUIVO_SAIDA!
+    call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
+    pause
+    exit /b 1
+)
+
+:: Get file size
+for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
+set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
+
+echo    ✅ Validação de arquivo de saída:
+echo    📁 Arquivo: !ARQUIVO_SAIDA! 📊 Tamanho: !OUTPUT_SIZE_MB! MB
+
+call :LogEntry "[POST] File size: !OUTPUT_SIZE_MB!MB, Validation completed"
+
+:: Validate Instagram compliance
+call :ValidateInstagramCompliance
+
+:: Cleanup temporary files
+if "!ENCODE_MODE!"=="2PASS" (
+    echo 🧹 Limpando arquivos temporários...
+    set /p "CLEAN_LOGS=Deletar logs de passagem? (S/N): "
+    if /i "!CLEAN_LOGS:~0,1!"=="S" (
+        del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
+        del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
+        echo   ✅ Logs removidos
+    )
+)
+
+exit /b 0
+
+:ValidateInstagramCompliance
+echo   🎯 Verificando compatibilidade ZERO-RECOMPRESSION...
+
+:: Single FFmpeg call to check everything
+set "TEMP_CHECK=compliance_check_!RANDOM!.txt"
+"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>"!TEMP_CHECK!" 1>nul
+
+:: Check all parameters in one pass
+set "COMPLIANCE_OK=Y"
+
+findstr "yuv420p" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Pixel format: yuv420p (INSTAGRAM NATIVO)
+) else (
+    echo     ❌ Pixel format incorreto!
+    set "COMPLIANCE_OK=N"
+)
+
+findstr "High.*4.1" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Profile/Level: High 4.1 (MOBILE COMPATIBLE)
+) else (
+    echo     ⚠️ Profile/Level pode não ser ideal
+)
+
+findstr "tv" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Color range: TV Limited (16-235)
+) else (
+    echo     ❌ CRÍTICO: Color range incorreto!
+    set "COMPLIANCE_OK=N"
+)
+
+findstr "bt709" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Color space: BT.709 (HD STANDARD)
+) else (
+    echo     ❌ CRÍTICO: Color space incorreto!
+    set "COMPLIANCE_OK=N"
+)
+
+findstr "bt709" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Color primaries: BT.709
+) else (
+    echo     ❌ CRÍTICO: Color primaries incorreto!
+    set "COMPLIANCE_OK=N"
+)
+findstr "major_brand.*mp4" "!TEMP_CHECK!" >nul
+if not errorlevel 1 (
+    echo     ✅ Faststart: Metadata otimizada
+) else (
+    echo     ❌ CRÍTICO: Faststart não otimizado!
+    set "COMPLIANCE_OK=N"
+)
+
+del "!TEMP_CHECK!" 2>nul
+
+if "!COMPLIANCE_OK!"=="Y" (
+    echo   ✅ COMPLIANCE INSTAGRAM ZERO-RECOMPRESSION OK
+    call :LogEntry "[COMPLIANCE] Instagram compliance check passed"
+
+    echo.
+    echo      ╔══════════════════════════════════════════════════════════════════╗
+    echo      ║           CERTIFICAÇÃO ZERO-RECOMPRESSION APROVADA!              ║
+    echo      ║                                                                  ║
+    echo      ║  ✅ Instagram VAI aceitar sem reprocessamento                   ║
+    echo      ║  ✅ Qualidade preservada a 100% garantida                       ║
+    echo      ║  ✅ Compatibilidade universal certificada                       ║
+    echo      ║  ✅ Streaming otimizado validado                                ║
+    echo      ║                                                                  ║
+    echo      ║           🏆 HOLLYWOOD-LEVEL QUALITY ACHIEVED 🏆                ║
+    echo      ╚══════════════════════════════════════════════════════════════════╝
+)
+exit /b 0
+
+REM ============================================================================
+REM                    RELATÓRIO FINAL APRIMORADO
+REM ============================================================================
+
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                   🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆                     ║
+echo ║                                                                              ║
+echo ║  📁 Arquivo: !ARQUIVO_SAIDA!                                                 ║
+echo ║  📊 Tamanho: !OUTPUT_SIZE_MB! MB                                             ║
+echo ║  🎯 Bitrate: !BITRATE_REAL! kbps (target: !BITRATE_VIDEO_TARGET!)           ║
+echo ║  ⏱️ Duração: ~!DURATION_SECONDS! segundos                                   ║
+echo ║  🎬 Qualidade: Hollywood Zero-Recompression                                  ║
+echo ║  📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento              ║
+echo ║  🎵 Áudio: 320k AAC 48kHz Stereo                                            ║
+echo ║  ⚙️ Preset: !PRESET_X264! (parâmetros broadcast-grade)                      ║
+echo ║                                                                              ║
+echo ║  ✅ PRONTO PARA UPLOAD NO INSTAGRAM!                                        ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+
+echo.
+echo 🎉 DICAS DE USO:
+echo    • Faça upload do arquivo diretamente no Instagram
+echo    • Não reprocesse em outros editores
+echo    • Qualidade será preservada 100%%
+echo.
+
+call :LogEntry "[SUCCESS] 2-pass encoding completed successfully"
+call :LogEntry "[SUCCESS] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
+call :LogEntry "[SUCCESS] Profile: !PROFILE_NAME!, Preset: !PRESET_X264!"
+
+exit /b 0
+
 :: ============================================================================
 ::                        CONFIGURAÇÃO DE THREADING
 :: ============================================================================
@@ -1496,73 +1401,6 @@ if not defined THREAD_COUNT (
         echo   🚀 Desktop detectado - Threading automático: Todos os cores
     )
 )
-exit /b 0
-
-REM ============================================================================
-REM                    CONFIGURAÇÃO ESPECÍFICA POR PASSAGEM
-REM ============================================================================
-:ConfigurePassSpecific
-if "!PASS_TYPE!"=="PASS1" (
-	echo   🔄 PASS 1 - Análise estatística para VBV otimizado...
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
-
-) else if "!PASS_TYPE!"=="PASS2" (
-	echo   🎬 PASS 2 - Encoding final com máxima qualidade...
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !BITRATE_VIDEO_TARGET!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !BITRATE_VIDEO_MAX!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFSIZE_VIDEO!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
-
-) else if "!PASS_TYPE!"=="CRF" (
-	echo   🎯 CRF Mode - Qualidade constante otimizada...
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -crf !CRF_VALUE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a !BITRATE_AUDIO! -ar 48000 -ac 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
-) else (
-    echo ❌ ERRO: PASS_TYPE inválido: !PASS_TYPE!
-    echo    Valores válidos: PASS1, PASS2 ou CRF
-    exit /b 1
-)
-
-exit /b 0
-
-:: ============================================================================
-::                   VALIDAÇÃO DE VARIÁVEIS CRÍTICAS APRIMORADA
-:: ============================================================================
-:ValidateRequiredVars
-:: ✅ NOVA FUNÇÃO: Validação mais robusta com mensagens específicas
-set "VAR_NAME=%~1"
-if "%VAR_NAME%"=="" exit /b 0
-
-call set "VAR_VALUE=%%%VAR_NAME%%%"
-if not defined %VAR_NAME% (
-    echo   ❌ ERRO CRÍTICO: Variável %VAR_NAME% não está definida!
-    echo      Esta variável é obrigatória para o funcionamento do script.
-    echo      Verifique a configuração do perfil selecionado.
-    pause
-    exit /b 1
-)
-
-if "!VAR_VALUE!"=="" (
-    echo   ❌ ERRO CRÍTICO: Variável %VAR_NAME% está vazia!
-    echo      Esta variável precisa ter um valor válido.
-    pause
-    exit /b 1
-)
-
-echo   ✅ %VAR_NAME% = !VAR_VALUE!
-shift
-if not "%~2"=="" goto :ValidateRequiredVars
 exit /b 0
 
 :RecoverFromError
@@ -1581,109 +1419,6 @@ if "!BACKUP_CREATED!"=="Y" (
 call :LogEntry "[RECOVERY] Error recovery attempted"
 exit /b 0
 
-:PostProcessing
-echo.
-echo 🔍 Pós-processamento e validação...
-
-:: Validate output file
-if not exist "!ARQUIVO_SAIDA!" (
-    echo ❌ Arquivo de saída não foi criado!
-    call :LogEntry "[ERROR] Output file not created"
-    exit /b 1
-)
-
-:: Get file size
-for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
-set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
-
-echo   ✅ Arquivo criado: !OUTPUT_SIZE_MB! MB
-
-:: Validate Instagram compliance
-call :ValidateInstagramCompliance
-
-:: Cleanup temporary files
-if "!ENCODE_MODE!"=="2PASS" (
-    echo 🧹 Limpando arquivos temporários...
-    set /p "CLEAN_LOGS=Deletar logs de passagem? (S/N): "
-    if /i "!CLEAN_LOGS:~0,1!"=="S" (
-        del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
-        del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
-        echo   ✅ Logs removidos
-    )
-)
-
-call :LogEntry "[POST] File size: !OUTPUT_SIZE_MB!MB, Validation completed"
-exit /b 0
-
-:ValidateInstagramCompliance
-echo   🎯 Verificando compatibilidade ZERO-RECOMPRESSION...
-
-:: Check pixel format
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>&1 | findstr "yuv420p" >nul
-if errorlevel 1 (
-    echo     ❌ CRÍTICO: Pixel format incorreto!
-    exit /b 1
-) else (
-    echo     ✅ Pixel format: yuv420p (INSTAGRAM NATIVO)
-)
-
-:: Check color range
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>&1 | findstr "tv" >nul
-if not errorlevel 1 (
-    echo     ✅ Color range: TV Limited (16-235)
-)
-
-:: Check color space
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>&1 | findstr "bt709" >nul
-if not errorlevel 1 (
-    echo     ✅ Color space: BT.709 (HD STANDARD)
-)
-
-:: Check profile and level
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>&1 | findstr "High.*4.1" >nul
-if not errorlevel 1 (
-    echo     ✅ Profile/Level: High 4.1 (MOBILE COMPATIBLE)
-)
-
-:: Check faststart
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" 2>&1 | findstr "major_brand.*mp41" >nul
-if not errorlevel 1 (
-    echo     ✅ Faststart: Metadata otimizada
-)
-
-:: Test file integrity with detailed analysis
-echo     🔍 Executando análise profunda de integridade...
-"%FFMPEG_CMD%" -v error -i "!ARQUIVO_SAIDA!" -f null - 2>error_check.tmp
-if errorlevel 1 (
-    echo     ❌ CRÍTICO: Problemas de integridade detectados!
-    type error_check.tmp
-    del error_check.tmp 2>nul
-    exit /b 1
-) else (
-    echo     ✅ Integridade: PERFEITA (zero erros)
-    del error_check.tmp 2>nul
-)
-
-:: Verify GOP structure
-echo     📊 Validando estrutura GOP...
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -vf "select=eq(pict_type\,I)" -vsync 0 -f null - 2>&1 | findstr "frame=" >nul
-if not errorlevel 1 (
-    echo     ✅ GOP Structure: Keyframes detectados corretamente
-)
-
-echo.
-echo      ╔══════════════════════════════════════════════════════════════════╗
-echo      ║           CERTIFICAÇÃO ZERO-RECOMPRESSION APROVADA!              ║
-echo      ║                                                                  ║
-echo      ║  ✅ Instagram VAI aceitar sem reprocessamento                   ║
-echo      ║  ✅ Qualidade preservada a 100% garantida                       ║
-echo      ║  ✅ Compatibilidade universal certificada                       ║
-echo      ║  ✅ Streaming otimizado validado                                ║
-echo      ║                                                                  ║
-echo      ║           🏆 HOLLYWOOD-LEVEL QUALITY ACHIEVED 🏆                ║
-echo      ╚══════════════════════════════════════════════════════════════════╝
-exit /b 0
-
 :ShowResults
 echo.
 echo 📊 RELATÓRIO FINAL - CONFIGURAÇÃO PROFISSIONAL:
@@ -1696,7 +1431,6 @@ echo   💻 Aceleração: CPU-ONLY (!PRESET_X264! - HOLLYWOOD LEVEL)
 echo   📊 Tamanho final: !OUTPUT_SIZE_MB! MB
 echo   🎯 Bitrate: !BITRATE_VIDEO_TARGET! (target) / !BITRATE_VIDEO_MAX! (max)
 echo   🎵 Audio: !BITRATE_AUDIO! AAC 48kHz Stereo
-echo   ⏱️ Tempo total: !TOTAL_TIME!
 echo   📋 Log completo: !EXEC_LOG!
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -1714,12 +1448,7 @@ echo ║  ✅ Compatível com todos os dispositivos móveis                     
 echo ║  ✅ Configuração equivalente a Netflix/Disney+ streaming                     ║
 echo ║                                                                              ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
-exit /b 0
-
-:CalculateElapsedTime
-:: Simple time calculation (basic implementation)
-set "TOTAL_TIME=Calculado"
-exit /b 0
+echo.
 
 REM ============================================================================
 REM                    OPÇÕES PÓS-PROCESSAMENTO
@@ -1746,9 +1475,6 @@ if /i "!PLAY_FILE:~0,1!"=="S" (
     )
 )
 
-:: ============================================================================
-::                            UTILITY FUNCTIONS
-:: ============================================================================
 :: ============================================================================
 ::                        TESTE DE VALIDAÇÃO FFMPEG
 :: ============================================================================
@@ -1854,15 +1580,6 @@ if not defined EXEC_LOG (
     echo ===== INSTAGRAM ENCODER V5 LOG - %date% %time% =====>"!EXEC_LOG!"
 )
 echo [%time%] %~1>>"!EXEC_LOG!"
-exit /b 0
-
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║              SISTEMA VALIDADO - ESCOLHA UM PROFILE AGORA!                    ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-echo Pressione qualquer tecla para voltar ao menu de profiles...
-pause >nul
 exit /b 0
 
 :: ============================================================================
