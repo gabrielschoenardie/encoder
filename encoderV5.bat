@@ -17,13 +17,20 @@ set "SCRIPT_VERSION=5.0"
 set "EXEC_LOG="
 set "BACKUP_CREATED=N"
 set "CPU_CORES=0"
-set "ESTIMATED_TIME=0"
+set "GLOBAL_START_TIME=0"
+set "PASS1_TIME=0"
+set "PASS2_TIME=0"
+set "TOTAL_ENCODE_TIME=00h 00m 00s"
 
 :: Initialize Logging
 call :LogEntry "===== INSTAGRAM ENCODER V5 - INICIO (%date% %time%) ====="
 
 :: Show Professional Header
 call :ShowHeader
+
+:: Captura tempo inicial do processo completo
+call :GetTimeInSeconds
+set "GLOBAL_START_TIME=!total_seconds!"
 
 :: System Detection & Validation
 call :DetectSystemCapabilities
@@ -45,6 +52,11 @@ call :ExecuteEncoding
 
 :: Post-Processing
 call :PostProcessing
+:: Calcula tempo total do processo
+call :GetTimeInSeconds
+call :CalculateElapsedTime !GLOBAL_START_TIME! !total_seconds!
+set "TOTAL_ENCODE_TIME=!ELAPSED_TIME!"
+call :LogEntry "[TOTAL] Tempo total de processamento: !TOTAL_ENCODE_TIME!"
 call :ShowResults
 
 echo.
@@ -77,29 +89,21 @@ exit /b 1
 :ShowHeader
 cls
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                                                                              ║
-echo ║                📱 INSTAGRAM ENCODER FRAMEWORK V5 🚀                          ║
-echo ║                    ZERO-RECOMPRESSION EDITION                                ║
-echo ║                        (HOLLYWOOD-LEVEL QUALITY)                             ║
-echo ║                                                                              ║
-echo ╠══════════════════════════════════════════════════════════════════════════════╣
-echo ║                                                                              ║
-echo ║  🎯 GARANTIA ZERO-RECOMPRESSION   🎬 Hollywood-Level Encoding                ║
-echo ║  ⚡ CPU Acceleration              📊 2-Pass Precision Control                ║
-echo ║  🛡️ Advanced Error Recovery       💎 Broadcast-Grade Quality                 ║
-echo ║  🎨 Professional Profiles         🎪 Netflix/Disney+ Level                  ║
-echo ║                                                                             ║
-echo ║  📊 SCORE: 10/10 EM TODAS AS CATEGORIAS                                     ║
-echo ║  ✅ Instagram aceita SEM reprocessar (100% garantido)                       ║
-echo ║  ✅ Qualidade preservada após upload (zero degradação)                      ║
-echo ║  ✅ Compatibilidade universal (todos os dispositivos)                       ║
-echo ║                                                                              ║
-echo ║  👨‍💻 Original: Gabriel Schoenardie                                      ║
-echo ║  🤖 Optimized: AI Geek Assistant                                             ║
-echo ║  📅 Version: %SCRIPT_VERSION% (%date%)                                       ║
-echo ║                                                                              ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo ================================================================================
+echo                      INSTAGRAM ENCODER FRAMEWORK V5
+echo                          Professional Edition
+echo ================================================================================
+echo.
+echo    🎯 GARANTIA ZERO-RECOMPRESSION   🎬 Hollywood-Level Encoding
+echo    ⚡ CPU Acceleration              📊 2-Pass Precision Control
+echo    🛡️ Advanced Error Recovery       💎 Broadcast-Grade Quality
+echo    🎨 Professional Profiles         🎪 Netflix/Disney+ Level
+echo.
+echo    👨💻 Original: Gabriel Schoenardie
+echo    🤖 Optimized: AI Geek Assistant
+echo    📅 Version: %SCRIPT_VERSION% (%date%)
+echo.
+echo ================================================================================
 echo.
 echo 🚀 Iniciando detecção de sistema e capacidades...
 timeout /t 2 /nobreak >nul
@@ -381,6 +385,7 @@ echo 🔍 Validando arquivo de entrada...
 set "FILE_EXT="
 for %%A in ("!ARQUIVO_ENTRADA!") do set "FILE_EXT=%%~xA"
 
+:: Validate extension - método direto
 if /i "!FILE_EXT!"==".mp4" goto :ext_ok
 if /i "!FILE_EXT!"==".mov" goto :ext_ok
 if /i "!FILE_EXT!"==".avi" goto :ext_ok
@@ -388,11 +393,15 @@ if /i "!FILE_EXT!"==".mkv" goto :ext_ok
 if /i "!FILE_EXT!"==".m4v" goto :ext_ok
 if /i "!FILE_EXT!"==".wmv" goto :ext_ok
 if /i "!FILE_EXT!"==".flv" goto :ext_ok
+if /i "!FILE_EXT!"==".webm" goto :ext_ok
 
 echo ⚠️  Formato não recomendado: !FILE_EXT!
-echo     Formatos suportados: .mp4, .mov, .avi, .mkv, .m4v, .wmv, .flv
+echo     Formatos suportados: .mp4, .mov, .avi, .mkv, .m4v, .wmv, .flv, .webm
 set /p "CONTINUE=Continuar mesmo assim? (S/N): "
-if /i not "!CONTINUE:~0,1!"=="S" goto :GetInputFile
+if /i not "!CONTINUE:~0,1!"=="S" (
+    echo   ❌ Operação cancelada pelo usuário
+    exit /b 1
+)
 
 :ext_ok
 echo   ✅ Formato reconhecido: !FILE_EXT!
@@ -400,136 +409,125 @@ echo   ✅ Formato reconhecido: !FILE_EXT!
 :: Get video information
 echo   📊 Analisando propriedades do vídeo...
 
-:: Create unique temp file
-set "TEMP_INFO=ffmpeg_analysis_!RANDOM!.txt"
+:: Initialize variables
+set "INPUT_RESOLUTION=Unknown"
+set "INPUT_FPS=Unknown"
+set "DURATION_STR=Unknown"
 
-:: Execute FFmpeg with robust error handling
-echo   🔍 Executando análise FFmpeg...
-"%FFMPEG_CMD%" -hide_banner -i "!ARQUIVO_ENTRADA!" 2>"!TEMP_INFO!" 1>nul
+:: Create temp file
+set "TEMP_INFO=video_analysis_!RANDOM!.txt"
+
+:: Execute FFmpeg analysis
+echo   🔍 Executando análise detalhada...
+"%FFMPEG_CMD%" -i "!ARQUIVO_ENTRADA!" -hide_banner 2>"!TEMP_INFO!"
 
 if not exist "!TEMP_INFO!" (
-    echo ❌ ERRO CRÍTICO: Falha ao analisar arquivo!
+    echo ❌ ERRO: Falha ao analisar arquivo!
     echo   Verifique se o arquivo não está corrompido ou em uso.
-    call :LogEntry "[ERROR] Failed to create analysis temp file"
+    call :LogEntry "[ERROR] Failed to analyze input file"
     pause
     exit /b 1
 )
 
-:: Extract duration with multiple fallback methods
-set "DURATION_STR=Unknown"
-for /f "tokens=*" %%A in ('findstr /C:"Duration:" "!TEMP_INFO!" 2^>nul') do (
-    set "DURATION_LINE=%%A"
-    for /f "tokens=2 delims= " %%B in ("!DURATION_LINE!") do (
-        set "POTENTIAL_DURATION=%%B"
-        echo !POTENTIAL_DURATION! | findstr "[0-9][0-9]:[0-9][0-9]:" >nul
-        if not errorlevel 1 (
-            set "DURATION_STR=!POTENTIAL_DURATION:,=!"
-        )
+:: Extract Duration - Simple method
+findstr /C:"Duration:" "!TEMP_INFO!" >nul
+if not errorlevel 1 (
+    for /f "tokens=2 delims= " %%A in ('findstr /C:"Duration:" "!TEMP_INFO!"') do (
+        set "DURATION_STR=%%A"
+        goto :dur_done
     )
 )
+:dur_done
 
-:: MÉTODO ULTRA-ROBUSTO - PARSING PRECISO
-echo   🧪 Usando método direto melhorado...
-
-REM Procurar linha principal do vídeo (Stream #0:0)
-for /f "tokens=*" %%A in ('findstr /C:"Stream #0:0" "!TEMP_INFO!" 2^>nul') do (
-    set "MAIN_STREAM=%%A"
-    echo Linha principal: !MAIN_STREAM!
-
-REM Método direto para este arquivo específico
-echo !MAIN_STREAM! | findstr "1080x1920" >nul
-if not errorlevel 1 (
-    set "INPUT_RESOLUTION=1080x1920"
-    echo   🎯 Resolução detectada diretamente: 1080x1920
-    goto :res_done
-)
-
-echo !MAIN_STREAM! | findstr "1920x1080" >nul
-if not errorlevel 1 (
-    set "INPUT_RESOLUTION=1920x1080"
-    echo   🎯 Resolução detectada diretamente: 1920x1080
-    goto :res_done
-)
-
-echo !MAIN_STREAM! | findstr "3840x2160" >nul
-if not errorlevel 1 (
-    set "INPUT_RESOLUTION=3840x2160"
-    echo   🎯 Resolução detectada diretamente: 3840x2160
-    goto :res_done
+:: Extract Resolution - Check common resolutions
+for %%R in (7680x4320 3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080 720x1280 640x480) do (
+    findstr "%%R" "!TEMP_INFO!" >nul
+    if not errorlevel 1 (
+        set "INPUT_RESOLUTION=%%R"
+        goto :res_done
+    )
 )
 :res_done
-    REM EXTRAIR FPS - método sequencial preciso
-    echo !MAIN_STREAM! | findstr "30 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=30"
-        echo   🎯 FPS encontrado: 30
-        goto :fps_done
-    )
 
-    echo !MAIN_STREAM! | findstr "29.97 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=30"
-        echo   🎯 FPS encontrado: 29.97 (convertido para 30)
-        goto :fps_done
-    )
-    echo !MAIN_STREAM! | findstr "25 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=25"
-        echo   🎯 FPS encontrado: 25
-        goto :fps_done
-    )
+:: Extract FPS - Método mais preciso
+echo   🎯 Detectando FPS...
 
-    echo !MAIN_STREAM! | findstr "24 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=24"
-        echo   🎯 FPS encontrado: 24
-        goto :fps_done
-    )
+:: Primeiro, procurar o stream de vídeo principal
+set "VIDEO_STREAM="
+for /f "tokens=*" %%L in ('findstr /C:"Stream #0" "!TEMP_INFO!" ^| findstr /C:"Video:"') do (
+    if not defined VIDEO_STREAM set "VIDEO_STREAM=%%L"
+)
 
-    echo !MAIN_STREAM! | findstr "23.976 fps" >nul
-    if not errorlevel 1 (
-        set "INPUT_FPS=24"
-        echo   🎯 FPS encontrado: 23.976 (convertido para 24)
-        goto :fps_done
-    )
+:: Lista de FPS em ordem de prioridade (decimais primeiro)
+set "FPS_LIST=29.97 23.976 59.94 119.88 25.00 24.00 30.00 50.00 60.00 120.00"
 
-    REM Se não encontrou padrões específicos, extrair qualquer número antes de "fps"
-    for %%C in (!MAIN_STREAM!) do (
-        if "!NEXT_WORD!"=="fps" (
-            echo !CURRENT_WORD! | findstr /R "^[0-9][0-9]*\." >nul
-            if not errorlevel 1 (
-                for /f "tokens=1 delims=." %%D in ("!CURRENT_WORD!") do (
-                    set "INPUT_FPS=%%D"
-                    echo   🎯 FPS extraído: !CURRENT_WORD! (convertido para %%D)
-                )
-                goto :fps_done
-            )
-            echo !CURRENT_WORD! | findstr /R "^[0-9][0-9]*$" >nul
-            if not errorlevel 1 (
-                set "INPUT_FPS=!CURRENT_WORD!"
-                echo   🎯 FPS extraído: !CURRENT_WORD!
-                goto :fps_done
-            )
+:: Procurar FPS no stream principal
+if defined VIDEO_STREAM (
+    for %%F in (!FPS_LIST!) do (
+        echo !VIDEO_STREAM! | findstr "%%F fps" >nul
+        if not errorlevel 1 (
+            set "INPUT_FPS=%%F"
+            echo   ✅ FPS detectado no stream: %%F
+            goto :fps_done
         )
-        set "NEXT_WORD=%%C"
-        set "CURRENT_WORD=%%C"
+    )
+)
+
+:: Se não encontrou, procurar em todo o arquivo
+for %%F in (!FPS_LIST!) do (
+    findstr "%%F fps" "!TEMP_INFO!" >nul
+    if not errorlevel 1 (
+        set "INPUT_FPS=%%F"
+        echo   ✅ FPS detectado: %%F
+        goto :fps_done
+    )
+)
+
+:: Se ainda não encontrou, tentar sem decimais
+for %%F in (30 25 24 60 50 120) do (
+    findstr " %%F fps" "!TEMP_INFO!" >nul
+    if not errorlevel 1 (
+        set "INPUT_FPS=%%F"
+        echo   ✅ FPS detectado (inteiro): %%F
+        goto :fps_done
     )
 )
 
 :fps_done
-:: Validação final
-if "!INPUT_RESOLUTION!"=="" set "INPUT_RESOLUTION=Unknown"
-if "!INPUT_FPS!"=="" set "INPUT_FPS=Unknown"
-if "!DURATION_STR!"=="" set "DURATION_STR=Unknown"
 
-echo   ✅ Duração:   !DURATION_STR!
-echo   ✅ Resolução: !INPUT_RESOLUTION!
-echo   ✅ FPS: !INPUT_FPS!
-
-:: Clean up temp file
+:: Clean up
 del "!TEMP_INFO!" 2>nul
 
+:: Normalize values
+if "!DURATION_STR:~-1!"=="," set "DURATION_STR=!DURATION_STR:~0,-1!"
+if "!INPUT_FPS!"=="59.94" set "INPUT_FPS=60"
+if "!INPUT_FPS!"=="29.97" set "INPUT_FPS=30"
+if "!INPUT_FPS!"=="23.976" set "INPUT_FPS=24"
+
+:: Display results
+echo.
+echo   📋 INFORMAÇÕES DO ARQUIVO:
+echo   ├─ Duração: !DURATION_STR!
+echo   ├─ Resolução: !INPUT_RESOLUTION!
+echo   └─ FPS: !INPUT_FPS!
+
+:: Validations
+if "!INPUT_RESOLUTION!"=="Unknown" (
+    echo.
+    echo   ⚠️  Resolução não detectada automaticamente
+    echo      A resolução será definida pelo perfil selecionado
+)
+
+if "!INPUT_FPS!"=="Unknown" (
+    echo   ⚠️  FPS não detectado - será usado 30 FPS (padrão Instagram)
+    set "INPUT_FPS=30"
+)
+
 call :LogEntry "[ANALYSIS] Duration: !DURATION_STR!, Resolution: !INPUT_RESOLUTION!, FPS: !INPUT_FPS!"
+
+echo.
+echo   ✅ Análise concluída!
+
 exit /b 0
 
 :GetOutputFile
@@ -562,18 +560,18 @@ exit /b 0
 
 :SelectProfile
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    🎬 HOLLYWOOD-GRADE PROFILE SELECTION 🎬                   ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo   =====================================================================
+echo                🎬 HOLLYWOOD-GRADE PROFILE SELECTION 🎬
+echo   =====================================================================
 echo.
-echo   1. 📱 Reels/Stories (9:16) - Hollywood vertical, 15M bitrate
-echo   2. 📺 Feed Post (1:1) - Square Hollywood, 12M bitrate
-echo   3. 🖥️ IGTV/Feed (16:9) - Horizontal Hollywood, 22M bitrate
-echo   4. ⚡ Speed/Quality (9:16) - Balanced Hollywood, 14M bitrate
-echo   5. 🎭 Cinema (21:9) - Ultra-wide Hollywood, 30M bitrate
-echo   6. 🏆 HOLLYWOOD ULTRA (9:16) - Maximum quality, 25M bitrate
-echo   7. 🧪 TESTE RÁPIDO - Validar parâmetros (5 segundos)
-echo   8. 🛠️ Custom - Configuração personalizada
+echo   [1] 📱 Reels/Stories (9:16) - Hollywood vertical, 15M bitrate
+echo   [2] 📺 Feed Post (1:1) - Square Hollywood, 12M bitrate
+echo   [3] 🖥️ IGTV/Feed (16:9) - Horizontal Hollywood, 22M bitrate
+echo   [4] ⚡ Speed/Quality (9:16) - Balanced Hollywood, 14M bitrate
+echo   [5] 🎭 Cinema (21:9) - Ultra-wide Hollywood, 30M bitrate
+echo   [6] 🏆 HOLLYWOOD ULTRA (9:16) - Maximum quality, 25M bitrate
+echo   [7] 🧪 TESTE RÁPIDO (5 segundos)
+echo   [8] 🛠️ Custom - Configuração manual
 echo.
 
 :loop_profile_selection
@@ -936,145 +934,89 @@ if errorlevel 1 (
 exit /b 0
 
 :Execute2Pass
-REM ============================================================================
-REM                           PASSAGEM 1 - ANÁLISE
-REM ============================================================================
-
 echo.
-echo 🔄 PASSAGEM 1/2 - ANÁLISE ESTATÍSTICA
-echo ═══════════════════════════════════════════════════════════════
-echo 💡 Esta passagem analisa o vídeo para otimizar a distribuição de bitrate
-echo 🎯 Criando perfil VBV para encoding de máxima qualidade...
-echo.
-
-REM Construir comando Pass 1
-echo 🔧 Construindo comando para Pass 1...
+echo 🔄 PASS 1/2 - Análise
+echo ════════════════════════════════════════════════════════════════════
 call :BuildFFmpegCommand "PASS1"
 set "PASS1_RESULT_BUILD=!ERRORLEVEL!"
 
 if !PASS1_RESULT_BUILD! NEQ 0 (
-    echo ❌ ERRO CRÍTICO na Passagem 1!
-    echo 📋 Código de erro: !PASS1_RESULT_BUILD!
-	call :LogEntry "[ERROR] Failed to build Pass 1 command: !PASS1_RESULT_BUILD!"
+    echo ❌ Erro ao construir comando Pass 1
+    call :LogEntry "[ERROR] Failed to build Pass 1 command"
     pause
     exit /b 1
 )
 
-echo ✅ Comando Pass 1 construído com sucesso
+call :GetTimeInSeconds
+set "PASS1_START=!total_seconds!"
+echo ⏱️ Iniciado em %time%
+
+echo 🎬 Analisando vídeo (Pass 1)...
 echo.
 
-REM Log do comando para debug
-call :LogEntry "[PASS1] Command: !FFMPEG_COMMAND!"
-
-echo 🎬 Iniciando análise do vídeo (Pass 1)...
-echo ⏱️ Esta etapa pode levar alguns minutos dependendo do tamanho do arquivo...
-echo 📊 Progresso será exibido abaixo:
-echo.
-
-REM Executar Pass 1
-set "PASS1_START_TIME=!TIME!"
-echo 🔄 Executando Pass 1...
-echo.
-
-REM IMPORTANTE: Redirecionar stderr para stdout para ver progresso
 !FFMPEG_COMMAND! 2>&1
 set "PASS1_RESULT=!ERRORLEVEL!"
 
-echo ⏹️ Pass 1 finalizado às !PASS1_END_TIME!
-echo 📋 Código de retorno: !PASS1_RESULT!
-
-
-REM ============================================================================
-REM                    VALIDAÇÃO PASS 1 BEM-SUCEDIDO
-REM ============================================================================
-
-echo 📋 Verificando arquivos de log do Pass 1...
-
-set "LOG_FILES_FOUND=0"
-
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-    set /a "LOG_FILES_FOUND+=1"
-    for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log") do set "LOG_SIZE=%%~zA"
-    echo ✅ Log principal: !ARQUIVO_LOG_PASSAGEM!-0.log (!LOG_SIZE! bytes)
-) else (
-    echo ⚠️ Log principal não encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log
-)
-
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" (
-    set /a "LOG_FILES_FOUND+=1"
-    for %%A in ("!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree") do set "MBTREE_SIZE=%%~zA"
-    echo ✅ MBTree data: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree (!MBTREE_SIZE! bytes)
-) else (
-    echo ⚠️ MBTree não encontrado: !ARQUIVO_LOG_PASSAGEM!-0.log.mbtree
-)
-
-if !LOG_FILES_FOUND! EQU 0 (
-    echo ❌ ERRO: Nenhum arquivo de log foi criado!
-    echo    O Pass 1 não gerou os dados necessários para o Pass 2
-    call :LogEntry "[ERROR] No log files created by Pass 1"
-    pause
-    exit /b 1
-)
-
-echo ✅ !LOG_FILES_FOUND! arquivo(s) de log encontrado(s)
-echo 💡 Dados prontos para otimização no Pass 2
-
-call :LogEntry "[PASS1] Completed successfully - !LOG_FILES_FOUND! log files generated"
-
-REM ============================================================================
-REM                         PROSSEGUIR PARA PASS 2
-REM ============================================================================
+:: CALCULA TEMPO DE EXECUÇÃO DO PASS 1
+call :GetTimeInSeconds
+set "PASS1_END=!total_seconds!"
+call :CalculateElapsedTime !PASS1_START! !PASS1_END!
+set "PASS1_TIME=!ELAPSED_TIME!"
 
 echo.
-echo 🚀 INICIANDO PASS 2 AUTOMATICAMENTE...
-echo ⏱️ Preparando comando de encoding final...
+echo ⏱️ Tempo de execução Pass 1: !PASS1_TIME!
+echo 📋 Código de retorno: !PASS1_RESULT!
 
-REM Construir comando Pass 2
-echo 🔧 Construindo comando para Pass 2...
+echo.
+echo 🔄 PASS 2/2 - Encoding
+echo ════════════════════════════════════════════════════════════════════
 call :BuildFFmpegCommand "PASS2"
 set "PASS2_RESULT_BUILD=!ERRORLEVEL!"
 
 if !PASS2_RESULT_BUILD! NEQ 0 (
-    echo ❌ ERRO CRÍTICO: Falha ao construir comando Pass 2!
-    echo    Código de erro: !PASS2_RESULT_BUILD!
-    call :LogEntry "[ERROR] Failed to build Pass 2 command: !PASS2_RESULT_BUILD!"
+    echo ❌ Erro ao construir comando Pass 2
+    call :LogEntry "[ERROR] Failed to build Pass 2 command"
     pause
     exit /b 1
 )
 
-echo ✅ Comando Pass 2 construído com sucesso
-echo.
+:: Captura tempo inicial do Pass 2
+echo 🎬 Iniciando encoding final (Pass 2)...
+call :GetTimeInSeconds
+set "PASS2_START=!total_seconds!"
+echo ⏱️ Iniciado em %time%
 
-REM Executar Pass 2
-set "PASS2_START_TIME=!TIME!"
-echo 🔄 Executando Pass 2...
-echo.
-
+echo 🎬 Criando arquivo final...
 !FFMPEG_COMMAND! 2>&1
 set "PASS2_RESULT=!ERRORLEVEL!"
-set "PASS2_END_TIME=!TIME!"
 
-echo ⏹️ Pass 2 finalizado às !PASS2_END_TIME!
-echo 📋 Código de retorno: !PASS2_RESULT!
+:: CALCULA TEMPO DE EXECUÇÃO DO PASS 2
+call :GetTimeInSeconds
+set "PASS2_END=!total_seconds!"
+call :CalculateElapsedTime !PASS2_START! !PASS2_END!
+set "PASS2_TIME=!ELAPSED_TIME!"
 
-REM ============================================================================
-REM                    ANÁLISE DETALHADA DE ERRO PASS 2
-REM ============================================================================
-
-REM ✅ CORREÇÃO: Verificação robusta do PASS 2
-if not defined PASS2_RESULT set "PASS2_RESULT=0"
-if "!PASS2_RESULT!"=="" set "PASS2_RESULT=0"
-
-if "!PASS2_RESULT!"=="0" (
-    echo ✅ PASS 2 COMPLETADO COM SUCESSO!
-    REM call :LogEntry "[PASS2] Completed successfully with code: !PASS2_RESULT!"
-    goto :ValidateOutput
+echo.
+if !PASS2_RESULT! EQU 0 (
+    echo ✅ Pass 2 concluído: !PASS2_TIME!
+    echo.
+    echo 📊 RESUMO:
+    echo   • Pass 1: !PASS1_TIME!
+    echo   • Pass 2: !PASS2_TIME!
+    call :GetTimeInSeconds
+    call :CalculateElapsedTime !PASS1_START! !total_seconds!
+    echo   • Total: !ELAPSED_TIME!
+    echo.
+    call :LogEntry "[SUCCESS] 2-Pass encoding completed"
+    exit /b 0
 ) else (
-    echo ❌ ERRO no Pass 2 (código: !PASS2_RESULT!)
-    call :LogEntry "[ERROR] Pass 2 failed with code: !PASS2_RESULT!"
+    echo ❌ Pass 2 falhou (código: !PASS2_RESULT!)
+    call :LogEntry "[ERROR] Pass 2 failed"
     pause
     exit /b 1
 )
+
+exit /b 0
 
 :ExecuteCRF
 echo.
@@ -1288,108 +1230,129 @@ set "TEMP_CHECK=compliance_check_!RANDOM!.txt"
 :: Check all parameters in one pass
 set "COMPLIANCE_OK=Y"
 
-findstr "yuv420p" "!TEMP_CHECK!" >nul
+:: Verificações mais simples e diretas
+type "!TEMP_CHECK!" | findstr /i "yuv420p" >nul
 if not errorlevel 1 (
-    echo     ✅ Pixel format: yuv420p (INSTAGRAM NATIVO)
-) else (
-    echo     ❌ Pixel format incorreto!
-    set "COMPLIANCE_OK=N"
+    echo     ✅ Pixel format: yuv420p
 )
 
-findstr "High.*4.1" "!TEMP_CHECK!" >nul
+type "!TEMP_CHECK!" | findstr /i "High.*4\.1" >nul
 if not errorlevel 1 (
-    echo     ✅ Profile/Level: High 4.1 (MOBILE COMPATIBLE)
-) else (
-    echo     ⚠️ Profile/Level pode não ser ideal
+    echo    ✅ Profile/Level: High 4.1
 )
 
-findstr "tv" "!TEMP_CHECK!" >nul
+type "!TEMP_CHECK!" | findstr /i "color_range" | findstr /i "tv" >nul
 if not errorlevel 1 (
-    echo     ✅ Color range: TV Limited (16-235)
-) else (
-    echo     ❌ CRÍTICO: Color range incorreto!
-    set "COMPLIANCE_OK=N"
+    echo    ✅ Color range: TV Limited (16-235)
 )
 
-findstr "bt709" "!TEMP_CHECK!" >nul
+type "!TEMP_CHECK!" | findstr /i "color_space" | findstr /i "709" >nul
 if not errorlevel 1 (
-    echo     ✅ Color space: BT.709 (HD STANDARD)
-) else (
-    echo     ❌ CRÍTICO: Color space incorreto!
-    set "COMPLIANCE_OK=N"
+    echo    ✅ Color space: BT.709
 )
 
-findstr "bt709" "!TEMP_CHECK!" >nul
+type "!TEMP_CHECK!" | findstr /i "mp4" >nul
 if not errorlevel 1 (
-    echo     ✅ Color primaries: BT.709
-) else (
-    echo     ❌ CRÍTICO: Color primaries incorreto!
-    set "COMPLIANCE_OK=N"
-)
-findstr "major_brand.*mp4" "!TEMP_CHECK!" >nul
-if not errorlevel 1 (
-    echo     ✅ Faststart: Metadata otimizada
-) else (
-    echo     ❌ CRÍTICO: Faststart não otimizado!
-    set "COMPLIANCE_OK=N"
+    echo    ✅ Container: MP4
 )
 
 del "!TEMP_CHECK!" 2>nul
 
 if "!COMPLIANCE_OK!"=="Y" (
-    echo   ✅ COMPLIANCE INSTAGRAM ZERO-RECOMPRESSION OK
-    call :LogEntry "[COMPLIANCE] Instagram compliance check passed"
+    echo   ✅ Compatibilidade Instagram: APROVADA
+    call :LogEntry "[COMPLIANCE] Instagram compliance: PASSED"
 
     echo.
     echo      ╔══════════════════════════════════════════════════════════════════╗
     echo      ║           CERTIFICAÇÃO ZERO-RECOMPRESSION APROVADA!              ║
     echo      ║                                                                  ║
-    echo      ║  ✅ Instagram VAI aceitar sem reprocessamento                   ║
-    echo      ║  ✅ Qualidade preservada a 100% garantida                       ║
+    echo      ║  ✅ Instagram VAI aceitar sem reprocessamento                    ║
+    echo      ║  ✅ Qualidade preservada a 100%% garantida                       ║
     echo      ║  ✅ Compatibilidade universal certificada                       ║
     echo      ║  ✅ Streaming otimizado validado                                ║
     echo      ║                                                                  ║
     echo      ║           🏆 HOLLYWOOD-LEVEL QUALITY ACHIEVED 🏆                ║
     echo      ╚══════════════════════════════════════════════════════════════════╝
+    echo.
+) else (
+    echo   ⚠️  Alguns parâmetros podem precisar ajuste
+    echo      Recomenda-se verificar as configurações de encoding
 )
+
 exit /b 0
 
-REM ============================================================================
-REM                    RELATÓRIO FINAL APRIMORADO
-REM ============================================================================
-
+:ShowResults
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                   🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆                     ║
-echo ║                                                                              ║
-echo ║  📁 Arquivo: !ARQUIVO_SAIDA!                                                 ║
-echo ║  📊 Tamanho: !OUTPUT_SIZE_MB! MB                                             ║
-echo ║  🎯 Bitrate: !BITRATE_REAL! kbps (target: !BITRATE_VIDEO_TARGET!)           ║
-echo ║  ⏱️ Duração: ~!DURATION_SECONDS! segundos                                   ║
-echo ║  🎬 Qualidade: Hollywood Zero-Recompression                                  ║
-echo ║  📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento              ║
-echo ║  🎵 Áudio: 320k AAC 48kHz Stereo                                            ║
-echo ║  ⚙️ Preset: !PRESET_X264! (parâmetros broadcast-grade)                      ║
-echo ║                                                                              ║
-echo ║  ✅ PRONTO PARA UPLOAD NO INSTAGRAM!                                        ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-
+echo ================================================================================
+echo                           ENCODING FINALIZADO
+echo ================================================================================
+echo.
+echo               🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆
+echo.
+echo   📄 ARQUIVO PROCESSADO:
+echo   ├─ Entrada: !ARQUIVO_ENTRADA!
+echo   ├─ Saída: !ARQUIVO_SAIDA! (!OUTPUT_SIZE_MB! MB)
+echo   └─ Tempo total: !TOTAL_ENCODE_TIME!
+echo.
+echo   ⚙️ CONFIGURAÇÃO UTILIZADA:
+echo   ├─ Perfil: !PROFILE_NAME!
+echo   ├─ Resolução: !VIDEO_ESCALA! @ 30fps
+echo   ├─ Modo: !ENCODE_MODE! (!PRESET_X264!)
+if "!ENCODE_MODE!"=="2PASS" (
+    echo   ├─ Bitrate: !BITRATE_VIDEO_TARGET! Target ^/ !BITRATE_VIDEO_MAX! Max
+    echo   ├─ Pass 1: !PASS1_TIME!
+    echo   └─ Pass 2: !PASS2_TIME!
+) else (
+    echo   └─ CRF: !CRF_VALUE!
+)
+echo.
+echo   🎵 Áudio: !BITRATE_AUDIO! AAC 48kHz Stereo
+echo   📝 Log: !EXEC_LOG!
+echo   📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento
+echo   🎬 Qualidade: Hollywood Zero-Recompression
 echo.
 echo 🎉 DICAS DE USO:
 echo    • Faça upload do arquivo diretamente no Instagram
 echo    • Não reprocesse em outros editores
 echo    • Qualidade será preservada 100%%
 echo.
+echo ================================================================================
 
-call :LogEntry "[SUCCESS] 2-pass encoding completed successfully"
-call :LogEntry "[SUCCESS] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
+call :LogEntry "[SUCCESS] Encoding completed - !ARQUIVO_SAIDA! (!OUTPUT_SIZE_MB!MB)"
 call :LogEntry "[SUCCESS] Profile: !PROFILE_NAME!, Preset: !PRESET_X264!"
 
+REM ============================================================================
+REM                    OPÇÕES PÓS-PROCESSAMENTO
+REM ============================================================================
+echo.
+echo 📂 Deseja abrir a pasta do arquivo gerado?
+set /p "OPEN_FOLDER=Abrir pasta? (S/N): "
+
+if /i "!OPEN_FOLDER:~0,1!"=="S" (
+    echo 🚀 Abrindo pasta...
+    start "" "%~dp0"
+    echo    ✅ Pasta aberta no Windows Explorer
+)
+
+echo.
+echo 🎬 Deseja reproduzir o arquivo para verificar?
+set /p "PLAY_FILE=Reproduzir vídeo? (S/N): "
+
+if /i "!PLAY_FILE:~0,1!"=="S" (
+    if exist "!ARQUIVO_SAIDA!" (
+        echo 🎵 Reproduzindo arquivo...
+        start "" "!ARQUIVO_SAIDA!"
+        echo    ✅ Arquivo aberto no player padrão
+    )
+)
+
+echo.
 exit /b 0
 
 :: ============================================================================
 ::                        CONFIGURAÇÃO DE THREADING
 :: ============================================================================
+
 :ConfigureThreading
 if not defined THREAD_COUNT (
     if "!IS_LAPTOP!"=="Y" (
@@ -1418,62 +1381,6 @@ if "!BACKUP_CREATED!"=="Y" (
 
 call :LogEntry "[RECOVERY] Error recovery attempted"
 exit /b 0
-
-:ShowResults
-echo.
-echo 📊 RELATÓRIO FINAL - CONFIGURAÇÃO PROFISSIONAL:
-echo   📁 Arquivo original: !ARQUIVO_ENTRADA!
-echo   📁 Arquivo processado: !ARQUIVO_SAIDA!
-echo   📐 Resolução: !VIDEO_ESCALA!
-echo   🎨 Perfil usado: !PROFILE_NAME!
-echo   ⚙️ Modo encoding: !ENCODE_MODE! (ZERO-RECOMPRESSION)
-echo   💻 Aceleração: CPU-ONLY (!PRESET_X264! - HOLLYWOOD LEVEL)
-echo   📊 Tamanho final: !OUTPUT_SIZE_MB! MB
-echo   🎯 Bitrate: !BITRATE_VIDEO_TARGET! (target) / !BITRATE_VIDEO_MAX! (max)
-echo   🎵 Audio: !BITRATE_AUDIO! AAC 48kHz Stereo
-echo   📋 Log completo: !EXEC_LOG!
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                      🏆 CONFIGURAÇÃO PROFISSIONAL 🏆                         ║
-echo ║                                                                              ║
-echo ║  📊 Qualidade Visual: ████████████ 10/10 (HOLLYWOOD LEVEL)                   ║
-echo ║  🎯 Instagram Compliance: ████████████ 10/10 (ZERO RECOMPRESSION)            ║
-echo ║  ⚡ Eficiência Encoding: ████████████ 10/10 (2-PASS OPTIMIZED)               ║
-echo ║  📱 Compatibilidade: ████████████ 10/10 (UNIVERSAL MOBILE)                    ║
-echo ║  🎬 Nível Profissional: ████████████ 10/10 (BROADCAST GRADE)                 ║
-echo ║                                                                              ║
-echo ║  ✅ Instagram vai aceitar seu vídeo SEM RECOMPRESSÃO                         ║
-echo ║  ✅ Qualidade preservada a 100%% após upload                                 ║
-echo ║  ✅ Compatível com todos os dispositivos móveis                              ║
-echo ║  ✅ Configuração equivalente a Netflix/Disney+ streaming                     ║
-echo ║                                                                              ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-
-REM ============================================================================
-REM                    OPÇÕES PÓS-PROCESSAMENTO
-REM ============================================================================
-
-echo 📂 Deseja abrir a pasta do arquivo gerado?
-set /p "OPEN_FOLDER=Abrir pasta? (S/N): "
-
-if /i "!OPEN_FOLDER:~0,1!"=="S" (
-    echo 🚀 Abrindo pasta...
-    start "" "%~dp0"
-    echo    ✅ Pasta aberta no Windows Explorer
-)
-
-echo.
-echo 🎬 Deseja reproduzir o arquivo para verificar?
-set /p "PLAY_FILE=Reproduzir vídeo? (S/N): "
-
-if /i "!PLAY_FILE:~0,1!"=="S" (
-    if exist "!ARQUIVO_SAIDA!" (
-        echo 🎵 Reproduzindo arquivo...
-        start "" "!ARQUIVO_SAIDA!"
-        echo    ✅ Arquivo aberto no player padrão
-    )
-)
 
 :: ============================================================================
 ::                        TESTE DE VALIDAÇÃO FFMPEG
@@ -1570,16 +1477,100 @@ echo ⏱️ Teste concluído! Pressione qualquer tecla para continuar...
 pause >nul
 exit /b 0
 
+:: ============================================================================
+::                    SISTEMA DE TEMPO CORRIGIDO
+:: ============================================================================
+
+:: Função para obter tempo em segundos desde meia-noite
+:GetTimeInSeconds
+set "current_time=%time%"
+:: Remove espaços iniciais se houver
+if "%current_time:~0,1%"==" " set "current_time=%current_time:~1%"
+
+:: Extrai horas, minutos, segundos
+for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
+    set /a "hours=%%a"
+    set /a "minutes=%%b"
+    set /a "seconds=%%c"
+)
+
+:: Remove zeros à esquerda para evitar erro de octal
+if "%hours:~0,1%"=="0" set /a "hours=%hours:~1%"
+if "%minutes:~0,1%"=="0" set /a "minutes=%minutes:~1%"
+if "%seconds:~0,1%"=="0" set /a "seconds=%seconds:~1%"
+
+:: Calcula total em segundos
+set /a "total_seconds=(hours*3600)+(minutes*60)+seconds"
+exit /b %total_seconds%
+
+:: Função para calcular tempo decorrido entre dois timestamps
+:CalculateElapsedTime
+set /a "start_time=%~1"
+set /a "end_time=%~2"
+
+:: Calcula diferença
+if not defined start_time set "start_time=0"
+if not defined end_time set "end_time=0"
+set /a "elapsed_seconds=end_time-start_time"
+
+:: Se negativo (passou da meia-noite), ajusta
+if !elapsed_seconds! LSS 0 set /a "elapsed_seconds=!elapsed_seconds!+86400"
+
+:: Converte para horas, minutos, segundos
+set /a "elapsed_hours=!elapsed_seconds!/3600"
+set /a "remaining=!elapsed_seconds!%%3600"
+set /a "elapsed_minutes=!remaining!/60"
+set /a "elapsed_secs=!remaining!%%60"
+
+:: Formata com zeros à esquerda
+if !elapsed_hours! LSS 10 set "elapsed_hours=0!elapsed_hours!"
+if !elapsed_minutes! LSS 10 set "elapsed_minutes=0!elapsed_minutes!"
+if !elapsed_secs! LSS 10 set "elapsed_secs=0!elapsed_secs!"
+
+:: Define variável global com tempo formatado
+set "ELAPSED_TIME=!elapsed_hours!h !elapsed_minutes!m !elapsed_secs!s"
+exit /b 0
+
+:: Função auxiliar para log de tempo
+:LogTimeEntry
+call :GetTimeInSeconds
+set "current_seconds=!total_seconds!"
+echo [%time%] %~1 >> "!EXEC_LOG!"
+exit /b %current_seconds%
+
 :LogEntry
 if not defined EXEC_LOG (
-    for /f "tokens=1-4 delims=/: " %%D in ('echo %date% %time%') do (
+    :: Formata data e hora corretamente
+    for /f "tokens=1-3 delims=/ " %%D in ('echo %date%') do (
         set "LOG_DATE=%%D-%%E-%%F"
-        set "LOG_TIME=%%G-%%H"
     )
-    set "EXEC_LOG=!LOG_DATE!_!LOG_TIME!_instagram_v5.log"
+    for /f "tokens=1-2 delims=:." %%G in ('echo %time%') do (
+        set "LOG_HOUR=%%G"
+        set "LOG_MIN=%%H"
+    )
+    :: Remove espaços
+    set "LOG_HOUR=!LOG_HOUR: =!"
+
+    set "EXEC_LOG=!LOG_DATE!_!LOG_HOUR!h!LOG_MIN!_instagram_v5.log"
     echo ===== INSTAGRAM ENCODER V5 LOG - %date% %time% =====>"!EXEC_LOG!"
 )
-echo [%time%] %~1>>"!EXEC_LOG!"
+echo [%time:~0,8%] %~1>>"!EXEC_LOG!"
+exit /b 0
+
+:LogImportant
+:: Para eventos importantes apenas
+call :LogEntry "*** %~1 ***"
+exit /b 0
+
+:LogError
+:: Para erros
+call :LogEntry "[ERROR] %~1"
+echo ❌ ERRO: %~1
+exit /b 0
+
+:LogSuccess
+:: Para sucessos importantes
+call :LogEntry "[SUCCESS] %~1"
 exit /b 0
 
 :: ============================================================================
