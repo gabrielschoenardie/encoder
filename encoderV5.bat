@@ -1,6 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul 2>&1
+title Instagram Encoder Framework V5 - Optimized Professional Edition
+chcp 65001 >nul 2>&1 || (
+    echo Aviso: UTF-8 nao suportado, alguns caracteres podem nao aparecer corretamente
+    echo Pressione qualquer tecla para continuar...
+    pause >nul
+)
+
 color 0A
 
 :: ============================================================================
@@ -9,8 +15,6 @@ color 0A
 ::         Instagram Encoder Framework V5 - Optimized Professional Edition
 ::         Version: 5.0 | Author: Gabriel Schoenardie | Date: 2025
 :: ============================================================================
-
-title Instagram Encoder Framework V5 - Optimized Professional Edition
 
 :: Global Variables
 set "SCRIPT_VERSION=5.0"
@@ -21,7 +25,7 @@ set "GLOBAL_START_TIME=0"
 set "TOTAL_ENCODE_TIME=00h 00m 00s"
 
 :: Initialize Logging
-call :LogEntry "===== INSTAGRAM ENCODER V5 OPTIMIZED - INICIO (%date% %time%) ====="
+call :LogEntry "===== INICIO (%date% %time%) ====="
 
 :: Show Professional Header
 call :ShowHeader
@@ -427,7 +431,7 @@ for /f "tokens=2 delims= " %%A in ('findstr /C:"Duration:" "!TEMP_INFO!" 2^>nul'
 :dur_done
 
 :: Resolution - optimized check
-for %%R in (7680x4320 3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080 720x1280 640x480) do (
+for %%R in (3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080 720x1280) do (
     findstr "%%R" "!TEMP_INFO!" >nul 2>&1
     if not errorlevel 1 (
         set "INPUT_RESOLUTION=%%R"
@@ -505,13 +509,6 @@ echo   [3] 🖥️ IGTV/Feed (16:9) - Horizontal Hollywood, 22M bitrate
 echo   [4] ⚡ Speed/Quality (9:16) - Balanced Hollywood, 14M bitrate
 echo   [5] 🎭 Cinema (21:9) - Ultra-wide Hollywood, 30M bitrate
 echo   [6] 🏆 HOLLYWOOD ULTRA (9:16) - Maximum quality, 25M bitrate
-echo.
-echo   ═══════════════════════════════════════════════════════════════════
-echo                        ESPAÇO RESERVADO PARA FUTUROS MODOS:
-echo                        [7] HEVC/H.265 Mode (Em desenvolvimento)
-echo                        [8] VP9 Mode (Em desenvolvimento)
-echo                        [9] AV1 Mode (Em desenvolvimento)
-echo   ═══════════════════════════════════════════════════════════════════
 echo.
 
 :loop_profile_selection
@@ -672,7 +669,7 @@ if errorlevel 1 (
 exit /b 0
 
 :: ============================================================================
-::                        RESERVED SPACE FOR FUTURE ENCODING MODES
+::                      RESERVED SPACE FOR FUTURE ENCODING MODES
 :: ============================================================================
 :: FUTURE: :ExecuteHEVC - H.265/HEVC encoding mode
 :: FUTURE: :ExecuteVP9 - VP9 encoding mode  
@@ -1066,7 +1063,7 @@ if not defined EXEC_LOG (
         set "LOG_MIN=%%H"
     )
     set "LOG_HOUR=!LOG_HOUR: =!"
-    set "EXEC_LOG=!LOG_DATE!_!LOG_HOUR!h!LOG_MIN!_instagram_v5_optimized.log"
+    set "EXEC_LOG=!LOG_DATE!_!LOG_HOUR!h!LOG_MIN!_instagram_v5.log"
     echo ===== INSTAGRAM ENCODER V5 OPTIMIZED LOG - %date% %time% =====>"!EXEC_LOG!"
 )
 echo [%time:~0,8%] %~1>>"!EXEC_LOG!"
