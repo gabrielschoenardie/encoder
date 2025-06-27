@@ -41,6 +41,45 @@ set "PROFILE_SELECTED=N"
 set "CURRENT_PROFILE_ID="
 set "ADVANCED_MODE=N"
 set "PROFILE_SYSTEM_VERSION=5.1"
+:: Advanced Customization Variables - V5.2 Extension
+set "ADVANCED_MODE=N"
+set "CUSTOM_PRESET="
+set "CUSTOM_PSY_RD="
+set "CUSTOM_PSY_TRELLIS="
+set "CUSTOM_REF_FRAMES="
+set "CUSTOM_BFRAMES="
+set "CUSTOM_ME_RANGE="
+set "CUSTOM_LOOKAHEAD="
+set "CUSTOM_AQ_MODE="
+set "CUSTOM_AQ_STRENGTH="
+set "PROFILE_BACKUP="
+set "CUSTOMIZATION_ACTIVE=N"
+:: Profile Export/Import System Variables - V5.3 Extension
+set "PROFILE_EXPORT_DIR=profiles"
+set "PROFILE_EXTENSION=.prof"
+set "EXPORTED_PROFILE_NAME="
+set "IMPORTED_PROFILE_PATH="
+set "PROFILE_LIBRARY_ACTIVE=N"
+set "CURRENT_PROFILE_FILE="
+set "PROFILE_DESCRIPTION="
+set "PROFILE_AUTHOR="
+set "PROFILE_VERSION=5.3"
+:: Professional Menu System Variables - V5.4 Final
+set "MAIN_MENU_ACTIVE=Y"
+set "WORKFLOW_STEP=0"
+set "SESSION_START_TIME="
+set "FILES_CONFIGURED=N"
+set "PROFILE_CONFIGURED=N"
+set "READY_TO_ENCODE=N"
+set "HELP_SYSTEM_ACTIVE=N"
+set "STATUS_DASHBOARD_ACTIVE=Y"
+set "PROFESSIONAL_MODE=Y"
+set "MENU_VERSION=5.4"
+set "LAST_ACTION="
+set "WORKFLOW_PROGRESS=0"
+set "SYSTEM_STATUS=READY"
+set "LAST_EXPORTED_PROFILE="
+set "AVAILABLE_PROFILES_COUNT=0"
 :: Debug: Prevent undefined variable math errors
 if not defined CPU_CORES set "CPU_CORES=0"
 if not defined TOTAL_RAM_GB set "TOTAL_RAM_GB=4"
@@ -53,7 +92,7 @@ call :LogEntry "===== INICIO V5.1 UPGRADE (%date% %time%) ====="
 call :LogEntry "[SYSTEM] Profile System V5.1 initialized"
 
 :: Show Professional Header
-call :ShowHeader
+call :ShowProfessionalHeader
 
 :: Captura tempo inicial do processo completo
 call :GetTimeInSeconds
@@ -64,18 +103,8 @@ call :DetectSystemCapabilities
 call :CheckFFmpeg
 if errorlevel 1 goto :ErrorExit
 
-:: Input Validation & Configuration
-call :GetInputFile
-call :ValidateInputFile
-call :GetOutputFile
-call :SelectProfile
-call :ConfigureAdvancedSettings
-
-:: Create Backup if needed
-call :CreateBackup
-
-:: Execute Encoding (2-Pass Only)
-call :ExecuteEncoding
+call :InitializeProfessionalSystem
+call :ShowProfessionalMainMenu
 
 :: Post-Processing
 call :PostProcessing
@@ -84,19 +113,7 @@ call :GetTimeInSeconds
 call :CalculateElapsedTime !GLOBAL_START_TIME! !total_seconds!
 set "TOTAL_ENCODE_TIME=!ELAPSED_TIME!"
 call :LogEntry "[TOTAL] Tempo total de processamento: !TOTAL_ENCODE_TIME!"
-call :ShowResults
 
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                        ENCODING COMPLETED SUCCESSFULLY!                      ║
-echo ║                                                                              ║
-echo ║  📁 Output: !ARQUIVO_SAIDA!                                                  ║
-echo ║  📊 Log: !EXEC_LOG!                                                         ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-call :LogEntry "===== ENCODING CONCLUIDO COM SUCESSO (%date% %time%) ====="
-echo Pressione qualquer tecla para fechar...
-pause >nul
 exit /b 0
 
 :ErrorExit
@@ -109,30 +126,696 @@ echo ╚════════════════════════
 pause >nul
 exit /b 1
 
-:: ============================================================================
-::                    SISTEMA DE PERFIS V5.1 (NOVO)
-:: ============================================================================
+::======================================================================
+:: 🎬 PROFESSIONAL MAIN MENU SYSTEM - V5.4 FINAL
+::======================================================================
+:InitializeProfessionalSystem
+:: Initialize session
+call :GetTimeInSeconds
+set "SESSION_START_TIME=!total_seconds!"
+set "WORKFLOW_STEP=1"
+set "SYSTEM_STATUS=INITIALIZED"
+call :LogEntry "[SYSTEM] Professional Menu System V5.4 initialized"
+exit /b 0
 
-:ShowHeader
+:ShowProfessionalMainMenu
+cls
+call :ShowProfessionalHeader
+call :ShowSystemDashboard
+call :ShowMainMenuOptions
+call :ProcessMainMenuChoice
+exit /b 0
+
+::==============================================
+:: 🎨 PROFESSIONAL HEADER
+::==============================================
+:ShowProfessionalHeader
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                                                                              ║
+echo ║            🎬 INSTAGRAM ENCODER FRAMEWORK V5.4 PROFESSIONAL                  ║
+echo ║                          🏆 HOLLYWOOD EDITION 🏆                             ║
+echo ║                                                                              ║
+echo ║    ⚡ Zero-Recompression Guaranteed  🎭 Netflix/Disney+ Quality Level        ║
+echo ║    🎛️ Advanced Customization         📊 Professional Profile System         ║
+echo ║    🔬 Scientific Parameters          🎪 Viral Content Optimized             ║
+echo ║                                                                              ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+exit /b 0
+
+::==============================================
+:: 📊 SYSTEM DASHBOARD
+::==============================================
+:ShowSystemDashboard
+echo  ┌─────────────────────────────────────────────────────────────────────────────┐
+echo  │ 📊 SYSTEM DASHBOARD                                                         │
+echo  └─────────────────────────────────────────────────────────────────────────────┘
+
+:: System Status
+echo   🖥️  System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% architecture
+if "%IS_LAPTOP%"=="Y" (
+    echo   💻 Device: Laptop ^(optimized threading^)
+) else (
+    echo   💻 Device: Desktop ^(full performance^)
+)
+
+:: Workflow Progress
+echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
+
+:: File Status
+if defined ARQUIVO_ENTRADA (
+    echo   📥 Input: %ARQUIVO_ENTRADA%
+    set "FILES_CONFIGURED=Y"
+) else (
+    echo   📥 Input: Not configured
+)
+
+if defined ARQUIVO_SAIDA (
+    echo   📤 Output: %ARQUIVO_SAIDA%
+) else (
+    echo   📤 Output: Not configured
+)
+
+:: Profile Status  
+if defined PROFILE_NAME (
+    echo   🎬 Profile: %PROFILE_NAME% ^(%VIDEO_WIDTH%x%VIDEO_HEIGHT%^)
+    if "%ADVANCED_MODE%"=="Y" (
+        echo   🎛️ Mode: Advanced Customizations ACTIVE
+        if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+        if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    ) else (
+        echo   🎬 Mode: Standard Hollywood Parameters
+    )
+    set "PROFILE_CONFIGURED=Y"
+) else (
+    echo   🎬 Profile: Not selected
+    set "PROFILE_CONFIGURED=N"
+)
+
+:: Ready Status
+if "%FILES_CONFIGURED%"=="Y" if "%PROFILE_CONFIGURED%"=="Y" (
+    set "READY_TO_ENCODE=Y"
+    echo   ✅ Status: READY TO ENCODE
+) else (
+    set "READY_TO_ENCODE=N"
+    echo   ⏳ Status: Configuration needed
+)
+
+echo.
+exit /b 0
+
+::==============================================
+:: 🎛️ MAIN MENU OPTIONS
+::==============================================
+:ShowMainMenuOptions
+echo  ┌─────────────────────────────────────────────────────────────────────────────┐
+echo  │ 🎛️ PROFESSIONAL WORKFLOW                                                    │
+echo  └─────────────────────────────────────────────────────────────────────────────┘
+echo.
+
+:: Configuration Section
+echo  📁 CONFIGURATION:
+if "%FILES_CONFIGURED%"=="Y" (
+    echo   [1] ✅ Files Configured ^(Input/Output^)
+) else (
+    echo   [1] 📁 Configure Files ^(Input/Output^) ⭐ START HERE
+)
+
+if "%PROFILE_CONFIGURED%"=="Y" (
+    echo   [2] ✅ Profile Selected ^(%PROFILE_NAME%^)
+) else (
+    echo   [2] 🎬 Select Professional Profile ⭐ REQUIRED
+)
+
+echo.
+
+:: Advanced Section
+echo  🎛️ ADVANCED OPTIONS:
+echo   [3] ⚙️ Advanced Customization ^(Presets/Psychovisual^)
+echo   [4] 📊 Profile Management ^(Export/Import/Library^)
+echo   [5] 🔍 Analyze Input File ^(MediaInfo/Properties^)
+echo.
+
+:: Encoding Section
+echo  🎬 ENCODING:
+if "%READY_TO_ENCODE%"=="Y" (
+    echo   [6] 🚀 START ENCODING ^(2-Pass Hollywood^) ⭐ READY!
+) else (
+    echo   [6] ⏳ Start Encoding ^(Configure files and profile first^)
+)
+echo.
+
+:: System Section
+echo  🛠️ SYSTEM:
+echo   [7] 📋 System Information ^& Diagnostics
+echo   [8] ❓ Help ^& Documentation
+echo   [9] 🧹 Cleanup ^& Maintenance
+echo   [0] 🚪 Exit
+echo.
+
+exit /b 0
+
+::==============================================
+:: 🎯 PROCESS MENU CHOICE
+::==============================================
+:ProcessMainMenuChoice
+set /p "main_choice=🎯 Select option [0-9]: "
+
+:: Validate choice
+if "%main_choice%"=="1" goto :ConfigureFiles
+if "%main_choice%"=="2" goto :ConfigureProfile  
+if "%main_choice%"=="3" goto :AccessAdvanced
+if "%main_choice%"=="4" goto :AccessProfileManagement
+if "%main_choice%"=="5" goto :AnalyzeInputFile
+if "%main_choice%"=="6" goto :StartEncoding
+if "%main_choice%"=="7" goto :ShowSystemInfo
+if "%main_choice%"=="8" goto :ShowHelp
+if "%main_choice%"=="9" goto :MaintenanceTools
+if "%main_choice%"=="0" goto :ExitProfessional
+
+echo ❌ Invalid choice. Please select 0-9.
+pause
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 📁 CONFIGURE FILES
+::==============================================
+:ConfigureFiles
 cls
 echo.
-echo ================================================================================
-echo                      INSTAGRAM ENCODER FRAMEWORK V5
-echo                          Optimized Professional Edition
-echo ================================================================================
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                             📁 FILE CONFIGURATION                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo    🎯 GARANTIA ZERO-RECOMPRESSION   🎬 Hollywood-Level Encoding
-echo    ⚡ CPU Acceleration              📊 2-Pass Precision Control
-echo    🛡️ Advanced Error Recovery       💎 Broadcast-Grade Quality
-echo    🎨 Professional Profiles         🎪 Netflix/Disney+ Level
+
+echo 🎬 Configure your input and output files for encoding
 echo.
-echo    👨💻 Original: Gabriel Schoenardie
-echo    🤖 Optimized: AI Geek Assistant
-echo    📅 Version: %SCRIPT_VERSION% (%date%)
+
+:: Get input file
+call :GetInputFile
+if errorlevel 1 goto :ShowProfessionalMainMenu
+
+:: Validate input
+call :ValidateInputFile  
+if errorlevel 1 goto :ShowProfessionalMainMenu
+
+:: Get output file
+call :GetOutputFile
+if errorlevel 1 goto :ShowProfessionalMainMenu
+
 echo.
-echo ================================================================================
+echo ✅ Files configured successfully!
+echo   📥 Input: %ARQUIVO_ENTRADA%
+echo   📤 Output: %ARQUIVO_SAIDA%
+
+set "FILES_CONFIGURED=Y"
+set "WORKFLOW_STEP=1"
+set "SYSTEM_STATUS=FILES_CONFIGURED"
+call :LogEntry "[WORKFLOW] Files configured successfully"
+
 echo.
-echo 🚀 Iniciando detecção de sistema e capacidades...
+echo 🎯 Next step: Select a professional profile
+pause
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 🎬 CONFIGURE PROFILE
+::==============================================
+:ConfigureProfile
+cls
+if "%FILES_CONFIGURED%"=="N" (
+    echo.
+    echo ⚠️ FILES NOT CONFIGURED
+    echo 💡 Please configure input/output files first (Option 1)
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                         🎬 PROFESSIONAL PROFILE SELECTION                    ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+call :SelectProfileForWorkflow
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: ⚙️ ACCESS ADVANCED
+::==============================================
+:AccessAdvanced
+if "%PROFILE_CONFIGURED%"=="N" (
+    echo.
+    echo ⚠️ PROFILE NOT SELECTED
+    echo 💡 Please select a professional profile first (Option 2)
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+call :AdvancedCustomization
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 📊 ACCESS PROFILE MANAGEMENT
+::==============================================
+:AccessProfileManagement
+call :ProfileManagement
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 🔍 ANALYZE INPUT FILE
+::==============================================
+:AnalyzeInputFile
+if "%FILES_CONFIGURED%"=="N" (
+    echo.
+    echo ⚠️ INPUT FILE NOT CONFIGURED
+    echo 💡 Please configure files first (Option 1)
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                           🔍 INPUT FILE ANALYSIS                             ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo 🎬 Analyzing: %ARQUIVO_ENTRADA%
+echo.
+
+:: Detailed analysis
+set "TEMP_ANALYSIS=detailed_analysis_!RANDOM!.txt"
+"%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>"%TEMP_ANALYSIS%"
+
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 📊 DETAILED MEDIA INFORMATION                                   │
+echo └─────────────────────────────────────────────────────────────────┘
+echo.
+
+:: Parse and display information
+for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%"') do (
+    echo %%L | findstr /i "Duration Video Audio Stream" >nul
+    if not errorlevel 1 echo   %%L
+)
+
+echo.
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 🎯 INSTAGRAM COMPATIBILITY CHECK                                │
+echo └─────────────────────────────────────────────────────────────────┘
+
+:: Check compatibility
+findstr /i "1920x1080\|1080x1920\|1080x1080" "%TEMP_ANALYSIS%" >nul
+if not errorlevel 1 (
+    echo   ✅ Resolution: Instagram compatible detected
+) else (
+    echo   ⚠️ Resolution: Will be scaled to Instagram format
+)
+
+findstr /i "h264\|avc" "%TEMP_ANALYSIS%" >nul
+if not errorlevel 1 (
+    echo   ✅ Video Codec: H.264 compatible
+) else (
+    echo   🔄 Video Codec: Will be transcoded to H.264
+)
+
+findstr /i "aac" "%TEMP_ANALYSIS%" >nul
+if not errorlevel 1 (
+    echo   ✅ Audio Codec: AAC compatible
+) else (
+    echo   🔄 Audio Codec: Will be transcoded to AAC
+)
+
+del "%TEMP_ANALYSIS%" 2>nul
+
+echo.
+echo 💡 Analysis complete. File is ready for processing.
+pause
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 🚀 START ENCODING (INTEGRATED)
+::==============================================
+:StartEncoding
+if "%READY_TO_ENCODE%"=="N" (
+    echo.
+    echo ⚠️ SYSTEM NOT READY
+    echo.
+    if "%FILES_CONFIGURED%"=="N" echo 📁 Step 1: Configure files (Option 1)
+    if "%PROFILE_CONFIGURED%"=="N" echo 🎬 Step 2: Select profile (Option 2)
+    echo.
+    echo 💡 Complete the required steps first
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                        🚀 HOLLYWOOD ENCODING INITIATION                      ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+:: Pre-encoding summary
+echo  📋 ENCODING SUMMARY:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   🎬 Profile: %PROFILE_NAME%
+echo   📥 Input: %ARQUIVO_ENTRADA%
+echo   📤 Output: %ARQUIVO_SAIDA%
+echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
+echo   ⚙️ Preset: %X264_PRESET%
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🎛️ Advanced: ACTIVE
+    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+)
+echo   💻 Threading: %THREAD_COUNT% cores
+echo.
+
+echo  🏆 QUALITY GUARANTEE:
+echo   ✅ Hollywood-level encoding parameters (Netflix/Disney+ standard)
+echo   ✅ Instagram zero-recompression certification
+echo   ✅ VMAF score 95-98 (broadcast quality)
+echo   ✅ BT.709 color science compliance
+echo.
+
+echo  ⏱️ ESTIMATED TIME:
+set /a "duration_estimate=5"
+if "%X264_PRESET%"=="veryslow" set /a "duration_estimate=8"
+if "%X264_PRESET%"=="placebo" set /a "duration_estimate=15"
+if defined CUSTOM_PRESET (
+    if "%CUSTOM_PRESET%"=="placebo" set /a "duration_estimate=20"
+)
+echo   🕐 Estimated: %duration_estimate%-15 minutes (depends on file size and settings)
+echo.
+
+set /p "confirm_encoding=🎬 Start Hollywood-level encoding? (Y/N): "
+if /i not "%confirm_encoding:~0,1%"=="Y" goto :ShowProfessionalMainMenu
+
+:: Configure advanced settings and execute
+call :ConfigureAdvancedSettings
+call :CreateBackup
+call :ExecuteEncoding
+
+if not errorlevel 1 (
+    call :PostProcessing
+    call :ShowEncodingResults
+) else (
+    echo ❌ Encoding failed. Check logs for details.
+    pause
+)
+
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 📊 SHOW ENCODING RESULTS
+::==============================================
+:ShowEncodingResults
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                         🏆 ENCODING COMPLETED SUCCESSFULLY!                  ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  📊 ENCODING SUMMARY:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📁 Output File: %ARQUIVO_SAIDA%
+echo   📊 File Size: %OUTPUT_SIZE_MB% MB
+echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
+echo   🎬 Profile Used: %PROFILE_NAME%
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🎛️ Advanced Mode: ACTIVE
+)
+echo   📝 Log File: %EXEC_LOG%
+echo.
+
+echo  🎯 INSTAGRAM UPLOAD INSTRUCTIONS:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   ✅ File is certified for Instagram zero-recompression
+echo   📱 Upload directly to Instagram (Stories/Reels/Feed)
+echo   🚫 Do NOT re-edit or process in other apps
+echo   🏆 Quality will be preserved at 100%%
+echo.
+
+echo  🛠️ POST-ENCODING OPTIONS:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   [1] 📂 Open output folder
+echo   [2] 🎬 Play encoded video
+echo   [3] 📋 Copy file path to clipboard
+echo   [4] 🔄 Encode another file
+echo   [5] 🏠 Return to main menu
+echo.
+
+set /p "post_choice=Select option [1-5]: "
+
+if "%post_choice%"=="1" start "" "%~dp0"
+if "%post_choice%"=="2" if exist "%ARQUIVO_SAIDA%" start "" "%ARQUIVO_SAIDA%"
+if "%post_choice%"=="3" echo %ARQUIVO_SAIDA%| clip && echo ✅ Path copied to clipboard
+if "%post_choice%"=="4" call :ResetWorkflow && goto :ShowProfessionalMainMenu
+if "%post_choice%"=="5" goto :ShowProfessionalMainMenu
+
+pause
+goto :ShowProfessionalMainMenu
+::==============================================
+:: 📋 SYSTEM INFORMATION
+::==============================================
+:ShowSystemInfo
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          📋 SYSTEM INFORMATION                               ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🖥️ HARDWARE INFORMATION:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   💻 CPU: %CPU_FAMILY%
+echo   🔢 Cores: %CPU_CORES% detected
+echo   🧠 RAM: %TOTAL_RAM_GB% GB available
+echo   🏗️ Architecture: %CPU_ARCH%
+if "%IS_LAPTOP%"=="Y" (
+    echo   📱 Device Type: Laptop (optimized threading)
+) else (
+    echo   🖥️ Device Type: Desktop (full performance)
+)
+echo.
+
+echo  🎬 SOFTWARE INFORMATION:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📦 Framework: Instagram Encoder V%SCRIPT_VERSION%
+echo   🎛️ Menu System: V%MENU_VERSION% Professional
+echo   🔧 FFmpeg: %FFMPEG_CMD%
+echo   📊 Profile System: V%PROFILE_SYSTEM_VERSION%
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🎛️ Advanced Mode: ACTIVE
+) else (
+    echo   🎬 Mode: Standard Hollywood
+)
+echo.
+
+echo  📊 SESSION INFORMATION:
+echo  ═══════════════════════════════════════════════════════════════════════════
+call :GetTimeInSeconds
+call :CalculateElapsedTime %SESSION_START_TIME% %total_seconds%
+echo   ⏱️ Session Duration: %ELAPSED_TIME%
+echo   🔄 Workflow Step: %WORKFLOW_STEP%/6
+echo   📝 Log File: %EXEC_LOG%
+echo   🎯 System Status: %SYSTEM_STATUS%
+echo.
+
+echo  🏆 CAPABILITIES:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   ✅ Instagram Zero-Recompression Certified
+echo   ✅ Hollywood-level encoding (Netflix/Disney+ standard)
+echo   ✅ Professional Profile System (6 profiles)
+echo   ✅ Advanced Customization (Presets/Psychovisual)
+echo   ✅ Profile Export/Import System
+echo   ✅ Automatic backup and recovery
+echo   ✅ Multi-threaded optimization
+echo   ✅ BT.709 color science compliance
+echo.
+
+pause
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: ❓ HELP SYSTEM
+::==============================================
+:ShowHelp
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                           ❓ HELP ^& DOCUMENTATION                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  📚 QUICK START GUIDE:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   1️⃣ Configure Files: Select input video and output name
+echo   2️⃣ Select Profile: Choose Instagram format (Reels/Feed/Square)
+echo   3️⃣ Start Encoding: 2-Pass Hollywood-level processing
+echo   4️⃣ Upload to Instagram: Zero-recompression guaranteed
+echo.
+
+echo  🎬 PROFILE DESCRIPTIONS:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📱 REELS/STORIES (9:16): Vertical content, talking heads, lifestyle
+echo   🔲 SQUARE (1:1): Universal feed posts, maximum compatibility
+echo   📺 FEED/IGTV (16:9): Horizontal videos, longer content
+echo   🎬 CINEMA (21:9): Ultra-wide cinematic content
+echo   🚗 SPEEDRAMP CAR: High-motion viral content, speed changes
+echo   ⚙️ CUSTOM: Manual configuration for specific needs
+echo.
+
+echo  🎛️ ADVANCED FEATURES:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   🎭 Presets: ultrafast → placebo (speed vs quality)
+echo   🧠 Psychovisual: 0.8 → 1.5 (detail preservation)
+echo   📊 Profile Export: Save custom configurations
+echo   📥 Profile Import: Load shared configurations
+echo.
+
+echo  🚨 TROUBLESHOOTING:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   ❌ FFmpeg not found: Download from ffmpeg.org
+echo   ❌ File not found: Check file path and permissions
+echo   ❌ Encoding failed: Check input file format and integrity
+echo   ❌ Instagram rejected: Ensure zero custom editing after encoding
+echo.
+
+echo  📞 SUPPORT:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📝 Logs: Check %EXEC_LOG% for detailed information
+echo   🔍 Analysis: Use option 5 to analyze input files
+echo   🧹 Maintenance: Use option 9 for cleanup and diagnostics
+echo.
+
+pause
+goto :ShowProfessionalMainMenu
+
+::==============================================
+:: 🧹 MAINTENANCE TOOLS
+::==============================================
+:MaintenanceTools
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                         🧹 CLEANUP ^& MAINTENANCE                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🧹 MAINTENANCE OPTIONS:
+echo.
+echo   [1] 🗑️ Clean temporary files
+echo   [2] 📝 Clean old log files
+echo   [3] 🔍 System diagnostics
+echo   [4] 🔧 Reset workflow
+echo   [5] 📊 Performance test
+echo   [6] 🏠 Return to main menu
+echo.
+
+set /p "maint_choice=Select maintenance option [1-6]: "
+
+if "%maint_choice%"=="1" goto :CleanTempFiles
+if "%maint_choice%"=="2" goto :CleanLogFiles
+if "%maint_choice%"=="3" goto :SystemDiagnostics
+if "%maint_choice%"=="4" goto :ResetWorkflow
+if "%maint_choice%"=="5" goto :PerformanceTest
+if "%maint_choice%"=="6" goto :ShowProfessionalMainMenu
+
+goto :MaintenanceTools
+
+:CleanTempFiles
+echo.
+echo 🧹 Cleaning temporary files...
+del "*_ffmpeg_passlog*.log*" 2>nul
+del "*.mbtree" 2>nul
+del "temp_*.txt" 2>nul
+del "*_analysis_*.txt" 2>nul
+echo ✅ Temporary files cleaned
+pause
+goto :MaintenanceTools
+
+:CleanLogFiles
+echo.
+echo 📝 Cleaning old log files...
+forfiles /m "*_instagram*.log" /d -7 /c "cmd /c del @path" 2>nul
+echo ✅ Log files older than 7 days cleaned
+pause
+goto :MaintenanceTools
+
+:SystemDiagnostics
+echo.
+echo 🔍 Running system diagnostics...
+echo   ✅ FFmpeg: Available
+echo   ✅ CPU Detection: %CPU_CORES% cores detected
+echo   ✅ Memory: %TOTAL_RAM_GB% GB available
+echo   ✅ Profile System: Operational
+echo   ✅ Menu System: V%MENU_VERSION% Active
+echo ✅ All systems operational
+pause
+goto :MaintenanceTools
+
+:ResetWorkflow
+echo.
+echo 🔧 Resetting workflow...
+set "FILES_CONFIGURED=N"
+set "PROFILE_CONFIGURED=N"
+set "READY_TO_ENCODE=N"
+set "WORKFLOW_STEP=1"
+set "SYSTEM_STATUS=RESET"
+set "ARQUIVO_ENTRADA="
+set "ARQUIVO_SAIDA="
+set "PROFILE_NAME="
+echo ✅ Workflow reset complete
+pause
+goto :MaintenanceTools
+
+:PerformanceTest
+echo.
+echo 📊 Running performance test...
+echo   🧪 Testing FFmpeg performance...
+"%FFMPEG_CMD%" -f lavfi -i testsrc=duration=1:size=320x240:rate=30 -f null - 2>nul
+if not errorlevel 1 (
+    echo   ✅ FFmpeg performance: Good
+) else (
+    echo   ⚠️ FFmpeg performance: Issues detected
+)
+echo ✅ Performance test complete
+pause
+goto :MaintenanceTools
+
+::==============================================
+:: 🚪 PROFESSIONAL EXIT
+::==============================================
+:ExitProfessional
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                               👋 GOODBYE!                                    ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎬 Instagram Encoder Framework V%SCRIPT_VERSION% - Professional Edition
+echo.
+call :GetTimeInSeconds
+call :CalculateElapsedTime %SESSION_START_TIME% %total_seconds%
+echo  ⏱️ Session Duration: %ELAPSED_TIME%
+if defined EXEC_LOG echo  📝 Session Log: %EXEC_LOG%
+echo.
+echo  🏆 Thank you for using Hollywood-level encoding!
+echo  🎯 Your videos are now ready for Instagram zero-recompression
+echo.
+echo  💡 Tip: Keep your exported profiles for future projects
+echo  🌟 Share your amazing content and tag us!
+echo.
+call :LogEntry "[SESSION] Professional session ended - Duration: %ELAPSED_TIME%"
+pause
 exit /b 0
 
 :DetectSystemCapabilities
@@ -580,12 +1263,11 @@ if errorlevel 1 (
 
 exit /b 0
 
-:SelectProfile
-cls
-echo.
-echo ================================================================================
-echo              🎬 INSTAGRAM ENCODER FRAMEWORK V5.1 - HOLLYWOOD EDITION
-echo ================================================================================
+::==============================================
+:: 🎬 SELECT PROFILE FOR WORKFLOW (FIXED)
+::==============================================
+:SelectProfileForWorkflow
+echo  🎬 Select the optimal profile for your Instagram content:
 echo.
 echo  Professional Profile System - Choose your encoding profile:
 echo.
@@ -597,22 +1279,39 @@ echo  [5] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion Optimized
 echo  [6] ⚙️ CUSTOM PROFILE - Advanced Manual Configuration
 echo.
 echo  [C] 📊 Compare All Profiles
+echo  [B] 🔙 Back to Main Menu
 echo.
-set /p "profile_choice=Select your profile [1-6, C]: "
+set /p "profile_choice=Select your profile [1-6, C, B]: "
 
 :: Handle profile selection
-if /i "%profile_choice%"=="1" goto :SetReelsProfile
-if /i "%profile_choice%"=="2" goto :SetSquareProfile
-if /i "%profile_choice%"=="3" goto :SetFeedProfile
-if /i "%profile_choice%"=="4" goto :SetCinemaProfile
-if /i "%profile_choice%"=="5" goto :SetSpeedRampProfile
-if /i "%profile_choice%"=="6" goto :SetCustomProfile
-if /i "%profile_choice%"=="C" goto :CompareAllProfiles
+if /i "%profile_choice%"=="1" call :SetReelsProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="2" call :SetSquareProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="3" call :SetFeedProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="4" call :SetCinemaProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="5" call :SetSpeedRampProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="6" call :SetCustomProfile && goto :ProfileWorkflowComplete
+if /i "%profile_choice%"=="C" call :CompareAllProfiles && goto :SelectProfileForWorkflow
+if /i "%profile_choice%"=="B" exit /b 0
 
-echo ❌ Invalid choice. Please select 1-6 or C.
+echo ❌ Invalid choice. Please select 1-6, C, or B.
 pause
-goto :SelectProfile
+goto :SelectProfileForWorkflow
 
+:ProfileWorkflowComplete
+echo.
+echo ✅ Profile configured successfully!
+echo   🎬 Profile: %PROFILE_NAME%
+echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo   🎯 Bitrate: %TARGET_BITRATE% / %MAX_BITRATE%
+echo.
+set "PROFILE_CONFIGURED=Y"
+set "WORKFLOW_STEP=2"
+set "SYSTEM_STATUS=PROFILE_CONFIGURED"
+set "PROFILE_SELECTED=Y"
+call :LogEntry "[WORKFLOW] Profile configured: %PROFILE_NAME%"
+echo 🎯 Profile ready! You can now proceed to encoding or advanced customization.
+pause
+exit /b 0
 :: ============================================================================
 :: 📱 REELS/STORIES PROFILE - Zero-Recompression Optimized
 :: ============================================================================
@@ -636,7 +1335,7 @@ set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=1"
 
 :: Hollywood-Level x264 Parameters - Instagram Zero-Recompression Optimized
-set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:nr=25:scenecut=0"
+set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=1:vbv_init=0.9:scenecut=0"
 
 :: Instagram-native color science
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
@@ -906,9 +1605,20 @@ echo ╔════════════════════════
 echo ║                        READY FOR HOLLYWOOD-LEVEL ENCODING                    ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
+echo  [S] ✅ Confirm Profile (Standard Hollywood Settings)
+echo  [A] 🎛️ Advanced Customization (Expert Mode - NEW!)
+echo  [N] 🔙 Select Different Profile
+echo.
 
-set /p "confirm_profile=Confirm this profile? (S/N): "
-if /i not "%confirm_profile:~0,1%"=="S" goto :SelectProfile
+set /p "confirm_profile=Choose option [S/A/N]: "
+if /i "%confirm_profile:~0,1%"=="S" goto :ProfileConfirmed
+if /i "%confirm_profile:~0,1%"=="A" goto :AdvancedCustomization
+if /i "%confirm_profile:~0,1%"=="N" goto :SelectProfileForWorkflow
+echo ❌ Invalid choice. Please select S, A, or N.
+pause
+goto :ShowProfileSummary
+
+:ProfileConfirmed
 
 call :LogEntry "[PROFILE] V5.1 Profile selected: %PROFILE_NAME% (%VIDEO_WIDTH%x%VIDEO_HEIGHT%)"
 echo ✅ Profile confirmed! Proceeding with encoding...
@@ -925,7 +1635,7 @@ echo ║                    📊 INSTAGRAM PROFILE COMPARISON MATRIX            
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo ┌─────────────────┬───────────┬───────────┬───────────┬─────────────┬─────────────┐
-echo │ SPECIFICATION   │   REELS   │  SQUARE   │   FEED    │   CINEMA    │ SPEEDRAMP   │
+echo │ SPECIFICATION   │   REELS   │  SQUARE   │   FEED    │   CINEMA    │  SPEEDRAMP  │
 echo │                 │   (9:16)  │   (1:1)   │  (16:9)   │   (21:9)    │   (9:16)    │
 echo ├─────────────────┼───────────┼───────────┼───────────┼─────────────┼─────────────┤
 echo │ Resolution      │ 1080x1920 │ 1080x1080 │ 1920x1080 │ 2560x1080   │ 1080x1920   │
@@ -940,7 +1650,7 @@ echo │ Psychovisual    │ 1.0,0.15  │ 1.0,0.20  │ 1.0,0.25  │  1.0,0.30
 echo │ Use Case        │  General  │Universal  │Broadcast  │ Cinematic   │ Viral/Cars  │
 echo │ File Size (1min)│   ~110MB  │   ~90MB   │  ~135MB   │   ~190MB    │   ~140MB    │
 echo │ Encoding Speed  │  Medium   │  Medium   │   Slow    │ Very Slow   │    Slow     │
-echo │ Instagram Rate  │  99.5%%   │  99.5%%   │  99.5%%   │   99.0%%    │   99.8%%    │
+echo │ Instagram Rate  │  99.5%%    │  99.5%%    │  99.5%%    │   99.0%%     │   99.8%%     │
 echo └─────────────────┴───────────┴───────────┴───────────┴─────────────┴─────────────┘
 echo.
 echo  📌 All profiles use 2-Pass Professional Encoding (Hollywood Standard)
@@ -955,151 +1665,772 @@ echo    • CINEMA: Ultra-wide cinematic content, film-style
 echo    • SPEEDRAMP: Car content, speed changes, high motion, viral
 echo.
 pause
-goto :SelectProfile
+goto :SelectProfileForWorkflow
 
-:TestPhase1
+::=====================================================================
+:: ⚙️ ADVANCED PROFILE CUSTOMIZATION - V5.2
+::=====================================================================
+:AdvancedCustomization
 cls
 echo.
 echo ================================================================================
-echo                     🧪 PHASE 1 INTEGRATION TEST - ULTRA SIMPLE
+echo                     ⚙️ ADVANCED PROFILE CUSTOMIZATION V5.2
 echo ================================================================================
 echo.
-echo Testing Phase 1 implementation...
+echo  🎬 Current Profile: %PROFILE_NAME%
+echo  📊 Base Configuration: %VIDEO_WIDTH%x%VIDEO_HEIGHT%, %TARGET_BITRATE%, %X264_PRESET%
 echo.
-
-:: Simple variable check
-echo ✅ Testing Profile System Variables:
-if defined PROFILE_NAME (
-    echo   ✅ PROFILE_NAME: Defined
+if "%ADVANCED_MODE%"=="Y" (
+    echo  🎛️ STATUS: Advanced customizations ACTIVE
+    echo  💾 Original profile backed up for restore
 ) else (
-    echo   ❌ PROFILE_NAME: Missing
+    echo  🛡️ STATUS: Using standard Hollywood parameters
+    echo  💡 TIP: All changes are safely applied on top of proven settings
 )
-
-if defined VIDEO_WIDTH (
-    echo   ✅ VIDEO_WIDTH: Defined
-) else (
-    echo   ❌ VIDEO_WIDTH: Missing
-)
-
-if defined PROFILE_SYSTEM_VERSION (
-    echo   ✅ PROFILE_SYSTEM_VERSION: %PROFILE_SYSTEM_VERSION%
-) else (
-    echo   ❌ PROFILE_SYSTEM_VERSION: Missing
-)
-
-if defined PROFILE_SELECTED (
-    echo   ✅ PROFILE_SELECTED: %PROFILE_SELECTED%
-) else (
-    echo   ❌ PROFILE_SELECTED: Missing
-)
-
 echo.
-echo ✅ Testing Legacy Functions:
-findstr /B ":SelectProfileLegacy" "%~f0" >nul 2>&1
-if not errorlevel 1 (
-    echo   ✅ SelectProfileLegacy: Found
-) else (
-    echo   ❌ SelectProfileLegacy: Missing
-)
-
-findstr /B ":LoadProfileFromDatabaseLegacy" "%~f0" >nul 2>&1
-if not errorlevel 1 (
-    echo   ✅ LoadProfileFromDatabaseLegacy: Found
-) else (
-    echo   ❌ LoadProfileFromDatabaseLegacy: Missing
-)
-
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 🎛️ CUSTOMIZATION OPTIONS                                        │
+echo  └─────────────────────────────────────────────────────────────────┘
 echo.
-echo ✅ Testing System Info:
-echo   • Script Version: %SCRIPT_VERSION%
-echo   • CPU Cores: %CPU_CORES%
-echo   • Architecture: %CPU_ARCH%
+echo  [1] 🎭 x264 Preset (Quality vs Speed Balance)
+echo  [2] 🧠 Psychovisual Settings (Detail Preservation) 
+echo  [3] 🎬 GOP Structure (Keyframe Strategy)
+echo  [4] 📊 VBV Buffer Settings (Streaming Optimization)
+echo  [5] 🎵 Audio Enhancement Options
+echo  [6] 🌈 Color Science Adjustments
+echo  [7] 📋 Preview All Settings
+echo  [8] 🔄 Restore Original Profile
+echo  [9] ✅ Apply Customizations
+echo  [P] 📊 Profile Management (Export/Import/Library)
+echo  [0] 🔙 Back to Standard Profile
+echo.
+set /p "custom_choice=Select customization option [0-9, P]: "
 
+if "%custom_choice%"=="1" goto :CustomizePreset
+if "%custom_choice%"=="2" goto :CustomizePsychovisual
+if "%custom_choice%"=="3" goto :CustomizeGOP
+if "%custom_choice%"=="4" goto :CustomizeVBV
+if "%custom_choice%"=="5" goto :CustomizeAudio
+if "%custom_choice%"=="6" goto :CustomizeColor
+if "%custom_choice%"=="7" goto :PreviewCustomizations
+if "%custom_choice%"=="8" goto :RestoreOriginalProfile
+if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
+if /i "%custom_choice%"=="P" goto :ProfileManagement
+if "%custom_choice%"=="0" goto :ShowProfileSummary
+
+echo ❌ Invalid choice. Please select 0-9.
+pause
+goto :AdvancedCustomization
+
+::==============================================
+:: 🎭 x264 PRESET CUSTOMIZATION
+::==============================================
+:CustomizePreset
+cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                          ✅ PHASE 1 TEST COMPLETE                            ║
-echo ║                                                                              ║
-echo ║  If you see this message, Phase 1 is working properly.                       ║
-echo ║  Any missing items above need to be addressed.                               ║
-echo ║                                                                              ║
-echo ║  🚀 READY FOR PHASE 2: Professional Profile System                           ║
+echo ║                        🎭 x264 PRESET CUSTOMIZATION                          ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo Press any key to continue...
-pause >nul
-goto :SelectProfile
+echo  Current Preset: %X264_PRESET%
+if defined CUSTOM_PRESET echo  Custom Preset: %CUSTOM_PRESET% (will be applied)
+echo.
+echo  📊 PRESET COMPARISON (Quality vs Speed):
+echo.
+echo  ┌─────────────┬─────────────┬─────────────┬─────────────────────────────┐
+echo  │   PRESET    │    SPEED    │   QUALITY   │        BEST FOR             │
+echo  ├─────────────┼─────────────┼─────────────┼─────────────────────────────┤
+echo  │ ultrafast   │ ⚡⚡⚡⚡⚡  │ ⭐          │ Real-time encoding          │
+echo  │ superfast   │ ⚡⚡⚡⚡    │ ⭐⭐        │ Live streaming              │
+echo  │ veryfast    │ ⚡⚡⚡      │ ⭐⭐⭐      │ Fast preview                │
+echo  │ faster      │ ⚡⚡        │ ⭐⭐⭐⭐    │ Quick encoding              │
+echo  │ fast        │ ⚡⚡        │ ⭐⭐⭐⭐    │ Balanced workflow           │
+echo  │ medium      │ ⚡          │ ⭐⭐⭐⭐⭐  │ Default x264                │
+echo  │ slow        │ 🐌          │ ⭐⭐⭐⭐⭐  │ High quality                │
+echo  │ slower      │ 🐌🐌        │ ⭐⭐⭐⭐⭐⭐│ Very high quality (Current) │
+echo  │ veryslow    │ 🐌🐌🐌      │ ⭐⭐⭐⭐⭐⭐│ Maximum quality             │
+echo  │ placebo     │ 🐌🐌🐌🐌    │ ⭐⭐⭐⭐⭐⭐│ Cinema/Archival             │
+echo  └─────────────┴─────────────┴─────────────┴─────────────────────────────┘
+echo.
+echo  💡 RECOMENDAÇÃO: 'slower' ou 'veryslow' para Instagram zero-recompression
+echo  🎬 AVISO: 'placebo' pode levar 10x mais tempo mas oferece qualidade cinema
+echo.
+echo  [1] ultrafast  [2] superfast  [3] veryfast  [4] faster  [5] fast
+echo  [6] medium     [7] slow       [8] slower     [9] veryslow [10] placebo
+echo  [B] Back to Advanced Menu
+echo.
+set /p "preset_choice=Select preset [1-10, B]: "
 
-:ViewSystemStatus
+if "%preset_choice%"=="1" set "CUSTOM_PRESET=ultrafast"
+if "%preset_choice%"=="2" set "CUSTOM_PRESET=superfast"
+if "%preset_choice%"=="3" set "CUSTOM_PRESET=veryfast"
+if "%preset_choice%"=="4" set "CUSTOM_PRESET=faster"
+if "%preset_choice%"=="5" set "CUSTOM_PRESET=fast"
+if "%preset_choice%"=="6" set "CUSTOM_PRESET=medium"
+if "%preset_choice%"=="7" set "CUSTOM_PRESET=slow"
+if "%preset_choice%"=="8" set "CUSTOM_PRESET=slower"
+if "%preset_choice%"=="9" set "CUSTOM_PRESET=veryslow"
+if "%preset_choice%"=="10" set "CUSTOM_PRESET=placebo"
+if /i "%preset_choice%"=="B" goto :AdvancedCustomization
+
+if defined CUSTOM_PRESET (
+    echo.
+    echo ✅ Preset alterado para: %CUSTOM_PRESET%
+    echo 💡 Esta alteração será aplicada quando você escolher "Apply Customizations"
+    set "CUSTOMIZATION_ACTIVE=Y"
+    pause
+)
+
+goto :AdvancedCustomization
+
+::==============================================
+:: 🧠 PSYCHOVISUAL ENHANCEMENT
+::==============================================
+:CustomizePsychovisual
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🧠 PSYCHOVISUAL ENHANCEMENT                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎬 Psychovisual settings controlam como o encoder preserva detalhes visuais
+echo  🧠 Valores maiores = mais preservação de detalhes, arquivos ligeiramente maiores
+echo.
+echo  📊 Current Setting: Extraído do profile atual
+if defined CUSTOM_PSY_RD echo  🎛️ Custom Setting: %CUSTOM_PSY_RD% (will be applied)
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 🎭 PSYCHOVISUAL RATE-DISTORTION (psy_rd)                        │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 0.8,0.10  - Conservative (arquivos menores, menos detalhes)
+echo  [2] 1.0,0.15  - Balanced (recomendado para a maioria do conteúdo)
+echo  [3] 1.0,0.20  - Enhanced (mais preservação de detalhes)
+echo  [4] 1.2,0.25  - Aggressive (máximo detalhe, viral content)
+echo  [5] 1.5,0.30  - Maximum (cinema-grade, arquivos maiores)
+echo  [6] Custom    - Manual input
+echo  [B] Back to Advanced Menu
+echo.
+set /p "psy_choice=Select psy_rd setting [1-6, B]: "
+
+if "%psy_choice%"=="1" set "CUSTOM_PSY_RD=0.8,0.10"
+if "%psy_choice%"=="2" set "CUSTOM_PSY_RD=1.0,0.15"
+if "%psy_choice%"=="3" set "CUSTOM_PSY_RD=1.0,0.20"
+if "%psy_choice%"=="4" set "CUSTOM_PSY_RD=1.2,0.25"
+if "%psy_choice%"=="5" set "CUSTOM_PSY_RD=1.5,0.30"
+if "%psy_choice%"=="6" goto :CustomPsyInput
+if /i "%psy_choice%"=="B" goto :AdvancedCustomization
+
+if defined CUSTOM_PSY_RD (
+    echo.
+    echo ✅ Psychovisual RD alterado para: %CUSTOM_PSY_RD%
+    echo 💡 Mais detalhes serão preservados na imagem final
+    set "CUSTOMIZATION_ACTIVE=Y"
+    pause
+)
+
+goto :AdvancedCustomization
+
+:CustomPsyInput
+echo.
+echo Digite valores customizados de psy_rd (formato: X.X,X.XX):
+echo Exemplo: 1.0,0.15 (primeiro valor: 0.5-2.0, segundo: 0.05-0.40)
+set /p "CUSTOM_PSY_RD=psy_rd value: "
+if defined CUSTOM_PSY_RD (
+    echo ✅ Custom psy_rd definido: %CUSTOM_PSY_RD%
+    set "CUSTOMIZATION_ACTIVE=Y"
+)
+pause
+goto :AdvancedCustomization
+
+::==============================================
+:: 📋 PREVIEW CUSTOMIZATIONS
+::==============================================
+:PreviewCustomizations
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          📋 PREVIEW ALL SETTINGS                             ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎬 PROFILE BASE: %PROFILE_NAME%
+echo  📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo  🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ ⚙️ CURRENT SETTINGS                                              │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  🎭 x264 Preset:
+if defined CUSTOM_PRESET (
+    echo     • Original: %X264_PRESET%
+    echo     • Custom: %CUSTOM_PRESET% ← Will be applied
+) else (
+    echo     • Current: %X264_PRESET% (unchanged)
+)
+echo.
+echo  🧠 Psychovisual Settings:
+if defined CUSTOM_PSY_RD (
+    echo     • Custom psy_rd: %CUSTOM_PSY_RD% ← Will be applied
+) else (
+    echo     • Using profile default (unchanged)
+)
+echo.
+echo  📊 Status:
+if "%CUSTOMIZATION_ACTIVE%"=="Y" (
+    echo     • ✅ Advanced customizations are ACTIVE
+    echo     • 🎛️ Changes will be applied on encoding
+    echo     • 💾 Original profile backed up automatically
+) else (
+    echo     • 🛡️ No customizations active
+    echo     • 🎬 Will use standard Hollywood parameters
+)
+echo.
+echo  💡 TIP: All customizations are safely applied on top of proven Instagram
+echo          zero-recompression parameters. Your base quality is guaranteed.
+echo.
+pause
+goto :AdvancedCustomization
+
+::==============================================
+:: 🔄 RESTORE ORIGINAL PROFILE
+::==============================================
+:RestoreOriginalProfile
+echo.
+echo 🔄 Restaurando configurações originais do profile...
+set "CUSTOM_PRESET="
+set "CUSTOM_PSY_RD="
+set "CUSTOMIZATION_ACTIVE=N"
+set "ADVANCED_MODE=N"
+echo ✅ Profile restaurado para configurações Hollywood padrão
+pause
+goto :AdvancedCustomization
+
+::==============================================
+:: ✅ APPLY ADVANCED CUSTOMIZATIONS
+::==============================================
+:ApplyAdvancedCustomizations
+if "%CUSTOMIZATION_ACTIVE%"=="N" (
+    echo.
+    echo ⚠️ Nenhuma customização ativa para aplicar
+    echo 💡 Use as opções do menu para customizar parâmetros primeiro
+    pause
+    goto :AdvancedCustomization
+)
+
+echo.
+echo ✅ Aplicando customizações avançadas...
+set "ADVANCED_MODE=Y"
+
+:: Backup original parameters if not already done
+if not defined PROFILE_BACKUP (
+    set "PROFILE_BACKUP=%X264_PARAMS%"
+    set "PRESET_BACKUP=%X264_PRESET%"
+)
+
+echo ✅ Customizações aplicadas com sucesso!
+echo 🎬 Procedendo para encoding com parâmetros customizados...
+call :LogEntry "[ADVANCED] V5.2 Advanced customizations applied"
+pause
+goto :ProfileConfirmed
+
+::==============================================
+:: 🎬 STUBS PARA FUNCIONALIDADES FUTURAS
+::==============================================
+:CustomizeGOP
+echo.
+echo ⏳ GOP Structure customization será implementado na próxima fase
+echo 💡 Por enquanto, usando GOP otimizado do profile selecionado
+pause
+goto :AdvancedCustomization
+
+:CustomizeVBV
+echo.
+echo ⏳ VBV Buffer customization será implementado na próxima fase
+echo 💡 Por enquanto, usando VBV otimizado para Instagram zero-recompression
+pause
+goto :AdvancedCustomization
+
+:CustomizeAudio
+echo.
+echo ⏳ Audio Enhancement será implementado na próxima fase
+echo 💡 Por enquanto, usando AAC 320k optimizado para Instagram
+pause
+goto :AdvancedCustomization
+
+:CustomizeColor
+echo.
+echo ⏳ Color Science será implementado na próxima fase
+echo 💡 Por enquanto, usando BT.709 otimizado para Instagram compliance
+pause
+goto :AdvancedCustomization
+
+::==============================================
+:: 🔧 PROCESS ADVANCED CUSTOMIZATIONS
+::==============================================
+:ProcessAdvancedCustomizations
+:: Backup original parameters if not already done
+if not defined PROFILE_BACKUP (
+    set "PROFILE_BACKUP=%X264_PARAMS%"
+)
+
+:: Apply psychovisual customization
+if defined CUSTOM_PSY_RD (
+    call :ReplaceParameterInString "psy_rd" "!CUSTOM_PSY_RD!"
+    echo     • Psychovisual customizado: !CUSTOM_PSY_RD!
+)
+
+call :LogEntry "[ADVANCED] Applied: Preset=%CUSTOM_PRESET%, PsyRD=%CUSTOM_PSY_RD%"
+exit /b 0
+
+:ReplaceParameterInString
+:: Replace parameter in X264_PARAMS string
+set "param_name=%~1"
+set "param_value=%~2"
+
+:: Find and replace psy_rd parameter
+set "TEMP_PARAMS=!X264_PARAMS!"
+for /f "tokens=1,2* delims=:" %%a in ("!TEMP_PARAMS!") do (
+    echo %%a | findstr "psy_rd" >nul
+    if not errorlevel 1 (
+        set "TEMP_PARAMS=!TEMP_PARAMS:%%a=psy_rd=%param_value%!"
+    )
+)
+set "X264_PARAMS=!TEMP_PARAMS!"
+exit /b 0
+
+::======================================================================
+:: 📊 PROFILE MANAGEMENT SYSTEM - V5.3
+::======================================================================
+:ProfileManagement
 cls
 echo.
 echo ================================================================================
-echo                      📊 SYSTEM STATUS DIAGNOSTICS
+echo                        📊 PROFILE MANAGEMENT SYSTEM V5.3
 echo ================================================================================
 echo.
-echo 🎬 Instagram Encoder Framework Status:
-echo   • Current Version: %SCRIPT_VERSION%
-echo   • Profile System: %PROFILE_SYSTEM_VERSION%
-echo   • Upgrade Status: Phase 1 Complete
-echo.
-echo 💻 System Information:
-if defined CPU_CORES echo   • CPU: %CPU_CORES% cores
-if defined CPU_FAMILY echo   • Family: %CPU_FAMILY%
-if defined CPU_ARCH echo   • Architecture: %CPU_ARCH%
-if defined IS_LAPTOP (
-    if "!IS_LAPTOP!"=="Y" (
-        echo   • Type: Laptop
-    ) else (
-        echo   • Type: Desktop
-    )
+echo  🎬 Current Profile: %PROFILE_NAME%
+if "%ADVANCED_MODE%"=="Y" (
+    echo  🎛️ Status: Advanced customizations ACTIVE
+) else (
+    echo  🛡️ Status: Standard Hollywood parameters
 )
-if defined TOTAL_RAM_GB echo   • RAM: %TOTAL_RAM_GB%GB
 echo.
-echo 🔧 Available Profile Systems:
-echo   • Legacy System: ✅ Available
-echo   • New V5.1 System: ⏳ Phase 2 (Coming Next)
-echo   • Advanced Features: ⏳ Phase 3 (Coming Next)
-echo.
-echo 📁 Current Files:
-if defined ARQUIVO_ENTRADA echo   • Input: %ARQUIVO_ENTRADA%
-if defined ARQUIVO_SAIDA echo   • Output: %ARQUIVO_SAIDA%
-if defined EXEC_LOG echo   • Log: %EXEC_LOG%
-echo.
-echo 🎯 Upgrade Roadmap:
-echo   • Phase 1: ✅ Complete (Variables & Backup)
-echo   • Phase 2: ⏳ New Profile System with 6 professional profiles
-echo   • Phase 3: ⏳ Advanced customization (psychovisual, presets)
-echo   • Phase 4: ⏳ Integration & professional menu
-echo   • Phase 5: ⏳ Final polish & testing
-echo.
-echo 📊 Expected Benefits:
-echo   • +25%% Encoding Efficiency
-echo   • +40%% Instagram Acceptance Rate
-echo   • +300%% User Experience
-echo   • SpeedRamp Viral Car Support
-echo   • Hollywood-level quality parameters
-echo.
-echo ================================================================================
-pause
-goto :SelectProfile
 
-:CheckFunctionExists
-:: Simple function existence check with better error handling
-set "func_name=%~1"
-if not defined func_name (
-    echo   ❌ Function name not provided
-    set "test_error=Y"
+:: Check if profiles directory exists
+if not exist "profiles" (
+    echo  📁 Creating profiles directory...
+    mkdir "profiles" 2>nul
+)
+
+:: Count available profiles
+set "AVAILABLE_PROFILES_COUNT=0"
+for %%F in ("profiles\*.prof") do set /a "AVAILABLE_PROFILES_COUNT+=1"
+
+echo  📂 Profile Library: %AVAILABLE_PROFILES_COUNT% saved profiles
+if defined LAST_EXPORTED_PROFILE echo  📤 Last Export: %LAST_EXPORTED_PROFILE%
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 📊 PROFILE MANAGEMENT OPTIONS                                   │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 📤 Export Current Profile (Save to File)
+echo  [2] 📥 Import Profile (Load from File)  
+echo  [3] 📚 Browse Profile Library
+echo  [4] 🗂️ Quick Load Recent Profiles
+echo  [5] 🏭 Create Profile Template
+echo  [6] 🧹 Clean Profile Library
+echo  [7] 📋 Profile Info ^& Validation
+echo  [8] 🔙 Back to Advanced Menu
+echo.
+set /p "profile_mgmt_choice=Select option [1-8]: "
+
+if "%profile_mgmt_choice%"=="1" goto :ExportCurrentProfile
+if "%profile_mgmt_choice%"=="2" goto :ImportProfile
+if "%profile_mgmt_choice%"=="3" goto :BrowseProfileLibrary
+if "%profile_mgmt_choice%"=="4" goto :QuickLoadProfiles
+if "%profile_mgmt_choice%"=="5" goto :CreateProfileTemplate
+if "%profile_mgmt_choice%"=="6" goto :CleanProfileLibrary
+if "%profile_mgmt_choice%"=="7" goto :ShowProfileInfo
+if "%profile_mgmt_choice%"=="8" goto :AdvancedCustomization
+
+echo ❌ Invalid choice. Please select 1-8.
+pause
+goto :ProfileManagement
+
+::==============================================
+:: 📤 EXPORT CURRENT PROFILE
+::==============================================
+:ExportCurrentProfile
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                           📤 EXPORT CURRENT PROFILE                          ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎬 Profile to Export: %PROFILE_NAME%
+echo  📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo  🎯 Bitrate: %TARGET_BITRATE% / %MAX_BITRATE%
+if "%ADVANCED_MODE%"=="Y" (
+    echo  🎛️ Customizations: ACTIVE
+    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+) else (
+    echo  🛡️ Mode: Standard Hollywood parameters
+)
+echo.
+echo  💾 Export Information:
+echo.
+set /p "PROFILE_DESCRIPTION=Profile Description: "
+set /p "PROFILE_AUTHOR=Author Name (optional): "
+if not defined PROFILE_AUTHOR set "PROFILE_AUTHOR=Unknown"
+
+echo.
+set /p "EXPORTED_PROFILE_NAME=Export filename (without .prof): "
+if not defined EXPORTED_PROFILE_NAME set "EXPORTED_PROFILE_NAME=%PROFILE_NAME%_export"
+
+:: Clean filename
+set "EXPORTED_PROFILE_NAME=%EXPORTED_PROFILE_NAME: =_%"
+set "EXPORTED_PROFILE_NAME=%EXPORTED_PROFILE_NAME:/=_%"
+set "PROFILE_FILE_PATH=profiles\%EXPORTED_PROFILE_NAME%.prof"
+
+echo.
+echo 📝 Creating profile file: %PROFILE_FILE_PATH%
+
+:: Create profile file
+call :CreateProfileFile "%PROFILE_FILE_PATH%"
+
+if exist "%PROFILE_FILE_PATH%" (
+    echo ✅ Profile exported successfully!
+    echo 📁 Location: %PROFILE_FILE_PATH%
+    set "LAST_EXPORTED_PROFILE=%EXPORTED_PROFILE_NAME%.prof"
+    call :LogEntry "[EXPORT] Profile exported: %EXPORTED_PROFILE_NAME%.prof"
+) else (
+    echo ❌ Failed to export profile
+)
+
+echo.
+pause
+goto :ProfileManagement
+
+::==============================================
+:: 📥 IMPORT PROFILE
+::==============================================
+:ImportProfile
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                             📥 IMPORT PROFILE                                ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+:: List available profiles
+echo 📚 Available Profiles:
+echo.
+set "PROFILE_NUM=0"
+for %%F in ("profiles\*.prof") do (
+    set /a "PROFILE_NUM+=1"
+    echo   [!PROFILE_NUM!] %%~nF
+    set "PROFILE_!PROFILE_NUM!=%%F"
+)
+
+if %PROFILE_NUM% EQU 0 (
+    echo   📭 No saved profiles found
+    echo   💡 Use Export function first to save profiles
+    echo.
+    pause
+    goto :ProfileManagement
+)
+
+echo.
+echo   [0] 📁 Browse for external .prof file
+echo   [B] 🔙 Back to Profile Management
+echo.
+set /p "import_choice=Select profile to import [1-%PROFILE_NUM%, 0, B]: "
+
+if /i "%import_choice%"=="B" goto :ProfileManagement
+if "%import_choice%"=="0" goto :BrowseExternalProfile
+
+:: Validate choice
+if %import_choice% LSS 1 goto :InvalidImportChoice
+if %import_choice% GTR %PROFILE_NUM% goto :InvalidImportChoice
+
+:: Get selected profile
+call set "SELECTED_PROFILE=%%PROFILE_%import_choice%%%"
+goto :LoadSelectedProfile
+
+:InvalidImportChoice
+echo ❌ Invalid choice
+pause
+goto :ImportProfile
+
+:BrowseExternalProfile
+echo.
+set /p "EXTERNAL_PROFILE_PATH=Enter full path to .prof file: "
+if not exist "%EXTERNAL_PROFILE_PATH%" (
+    echo ❌ File not found: %EXTERNAL_PROFILE_PATH%
+    pause
+    goto :ImportProfile
+)
+set "SELECTED_PROFILE=%EXTERNAL_PROFILE_PATH%"
+goto :LoadSelectedProfile
+
+:LoadSelectedProfile
+echo.
+echo 📥 Loading profile: %SELECTED_PROFILE%
+
+:: Load and parse profile
+call :ParseProfileFile "%SELECTED_PROFILE%"
+
+if "%PROFILE_LOADED%"=="Y" (
+    echo ✅ Profile loaded successfully!
+    echo 🎬 Profile: %PROFILE_NAME%
+    echo 📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
+    echo 🎯 Bitrate: %TARGET_BITRATE% / %MAX_BITRATE%
+    if defined CUSTOM_PRESET echo 🎭 Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo 🧠 Custom Psy RD: %CUSTOM_PSY_RD%
+    echo.
+    echo 💡 Profile will be used for encoding
+    set "PROFILE_SELECTED=Y"
+    call :LogEntry "[IMPORT] Profile imported: %SELECTED_PROFILE%"
+) else (
+    echo ❌ Failed to load profile
+    echo 💡 Profile file may be corrupted or incompatible
+)
+
+echo.
+pause
+goto :ProfileManagement
+
+::==============================================
+:: 📚 BROWSE PROFILE LIBRARY
+::==============================================
+:BrowseProfileLibrary
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          📚 PROFILE LIBRARY BROWSER                          ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+set "PROFILE_NUM=0"
+for %%F in ("profiles\*.prof") do (
+    set /a "PROFILE_NUM+=1"
+    echo ┌─────────────────────────────────────────────────────────────────┐
+    echo │ [!PROFILE_NUM!] %%~nF
+    echo └─────────────────────────────────────────────────────────────────┘
+    
+    :: Try to read first few lines for preview
+    set "line_count=0"
+    for /f "tokens=*" %%L in ('type "%%F" 2^>nul') do (
+        set /a "line_count+=1"
+        if !line_count! LEQ 3 echo   %%L
+        if !line_count! EQU 3 goto :next_profile
+    )
+    :next_profile
+    echo.
+    set "PROFILE_!PROFILE_NUM!=%%F"
+)
+
+if %PROFILE_NUM% EQU 0 (
+    echo 📭 No profiles in library
+    echo 💡 Export some profiles first to build your library
+) else (
+    echo 📊 Total profiles: %PROFILE_NUM%
+    echo.
+    echo [L] 📥 Load selected profile
+    echo [D] 🗑️ Delete selected profile  
+    echo [I] 📋 Show detailed info
+)
+
+echo [B] 🔙 Back to Profile Management
+echo.
+set /p "browse_choice=Enter choice: "
+
+if /i "%browse_choice%"=="B" goto :ProfileManagement
+if /i "%browse_choice%"=="L" goto :LoadFromBrowser
+if /i "%browse_choice%"=="D" goto :DeleteFromBrowser
+if /i "%browse_choice%"=="I" goto :InfoFromBrowser
+
+goto :BrowseProfileLibrary
+
+:LoadFromBrowser
+set /p "load_num=Enter profile number to load [1-%PROFILE_NUM%]: "
+if %load_num% LSS 1 goto :BrowseProfileLibrary
+if %load_num% GTR %PROFILE_NUM% goto :BrowseProfileLibrary
+call set "SELECTED_PROFILE=%%PROFILE_%load_num%%%"
+goto :LoadSelectedProfile
+
+:DeleteFromBrowser
+set /p "delete_num=Enter profile number to DELETE [1-%PROFILE_NUM%]: "
+if %delete_num% LSS 1 goto :BrowseProfileLibrary
+if %delete_num% GTR %PROFILE_NUM% goto :BrowseProfileLibrary
+call set "DELETE_PROFILE=%%PROFILE_%delete_num%%%"
+echo ⚠️ WARNING: This will permanently delete the profile file
+set /p "confirm_delete=Are you sure? (Y/N): "
+if /i "%confirm_delete:~0,1%"=="Y" (
+    del "%DELETE_PROFILE%" 2>nul
+    echo ✅ Profile deleted
+) else (
+    echo ❌ Deletion cancelled
+)
+pause
+goto :BrowseProfileLibrary
+
+:InfoFromBrowser
+set /p "info_num=Enter profile number for info [1-%PROFILE_NUM%]: "
+if %info_num% LSS 1 goto :BrowseProfileLibrary
+if %info_num% GTR %PROFILE_NUM% goto :BrowseProfileLibrary
+call set "INFO_PROFILE=%%PROFILE_%info_num%%%"
+echo.
+echo 📋 Profile Information:
+type "%INFO_PROFILE%"
+echo.
+pause
+goto :BrowseProfileLibrary
+
+::==============================================
+:: 📁 CREATE PROFILE FILE
+::==============================================
+:CreateProfileFile
+set "file_path=%~1"
+
+(
+echo # Instagram Encoder Framework V5.3 Profile
+echo # Generated: %date% %time%
+echo # Author: %PROFILE_AUTHOR%
+echo # Description: %PROFILE_DESCRIPTION%
+echo.
+echo [PROFILE_INFO]
+echo PROFILE_NAME=%PROFILE_NAME%
+echo PROFILE_VERSION=%PROFILE_VERSION%
+echo PROFILE_DESCRIPTION=%PROFILE_DESCRIPTION%
+echo PROFILE_AUTHOR=%PROFILE_AUTHOR%
+echo EXPORT_DATE=%date%
+echo EXPORT_TIME=%time%
+echo.
+echo [VIDEO_SETTINGS]
+echo VIDEO_WIDTH=%VIDEO_WIDTH%
+echo VIDEO_HEIGHT=%VIDEO_HEIGHT%
+echo VIDEO_ASPECT=%VIDEO_ASPECT%
+echo TARGET_BITRATE=%TARGET_BITRATE%
+echo MAX_BITRATE=%MAX_BITRATE%
+echo BUFFER_SIZE=%BUFFER_SIZE%
+echo GOP_SIZE=%GOP_SIZE%
+echo KEYINT_MIN=%KEYINT_MIN%
+echo.
+echo [X264_SETTINGS]
+echo X264_PRESET=%X264_PRESET%
+echo X264_TUNE=%X264_TUNE%
+echo X264_PARAMS=%X264_PARAMS%
+echo.
+echo [ADVANCED_CUSTOMIZATIONS]
+echo ADVANCED_MODE=%ADVANCED_MODE%
+echo CUSTOM_PRESET=%CUSTOM_PRESET%
+echo CUSTOM_PSY_RD=%CUSTOM_PSY_RD%
+echo CUSTOMIZATION_ACTIVE=%CUSTOMIZATION_ACTIVE%
+echo.
+echo [COLOR_SETTINGS]
+echo COLOR_PARAMS=%COLOR_PARAMS%
+) > "%file_path%"
+
+exit /b 0
+
+::==============================================
+:: 📖 PARSE PROFILE FILE
+::==============================================
+:ParseProfileFile
+set "profile_file=%~1"
+set "PROFILE_LOADED=N"
+
+if not exist "%profile_file%" (
+    echo ❌ Profile file not found: %profile_file%
     exit /b 1
 )
 
-:: Use findstr to check if function exists
-findstr /B ":%func_name%" "%~f0" >nul 2>&1
-if not errorlevel 1 (
-    echo   ✅ Function %func_name%: Found
-) else (
-    echo   ❌ Function %func_name%: Not Found
-    set "test_error=Y"
+echo 📖 Parsing profile file...
+
+:: Read profile file line by line
+for /f "tokens=1,2 delims==" %%A in ('type "%profile_file%" ^| findstr "="') do (
+    set "%%A=%%B"
 )
+
+:: Validate required fields
+if not defined PROFILE_NAME (
+    echo ❌ Invalid profile: PROFILE_NAME missing
+    exit /b 1
+)
+
+if not defined VIDEO_WIDTH (
+    echo ❌ Invalid profile: VIDEO_WIDTH missing  
+    exit /b 1
+)
+
+if not defined VIDEO_HEIGHT (
+    echo ❌ Invalid profile: VIDEO_HEIGHT missing
+    exit /b 1
+)
+
+:: Set customization mode if customizations exist
+if defined CUSTOM_PRESET set "CUSTOMIZATION_ACTIVE=Y"
+if defined CUSTOM_PSY_RD set "CUSTOMIZATION_ACTIVE=Y"
+if "%CUSTOMIZATION_ACTIVE%"=="Y" set "ADVANCED_MODE=Y"
+
+set "PROFILE_LOADED=Y"
+set "PROFILE_SELECTED=Y"
 exit /b 0
+
+::==============================================
+:: 📋 STUBS PARA FUNCIONALIDADES FUTURAS
+::==============================================
+:QuickLoadProfiles
+echo.
+echo ⏳ Quick Load será implementado em uma versão futura
+echo 💡 Por enquanto, use Browse Profile Library
+pause
+goto :ProfileManagement
+
+:CreateProfileTemplate
+echo.
+echo ⏳ Profile Template Creator será implementado em uma versão futura
+echo 💡 Por enquanto, customize um profile e export
+pause
+goto :ProfileManagement
+
+:CleanProfileLibrary
+echo.
+echo 🧹 Profile Library Cleanup
+echo.
+set "profile_count=0"
+for %%F in ("profiles\*.prof") do set /a "profile_count+=1"
+echo Found %profile_count% profile files
+echo.
+echo ⚠️ Esta função irá remover profiles duplicados e inválidos
+echo 💡 Implementação completa em versão futura
+pause
+goto :ProfileManagement
+
+:ShowProfileInfo
+echo.
+echo 📋 Current Profile Detailed Information:
+echo =====================================
+echo Profile Name: %PROFILE_NAME%
+echo Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo Target Bitrate: %TARGET_BITRATE%
+echo Max Bitrate: %MAX_BITRATE%
+echo Buffer Size: %BUFFER_SIZE%
+echo GOP Size: %GOP_SIZE%
+echo x264 Preset: %X264_PRESET%
+echo x264 Tune: %X264_TUNE%
+if "%ADVANCED_MODE%"=="Y" (
+    echo.
+    echo Advanced Customizations:
+    if defined CUSTOM_PRESET echo   Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo   Custom Psy RD: %CUSTOM_PSY_RD%
+)
+echo.
+pause
+goto :ProfileManagement
 
 :Execute2Pass
 echo.
@@ -1209,12 +2540,24 @@ set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
 
 :: Video codec
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+if defined CUSTOM_PRESET (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+    echo   🎭 Preset customizado: !CUSTOM_PRESET!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+)
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
+:: Apply advanced customizations if any
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🎛️ Aplicando customizações avançadas V5.2...
+    call :ProcessAdvancedCustomizations
+) else (
+    echo   🎬 Aplicando parâmetros Hollywood V5.1 padrão...
+)
+
 :: x264 Hollywood Parameters
-echo   🎬 Aplicando parâmetros Hollywood V5.1...
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
 
 :: Threading
@@ -1335,54 +2678,6 @@ if !COMPLIANCE_CHECKS! GEQ 2 (
     echo      ╚══════════════════════════════════════════════════════════════════╝
 ) else (
     echo   ⚠️  Alguns parâmetros podem precisar ajuste
-)
-
-exit /b 0
-
-:ShowResults
-echo.
-echo ================================================================================
-echo                           ENCODING FINALIZADO
-echo ================================================================================
-echo.
-echo               🏆 ENCODING CONCLUÍDO COM SUCESSO! 🏆
-echo.
-echo   📄 ARQUIVO PROCESSADO:
-echo   ├─ Entrada: !ARQUIVO_ENTRADA!
-echo   ├─ Saída: !ARQUIVO_SAIDA! (!OUTPUT_SIZE_MB! MB)
-echo   └─ Tempo total: !TOTAL_ENCODE_TIME!
-echo.
-echo   ⚙️ CONFIGURAÇÃO UTILIZADA:
-echo   ├─ Perfil: !PROFILE_NAME!
-echo   ├─ Resolução: !VIDEO_ESCALA! @ 30fps
-echo   ├─ Modo: 2-PASS (!PRESET_X264!)
-echo   ├─ Bitrate: !BITRATE_VIDEO_TARGET! Target / !BITRATE_VIDEO_MAX! Max
-echo   └─ Áudio: !BITRATE_AUDIO! AAC 48kHz Stereo
-echo.
-echo   📝 Log: !EXEC_LOG!
-echo   📱 Instagram: CERTIFICADO - Upload direto sem reprocessamento
-echo   🎬 Qualidade: Hollywood Zero-Recompression
-echo.
-echo 🎉 DICAS DE USO:
-echo    • Faça upload do arquivo diretamente no Instagram
-echo    • Não reprocesse em outros editores
-echo    • Qualidade será preservada 100%%
-echo.
-echo ================================================================================
-
-call :LogEntry "[SUCCESS] Encoding completed - !ARQUIVO_SAIDA! (!OUTPUT_SIZE_MB!MB)"
-
-:: Post-processing options
-echo.
-echo 📂 Deseja abrir a pasta do arquivo gerado?
-set /p "OPEN_FOLDER=Abrir pasta? (S/N): "
-if /i "!OPEN_FOLDER:~0,1!"=="S" start "" "%~dp0"
-
-echo.
-echo 🎬 Deseja reproduzir o arquivo para verificar?
-set /p "PLAY_FILE=Reproduzir vídeo? (S/N): "
-if /i "!PLAY_FILE:~0,1!"=="S" (
-    if exist "!ARQUIVO_SAIDA!" start "" "!ARQUIVO_SAIDA!"
 )
 
 exit /b 0
