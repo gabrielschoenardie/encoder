@@ -1267,6 +1267,8 @@ exit /b 0
 :: 🎬 SELECT PROFILE FOR WORKFLOW (FIXED)
 ::==============================================
 :SelectProfileForWorkflow
+echo [DEBUG] Choice selected: "%profile_choice%"
+pause
 echo  🎬 Select the optimal profile for your Instagram content:
 echo.
 echo  Professional Profile System - Choose your encoding profile:
@@ -1283,14 +1285,35 @@ echo  [B] 🔙 Back to Main Menu
 echo.
 set /p "profile_choice=Select your profile [1-6, C, B]: "
 
-:: Handle profile selection
-if /i "%profile_choice%"=="1" call :SetReelsProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="2" call :SetSquareProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="3" call :SetFeedProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="4" call :SetCinemaProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="5" call :SetSpeedRampProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="6" call :SetCustomProfile && goto :ProfileWorkflowComplete
-if /i "%profile_choice%"=="C" call :CompareAllProfiles && goto :SelectProfileForWorkflow
+:: Handle profile selection - FIXED SYNTAX
+if /i "%profile_choice%"=="1" (
+    call :SetReelsProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="2" (
+    call :SetSquareProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="3" (
+    call :SetFeedProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="4" (
+    call :SetCinemaProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="5" (
+    call :SetSpeedRampProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="6" (
+    call :SetCustomProfile
+    goto :ProfileWorkflowComplete
+)
+if /i "%profile_choice%"=="C" (
+    call :CompareAllProfiles
+    goto :SelectProfileForWorkflow
+)
 if /i "%profile_choice%"=="B" exit /b 0
 
 echo ❌ Invalid choice. Please select 1-6, C, or B.
@@ -1305,13 +1328,14 @@ echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
 echo   🎯 Bitrate: %TARGET_BITRATE% / %MAX_BITRATE%
 echo.
 set "PROFILE_CONFIGURED=Y"
-set "WORKFLOW_STEP=2"
+set "WORKFLOW_STEP=3"
 set "SYSTEM_STATUS=PROFILE_CONFIGURED"
 set "PROFILE_SELECTED=Y"
 call :LogEntry "[WORKFLOW] Profile configured: %PROFILE_NAME%"
 echo 🎯 Profile ready! You can now proceed to encoding or advanced customization.
 pause
 exit /b 0
+
 :: ============================================================================
 :: 📱 REELS/STORIES PROFILE - Zero-Recompression Optimized
 :: ============================================================================
