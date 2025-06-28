@@ -1482,8 +1482,7 @@ set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=1"
 
 :: Hollywood-Level x264 Parameters - Instagram Zero-Recompression Optimized
-set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=1:vbv_init=0.9:scenecut=0"
-
+set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3:0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3:aq-strength=1.0:vbv_init=0.9:scenecut=0"
 :: Instagram-native color science
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
