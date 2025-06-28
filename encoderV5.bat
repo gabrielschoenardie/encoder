@@ -1,12 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 title Instagram Encoder Framework V5 - Optimized Professional Edition
-chcp 65001 >nul 2>&1 || (
-    echo Aviso: UTF-8 nao suportado, alguns caracteres podem nao aparecer corretamente
-    echo Pressione qualquer tecla para continuar...
-    pause >nul
-)
-
+chcp 65001 >nul 2>&1
 color 0A
 
 :: ============================================================================
@@ -20,6 +15,8 @@ color 0A
 set "SCRIPT_VERSION=5.1"
 set "EXEC_LOG="
 set "BACKUP_CREATED=N"
+call :SafeInitialization
+
 set "CPU_CORES=0"
 set "GLOBAL_START_TIME=0"
 set "TOTAL_ENCODE_TIME=00h 00m 00s"
@@ -80,12 +77,6 @@ set "WORKFLOW_PROGRESS=0"
 set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
-:: Debug: Prevent undefined variable math errors
-if not defined CPU_CORES set "CPU_CORES=0"
-if not defined TOTAL_RAM_GB set "TOTAL_RAM_GB=4"
-if not defined GLOBAL_START_TIME set "GLOBAL_START_TIME=0"
-if not defined INPUT_SIZE set "INPUT_SIZE=0"
-if not defined OUTPUT_SIZE set "OUTPUT_SIZE=0"
 
 :: Initialize Logging
 call :LogEntry "===== INICIO V5.1 UPGRADE (%date% %time%) ====="
@@ -175,39 +166,50 @@ echo  └───────────────────────�
 :: System Status
 echo   🖥️  System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% architecture
 if "%IS_LAPTOP%"=="Y" (
-    echo   💻 Device: Laptop ^(optimized threading^)
+    echo   💻 Device: Laptop - optimized threading
 ) else (
-    echo   💻 Device: Desktop ^(full performance^)
+    echo   💻 Device: Desktop - full performance
 )
 
 :: Workflow Progress
 echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
 
-:: File Status
+:: File Status - Check and set FILES_CONFIGURED
 if defined ARQUIVO_ENTRADA (
-    echo   📥 Input: %ARQUIVO_ENTRADA%
-    set "FILES_CONFIGURED=Y"
+    if defined ARQUIVO_SAIDA (
+        echo   📥 Input: %ARQUIVO_ENTRADA%
+        echo   📤 Output: %ARQUIVO_SAIDA%
+        set "FILES_CONFIGURED=Y"
+    ) else (
+        echo   📥 Input: %ARQUIVO_ENTRADA%
+        echo   📤 Output: Not configured
+        set "FILES_CONFIGURED=N"
+    )
 ) else (
     echo   📥 Input: Not configured
-)
-
-if defined ARQUIVO_SAIDA (
-    echo   📤 Output: %ARQUIVO_SAIDA%
-) else (
     echo   📤 Output: Not configured
+    set "FILES_CONFIGURED=N"
 )
-
-:: Profile Status  
+:: Profile Status - CHECK AND SET PROFILE_CONFIGURED
 if defined PROFILE_NAME (
-    echo   🎬 Profile: %PROFILE_NAME% ^(%VIDEO_WIDTH%x%VIDEO_HEIGHT%^)
-    if "%ADVANCED_MODE%"=="Y" (
-        echo   🎛️ Mode: Advanced Customizations ACTIVE
-        if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
-        if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    if defined VIDEO_WIDTH if defined VIDEO_HEIGHT (
+        echo   🎬 Profile: "%PROFILE_NAME%"
+        echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% - "%VIDEO_ASPECT%"
+        if defined TARGET_BITRATE if defined MAX_BITRATE (
+            echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
+        )
+        if "%ADVANCED_MODE%"=="Y" (
+            echo   🎛️ Mode: Advanced Customizations ACTIVE
+            if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+            if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+        ) else (
+            echo   🎬 Mode: Standard Hollywood Parameters
+        )
+        set "PROFILE_CONFIGURED=Y"
     ) else (
-        echo   🎬 Mode: Standard Hollywood Parameters
+        echo   🎬 Profile: Selected but configuration incomplete
+        set "PROFILE_CONFIGURED=N"
     )
-    set "PROFILE_CONFIGURED=Y"
 ) else (
     echo   🎬 Profile: Not selected
     set "PROFILE_CONFIGURED=N"
@@ -220,6 +222,8 @@ if "%FILES_CONFIGURED%"=="Y" if "%PROFILE_CONFIGURED%"=="Y" (
 ) else (
     set "READY_TO_ENCODE=N"
     echo   ⏳ Status: Configuration needed
+    if "%FILES_CONFIGURED%"=="N" echo     → Configure files first
+    if "%PROFILE_CONFIGURED%"=="N" echo     → Select profile
 )
 
 echo.
@@ -237,13 +241,17 @@ echo.
 :: Configuration Section
 echo  📁 CONFIGURATION:
 if "%FILES_CONFIGURED%"=="Y" (
-    echo   [1] ✅ Files Configured ^(Input/Output^)
+    echo   [1] ✅ Files Configured - Input/Output
 ) else (
-    echo   [1] 📁 Configure Files ^(Input/Output^) ⭐ START HERE
+    echo   [1] 📁 Configure Files - Input/Output ⭐ START HERE
 )
 
 if "%PROFILE_CONFIGURED%"=="Y" (
-    echo   [2] ✅ Profile Selected ^(%PROFILE_NAME%^)
+    if defined PROFILE_NAME (
+        echo   [2] ✅ Profile Selected - %PROFILE_NAME%
+    ) else (
+        echo   [2] ✅ Profile Selected
+    )
 ) else (
     echo   [2] 🎬 Select Professional Profile ⭐ REQUIRED
 )
@@ -252,17 +260,17 @@ echo.
 
 :: Advanced Section
 echo  🎛️ ADVANCED OPTIONS:
-echo   [3] ⚙️ Advanced Customization ^(Presets/Psychovisual^)
-echo   [4] 📊 Profile Management ^(Export/Import/Library^)
-echo   [5] 🔍 Analyze Input File ^(MediaInfo/Properties^)
+echo   [3] ⚙️ Advanced Customization - Presets/Psychovisual
+echo   [4] 📊 Profile Management - Export/Import/Library
+echo   [5] 🔍 Analyze Input File - MediaInfo/Properties
 echo.
 
 :: Encoding Section
 echo  🎬 ENCODING:
 if "%READY_TO_ENCODE%"=="Y" (
-    echo   [6] 🚀 START ENCODING ^(2-Pass Hollywood^) ⭐ READY!
+    echo   [6] 🚀 START ENCODING - 2-Pass Hollywood ⭐ READY!
 ) else (
-    echo   [6] ⏳ Start Encoding ^(Configure files and profile first^)
+    echo   [6] ⏳ Start Encoding - Configure files and profile first
 )
 echo.
 
@@ -275,7 +283,6 @@ echo   [0] 🚪 Exit
 echo.
 
 exit /b 0
-
 ::==============================================
 :: 🎯 PROCESS MENU CHOICE
 ::==============================================
@@ -344,24 +351,20 @@ goto :ShowProfessionalMainMenu
 ::==============================================
 :ConfigureProfile
 cls
-if "%FILES_CONFIGURED%"=="N" (
-    echo.
-    echo ⚠️ FILES NOT CONFIGURED
-    echo 💡 Please configure input/output files first (Option 1)
-    echo.
-    pause
-    goto :ShowProfessionalMainMenu
-)
-
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
 echo ║                         🎬 PROFESSIONAL PROFILE SELECTION                    ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
+if "%FILES_CONFIGURED%"=="N" (
+    echo ⚠️ NOTE: Files not configured yet
+    echo 💡 You can select a profile now and configure files later
+    echo.
+)
+
 call :SelectProfileForWorkflow
 goto :ShowProfessionalMainMenu
-
 ::==============================================
 :: ⚙️ ACCESS ADVANCED
 ::==============================================
@@ -389,15 +392,6 @@ goto :ShowProfessionalMainMenu
 :: 🔍 ANALYZE INPUT FILE
 ::==============================================
 :AnalyzeInputFile
-if "%FILES_CONFIGURED%"=="N" (
-    echo.
-    echo ⚠️ INPUT FILE NOT CONFIGURED
-    echo 💡 Please configure files first (Option 1)
-    echo.
-    pause
-    goto :ShowProfessionalMainMenu
-)
-
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -405,52 +399,185 @@ echo ║                           🔍 INPUT FILE ANALYSIS                     
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
+:: Check if input file is configured
+if not defined ARQUIVO_ENTRADA (
+    echo ⚠️ INPUT FILE NOT CONFIGURED
+    echo.
+    echo 💡 To analyze a file, you need to configure it first:
+    echo.
+    echo    1. Return to main menu
+    echo    2. Select option [1] Configure Files
+    echo    3. Set your input file path
+    echo    4. Return here to analyze
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+:: Check if file exists
+if not exist "%ARQUIVO_ENTRADA%" (
+    echo ❌ INPUT FILE NOT FOUND
+    echo.
+    echo 📁 File: %ARQUIVO_ENTRADA%
+    echo 💡 Please check if the file path is correct
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
 echo 🎬 Analyzing: %ARQUIVO_ENTRADA%
 echo.
 
-:: Detailed analysis
-set "TEMP_ANALYSIS=detailed_analysis_!RANDOM!.txt"
+:: Check FFmpeg availability
+if not defined FFMPEG_CMD (
+    echo ❌ FFmpeg not available for analysis
+    echo 💡 FFmpeg is required for file analysis
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+:: Create temporary analysis file
+set "TEMP_ANALYSIS=analysis_%RANDOM%.txt"
+
+echo 📊 Running detailed analysis...
+echo.
+
+:: Run FFmpeg analysis
 "%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>"%TEMP_ANALYSIS%"
+
+if not exist "%TEMP_ANALYSIS%" (
+    echo ❌ Failed to analyze file
+    echo 💡 File may be corrupted or in unsupported format
+    pause
+    goto :ShowProfessionalMainMenu
+)
 
 echo ┌─────────────────────────────────────────────────────────────────┐
 echo │ 📊 DETAILED MEDIA INFORMATION                                   │
 echo └─────────────────────────────────────────────────────────────────┘
 echo.
 
-:: Parse and display information
-for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%"') do (
-    echo %%L | findstr /i "Duration Video Audio Stream" >nul
-    if not errorlevel 1 echo   %%L
+:: Parse and display key information
+echo 📋 FILE INFORMATION:
+for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%" ^| findstr /i "Input"') do (
+    echo   %%L
+)
+
+echo.
+echo 🎥 VIDEO INFORMATION:
+for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%" ^| findstr /i "Video:"') do (
+    echo   %%L
+)
+
+echo.
+echo 🎵 AUDIO INFORMATION:
+for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%" ^| findstr /i "Audio:"') do (
+    echo   %%L
+)
+
+echo.
+echo ⏱️ DURATION INFORMATION:
+for /f "tokens=*" %%L in ('type "%TEMP_ANALYSIS%" ^| findstr /i "Duration"') do (
+    echo   %%L
 )
 
 echo.
 echo ┌─────────────────────────────────────────────────────────────────┐
 echo │ 🎯 INSTAGRAM COMPATIBILITY CHECK                                │
 echo └─────────────────────────────────────────────────────────────────┘
+echo.
 
-:: Check compatibility
-findstr /i "1920x1080\|1080x1920\|1080x1080" "%TEMP_ANALYSIS%" >nul
+:: Instagram compatibility checks
+set "INSTAGRAM_COMPATIBLE=Y"
+
+:: Check resolution compatibility
+findstr /i "1920x1080\|1080x1920\|1080x1080\|1080x1350" "%TEMP_ANALYSIS%" >nul
 if not errorlevel 1 (
-    echo   ✅ Resolution: Instagram compatible detected
+    echo   ✅ Resolution: Instagram native format detected
 ) else (
-    echo   ⚠️ Resolution: Will be scaled to Instagram format
+    echo   🔄 Resolution: Will be scaled to Instagram format
+    set "INSTAGRAM_COMPATIBLE=SCALED"
 )
 
+
+:: Check video codec
 findstr /i "h264\|avc" "%TEMP_ANALYSIS%" >nul
 if not errorlevel 1 (
     echo   ✅ Video Codec: H.264 compatible
 ) else (
     echo   🔄 Video Codec: Will be transcoded to H.264
+    set "INSTAGRAM_COMPATIBLE=TRANSCODE"
 )
 
+:: Check audio codec
 findstr /i "aac" "%TEMP_ANALYSIS%" >nul
 if not errorlevel 1 (
     echo   ✅ Audio Codec: AAC compatible
 ) else (
     echo   🔄 Audio Codec: Will be transcoded to AAC
+    set "INSTAGRAM_COMPATIBLE=TRANSCODE"
 )
 
+:: Check frame rate
+findstr /i "29.97\|30\|25\|24\|23.976" "%TEMP_ANALYSIS%" >nul
+if not errorlevel 1 (
+    echo   ✅ Frame Rate: Standard rate detected
+) else (
+    echo   🔄 Frame Rate: Will be converted to 30fps
+)
+
+echo.
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 📊 PROCESSING RECOMMENDATION                                    │
+echo └─────────────────────────────────────────────────────────────────┘
+echo.
+
+if "%INSTAGRAM_COMPATIBLE%"=="Y" (
+    echo   🏆 OPTIMAL: File is already in ideal format for Instagram
+    echo   ⚡ Encoding will be fast with minimal quality loss
+) else if "%INSTAGRAM_COMPATIBLE%"=="SCALED" (
+    echo   📐 GOOD: Only resolution scaling needed
+    echo   ⚡ Encoding will be moderately fast
+) else (
+    echo   🔄 STANDARD: Full transcoding required
+    echo   ⏱️ Encoding will take standard time for best quality
+)
+
+:: Cleanup temporary file
 del "%TEMP_ANALYSIS%" 2>nul
+
+echo.
+echo 💡 Analysis complete. File is ready for processing with recommended profile.
+echo.
+echo [1] 🔙 Return to Main Menu
+echo [2] 🎬 Go to Profile Selection
+echo [3] 🔍 View Raw FFmpeg Output
+echo.
+set /p "analysis_choice=Select option [1-3]: "
+
+if "%analysis_choice%"=="1" goto :ShowProfessionalMainMenu
+if "%analysis_choice%"=="2" goto :ConfigureProfile
+if "%analysis_choice%"=="3" goto :ShowRawOutput
+
+goto :ShowProfessionalMainMenu
+
+:ShowRawOutput
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          🔍 RAW FFMPEG OUTPUT                                ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+set "RAW_OUTPUT=raw_output_%RANDOM%.txt"
+"%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>"%RAW_OUTPUT%"
+
+if exist "%RAW_OUTPUT%" (
+    type "%RAW_OUTPUT%"
+    del "%RAW_OUTPUT%" 2>nul
+) else (
+    echo ❌ Could not generate raw output
+)
 
 echo.
 echo 💡 Analysis complete. File is ready for processing.
@@ -461,18 +588,6 @@ goto :ShowProfessionalMainMenu
 :: 🚀 START ENCODING (INTEGRATED)
 ::==============================================
 :StartEncoding
-if "%READY_TO_ENCODE%"=="N" (
-    echo.
-    echo ⚠️ SYSTEM NOT READY
-    echo.
-    if "%FILES_CONFIGURED%"=="N" echo 📁 Step 1: Configure files (Option 1)
-    if "%PROFILE_CONFIGURED%"=="N" echo 🎬 Step 2: Select profile (Option 2)
-    echo.
-    echo 💡 Complete the required steps first
-    pause
-    goto :ShowProfessionalMainMenu
-)
-
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -1267,8 +1382,6 @@ exit /b 0
 :: 🎬 SELECT PROFILE FOR WORKFLOW (FIXED)
 ::==============================================
 :SelectProfileForWorkflow
-echo [DEBUG] Choice selected: "%profile_choice%"
-pause
 echo  🎬 Select the optimal profile for your Instagram content:
 echo.
 echo  Professional Profile System - Choose your encoding profile:
@@ -1284,6 +1397,19 @@ echo  [C] 📊 Compare All Profiles
 echo  [B] 🔙 Back to Main Menu
 echo.
 set /p "profile_choice=Select your profile [1-6, C, B]: "
+
+:: VALIDATE EMPTY INPUT
+if not defined profile_choice (
+    echo ❌ Please select an option
+    pause
+    goto :SelectProfileForWorkflow
+)
+
+if "%profile_choice%"=="" (
+    echo ❌ Please select an option
+    pause
+    goto :SelectProfileForWorkflow
+)
 
 :: Handle profile selection - FIXED SYNTAX
 if /i "%profile_choice%"=="1" (
@@ -1316,7 +1442,7 @@ if /i "%profile_choice%"=="C" (
 )
 if /i "%profile_choice%"=="B" exit /b 0
 
-echo ❌ Invalid choice. Please select 1-6, C, or B.
+echo ❌ Invalid choice: "%profile_choice%". Please select 1-6, C, or B.
 pause
 goto :SelectProfileForWorkflow
 
@@ -1344,7 +1470,7 @@ echo.
 echo 🎬 Loading REELS/STORIES Profile (Hollywood Zero-Recompression)...
 
 :: Define all profile variables
-set "PROFILE_NAME=REELS/STORIES (Vertical - Zero Recompression)"
+set "PROFILE_NAME=REELS/STORIES Vertical Zero-Recompression"
 set "VIDEO_WIDTH=1080"
 set "VIDEO_HEIGHT=1920"
 set "VIDEO_ASPECT=9:16"
@@ -1381,7 +1507,7 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading FEED SQUARE Profile (Universal Compatibility)...
 
-set "PROFILE_NAME=FEED SQUARE (1:1 Universal)"
+set "PROFILE_NAME=FEED SQUARE 1:1 Universal"
 set "VIDEO_WIDTH=1080"
 set "VIDEO_HEIGHT=1080"
 set "VIDEO_ASPECT=1:1"
@@ -1417,7 +1543,7 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading FEED/IGTV Profile (Broadcast Standard)...
 
-set "PROFILE_NAME=FEED/IGTV (Horizontal Broadcast)"
+set "PROFILE_NAME=FEED/IGTV Horizontal Broadcast"
 set "VIDEO_WIDTH=1920"
 set "VIDEO_HEIGHT=1080"
 set "VIDEO_ASPECT=16:9"
@@ -1453,7 +1579,7 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading CINEMA ULTRA-WIDE Profile (Cinematic Quality)...
 
-set "PROFILE_NAME=CINEMA ULTRA-WIDE (21:9 Cinematic)"
+set "PROFILE_NAME=CINEMA ULTRA-WIDE 21:9 Cinematic"
 set "VIDEO_WIDTH=2560"
 set "VIDEO_HEIGHT=1080"
 set "VIDEO_ASPECT=21:9"
@@ -1489,7 +1615,7 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading SPEEDRAMP VIRAL CAR Profile (High-Motion Optimized)...
 
-set "PROFILE_NAME=SPEEDRAMP VIRAL CAR (High-Motion Vertical)"
+set "PROFILE_NAME=SPEEDRAMP VIRAL CAR High-Motion Vertical"
 set "VIDEO_WIDTH=1080"
 set "VIDEO_HEIGHT=1920"
 set "VIDEO_ASPECT=9:16"
