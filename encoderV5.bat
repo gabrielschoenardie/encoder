@@ -69,7 +69,6 @@ set "SESSION_START_TIME="
 set "FILES_CONFIGURED=N"
 set "PROFILE_CONFIGURED=N"
 set "READY_TO_ENCODE=N"
-set "HELP_SYSTEM_ACTIVE=N"
 set "STATUS_DASHBOARD_ACTIVE=Y"
 set "PROFESSIONAL_MODE=Y"
 set "MENU_VERSION=5.4"
@@ -166,7 +165,7 @@ for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
     set "safe_seconds=%%c"
 )
 
-:: Remove leading zeros to prevent octal interpretation - SIMPLIFIED
+:: Remove leading zeros to prevent octal interpretation
 if defined safe_hours (
     if "%safe_hours:~0,1%"=="0" (
         if not "%safe_hours%"=="0" set "safe_hours=%safe_hours:~1%"
@@ -191,15 +190,10 @@ if defined safe_seconds (
     set "safe_seconds=0"
 )
 
-:: Validate numeric ranges - SIMPLIFIED
+:: Validações finais simplificadas (removidas redundâncias)
 if not defined safe_hours set "safe_hours=12"
 if not defined safe_minutes set "safe_minutes=0" 
 if not defined safe_seconds set "safe_seconds=0"
-
-:: Range validation with individual checks
-if "%safe_hours%"=="" set "safe_hours=12"
-if "%safe_minutes%"=="" set "safe_minutes=0"
-if "%safe_seconds%"=="" set "safe_seconds=0"
 
 exit /b 0
 ::======================================================================
@@ -373,6 +367,13 @@ exit /b 0
 ::==============================================
 :ProcessMainMenuChoice
 set /p "main_choice=🎯 Select option [0-9]: "
+
+:: Validação única e simplificada
+if not defined main_choice (
+    echo ❌ Please select an option
+    pause
+    goto :ShowProfessionalMainMenu
+)
 
 :: Validate choice
 if "%main_choice%"=="1" goto :ConfigureFiles
@@ -654,15 +655,8 @@ echo ║                          🔍 RAW FFMPEG OUTPUT                        
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-set "RAW_OUTPUT=raw_output_%RANDOM%.txt"
-"%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>"%RAW_OUTPUT%"
-
-if exist "%RAW_OUTPUT%" (
-    type "%RAW_OUTPUT%"
-    del "%RAW_OUTPUT%" 2>nul
-) else (
-    echo ❌ Could not generate raw output
-)
+:: Mostra output direto sem criar arquivo temporário
+"%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>&1
 
 echo.
 echo 💡 Analysis complete. File is ready for processing.
@@ -845,68 +839,13 @@ pause
 goto :ShowProfessionalMainMenu
 
 ::==============================================
-:: ❓ HELP SYSTEM
-::==============================================
-:ShowHelp
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                           ❓ HELP ^& DOCUMENTATION                            ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-
-echo  📚 QUICK START GUIDE:
-echo  ═══════════════════════════════════════════════════════════════════════════
-echo   1️⃣ Configure Files: Select input video and output name
-echo   2️⃣ Select Profile: Choose Instagram format (Reels/Feed/Square)
-echo   3️⃣ Start Encoding: 2-Pass Hollywood-level processing
-echo   4️⃣ Upload to Instagram: Zero-recompression guaranteed
-echo.
-
-echo  🎬 PROFILE DESCRIPTIONS:
-echo  ═══════════════════════════════════════════════════════════════════════════
-echo   📱 REELS/STORIES (9:16): Vertical content, talking heads, lifestyle
-echo   🔲 SQUARE (1:1): Universal feed posts, maximum compatibility
-echo   📺 FEED/IGTV (16:9): Horizontal videos, longer content
-echo   🎬 CINEMA (21:9): Ultra-wide cinematic content
-echo   🚗 SPEEDRAMP CAR: High-motion viral content, speed changes
-echo   ⚙️ CUSTOM: Manual configuration for specific needs
-echo.
-
-echo  🎛️ ADVANCED FEATURES:
-echo  ═══════════════════════════════════════════════════════════════════════════
-echo   🎭 Presets: ultrafast → placebo (speed vs quality)
-echo   🧠 Psychovisual: 0.8 → 1.5 (detail preservation)
-echo   📊 Profile Export: Save custom configurations
-echo   📥 Profile Import: Load shared configurations
-echo.
-
-echo  🚨 TROUBLESHOOTING:
-echo  ═══════════════════════════════════════════════════════════════════════════
-echo   ❌ FFmpeg not found: Download from ffmpeg.org
-echo   ❌ File not found: Check file path and permissions
-echo   ❌ Encoding failed: Check input file format and integrity
-echo   ❌ Instagram rejected: Ensure zero custom editing after encoding
-echo.
-
-echo  📞 SUPPORT:
-echo  ═══════════════════════════════════════════════════════════════════════════
-echo   📝 Logs: Check %EXEC_LOG% for detailed information
-echo   🔍 Analysis: Use option 5 to analyze input files
-echo   🧹 Maintenance: Use option 9 for cleanup and diagnostics
-echo.
-
-pause
-goto :ShowProfessionalMainMenu
-
-::==============================================
 :: 🧹 MAINTENANCE TOOLS
 ::==============================================
 :MaintenanceTools
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                         🧹 CLEANUP ^& MAINTENANCE                            ║
+echo ║                         🧹 MAINTENANCE TOOLS                                 ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
@@ -914,20 +853,14 @@ echo  🧹 MAINTENANCE OPTIONS:
 echo.
 echo   [1] 🗑️ Clean temporary files
 echo   [2] 📝 Clean old log files
-echo   [3] 🔍 System diagnostics
-echo   [4] 🔧 Reset workflow
-echo   [5] 📊 Performance test
-echo   [6] 🏠 Return to main menu
+echo   [3] 🏠 Return to main menu
 echo.
 
-set /p "maint_choice=Select maintenance option [1-6]: "
+set /p "maint_choice=Select maintenance option [1-3]: "
 
 if "%maint_choice%"=="1" goto :CleanTempFiles
 if "%maint_choice%"=="2" goto :CleanLogFiles
-if "%maint_choice%"=="3" goto :SystemDiagnostics
-if "%maint_choice%"=="4" goto :ResetWorkflow
-if "%maint_choice%"=="5" goto :PerformanceTest
-if "%maint_choice%"=="6" goto :ShowProfessionalMainMenu
+if "%maint_choice%"=="3" goto :ShowProfessionalMainMenu
 
 goto :MaintenanceTools
 
@@ -945,49 +878,26 @@ goto :MaintenanceTools
 :CleanLogFiles
 echo.
 echo 📝 Cleaning old log files...
-forfiles /m "*_instagram*.log" /d -7 /c "cmd /c del @path" 2>nul
-echo ✅ Log files older than 7 days cleaned
-pause
-goto :MaintenanceTools
 
-:SystemDiagnostics
-echo.
-echo 🔍 Running system diagnostics...
-echo   ✅ FFmpeg: Available
-echo   ✅ CPU Detection: %CPU_CORES% cores detected
-echo   ✅ Memory: %TOTAL_RAM_GB% GB available
-echo   ✅ Profile System: Operational
-echo   ✅ Menu System: V%MENU_VERSION% Active
-echo ✅ All systems operational
-pause
-goto :MaintenanceTools
-
-:ResetWorkflow
-echo.
-echo 🔧 Resetting workflow...
-set "FILES_CONFIGURED=N"
-set "PROFILE_CONFIGURED=N"
-set "READY_TO_ENCODE=N"
-set "WORKFLOW_STEP=1"
-set "SYSTEM_STATUS=RESET"
-set "ARQUIVO_ENTRADA="
-set "ARQUIVO_SAIDA="
-set "PROFILE_NAME="
-echo ✅ Workflow reset complete
-pause
-goto :MaintenanceTools
-
-:PerformanceTest
-echo.
-echo 📊 Running performance test...
-echo   🧪 Testing FFmpeg performance...
-"%FFMPEG_CMD%" -f lavfi -i testsrc=duration=1:size=320x240:rate=30 -f null - 2>nul
-if not errorlevel 1 (
-    echo   ✅ FFmpeg performance: Good
-) else (
-    echo   ⚠️ FFmpeg performance: Issues detected
+:: Versão mais compatível sem forfiles
+set "deleted_count=0"
+for %%F in (*_instagram*.log) do (
+    :: Verifica se arquivo tem mais de 7 dias (simplificado)
+    set "file_date=%%~tF"
+    echo   Checking: %%F (%%~tF)
+    :: Como forfiles pode não estar disponível, oferece opção manual
+    set /p "delete_file=Delete %%F? (Y/N): "
+    if /i "!delete_file:~0,1!"=="Y" (
+        del "%%F" 2>nul
+        set /a "deleted_count+=1"
+    )
 )
-echo ✅ Performance test complete
+
+if !deleted_count! GTR 0 (
+    echo ✅ !deleted_count! log files cleaned
+) else (
+    echo ✅ No log files to clean
+)
 pause
 goto :MaintenanceTools
 
@@ -1472,7 +1382,7 @@ if errorlevel 1 (
 exit /b 0
 
 ::==============================================
-:: 🎬 SELECT PROFILE FOR WORKFLOW (FIXED)
+:: 🎬 SELECT PROFILE FOR WORKFLOW
 ::==============================================
 :SelectProfileForWorkflow
 echo  🎬 Select the optimal profile for your Instagram content:
@@ -1498,13 +1408,7 @@ if not defined profile_choice (
     goto :SelectProfileForWorkflow
 )
 
-if "%profile_choice%"=="" (
-    echo ❌ Please select an option
-    pause
-    goto :SelectProfileForWorkflow
-)
-
-:: Handle profile selection - FIXED SYNTAX
+:: Handle profile selection
 if /i "%profile_choice%"=="1" (
     call :SetReelsProfile
     goto :ProfileWorkflowComplete
@@ -1583,14 +1487,6 @@ set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10
 :: Instagram-native color science
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
-
 goto :ShowProfileSummary
 
 :: ============================================================================
@@ -1618,14 +1514,6 @@ set "CURRENT_PROFILE_ID=2"
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.0,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=5:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=80:mbtree=1:qcomp=0.65:aq=3,1.0:vbv_init=0.9:nr=15:scenecut=0"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
 
 goto :ShowProfileSummary
 
@@ -1655,14 +1543,6 @@ set "X264_PARAMS=cabac=1:ref=12:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=1
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
-
 goto :ShowProfileSummary
 
 :: ============================================================================
@@ -1691,14 +1571,6 @@ set "X264_PARAMS=cabac=1:ref=16:deblock=1,-2,-2:analyse=0x3,0x133:me=tesa:subme=
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
-
 goto :ShowProfileSummary
 
 :: ============================================================================
@@ -1726,14 +1598,6 @@ set "CURRENT_PROFILE_ID=5"
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.2,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=18,10:bf=6:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2:vbv_init=0.9:nr=15:scenecut=0:no-fast-pskip=1"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
 
 goto :ShowProfileSummary
 
@@ -1774,14 +1638,6 @@ set "CURRENT_PROFILE_ID=6"
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.20:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:nr=15:scenecut=0"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-
-:: Clear legacy variables
-set "VIDEO_ESCALA="
-set "BITRATE_VIDEO_TARGET="
-set "BITRATE_VIDEO_MAX="
-set "BUFSIZE_VIDEO="
-set "PRESET_X264="
-set "BITRATE_AUDIO="
 
 goto :ShowProfileSummary
 
