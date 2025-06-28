@@ -15,11 +15,10 @@ color 0A
 set "SCRIPT_VERSION=5.1"
 set "EXEC_LOG="
 set "BACKUP_CREATED=N"
-call :SafeInitialization
-
 set "CPU_CORES=0"
 set "GLOBAL_START_TIME=0"
 set "TOTAL_ENCODE_TIME=00h 00m 00s"
+
 :: Professional Profile System Variables - V5.1 Upgrade
 set "PROFILE_NAME="
 set "VIDEO_WIDTH="
@@ -38,8 +37,8 @@ set "PROFILE_SELECTED=N"
 set "CURRENT_PROFILE_ID="
 set "ADVANCED_MODE=N"
 set "PROFILE_SYSTEM_VERSION=5.1"
+
 :: Advanced Customization Variables - V5.2 Extension
-set "ADVANCED_MODE=N"
 set "CUSTOM_PRESET="
 set "CUSTOM_PSY_RD="
 set "CUSTOM_PSY_TRELLIS="
@@ -51,6 +50,7 @@ set "CUSTOM_AQ_MODE="
 set "CUSTOM_AQ_STRENGTH="
 set "PROFILE_BACKUP="
 set "CUSTOMIZATION_ACTIVE=N"
+
 :: Profile Export/Import System Variables - V5.3 Extension
 set "PROFILE_EXPORT_DIR=profiles"
 set "PROFILE_EXTENSION=.prof"
@@ -61,6 +61,7 @@ set "CURRENT_PROFILE_FILE="
 set "PROFILE_DESCRIPTION="
 set "PROFILE_AUTHOR="
 set "PROFILE_VERSION=5.3"
+
 :: Professional Menu System Variables - V5.4 Final
 set "MAIN_MENU_ACTIVE=Y"
 set "WORKFLOW_STEP=0"
@@ -78,6 +79,11 @@ set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
 
+::===========================================
+:: 🛡️ SAFE INITIALIZATION - V5.4
+::===========================================
+call :SafeInitialization
+
 :: Initialize Logging
 call :LogEntry "===== INICIO V5.1 UPGRADE (%date% %time%) ====="
 call :LogEntry "[SYSTEM] Profile System V5.1 initialized"
@@ -85,14 +91,13 @@ call :LogEntry "[SYSTEM] Profile System V5.1 initialized"
 :: Show Professional Header
 call :ShowProfessionalHeader
 
-:: Captura tempo inicial do processo completo
-call :GetTimeInSeconds
-set "GLOBAL_START_TIME=!total_seconds!"
-
 :: System Detection & Validation
 call :DetectSystemCapabilities
 call :CheckFFmpeg
 if errorlevel 1 goto :ErrorExit
+
+:: Show Professional Header
+call :ShowProfessionalHeader
 
 call :InitializeProfessionalSystem
 call :ShowProfessionalMainMenu
@@ -117,6 +122,86 @@ echo ╚════════════════════════
 pause >nul
 exit /b 1
 
+::===========================================
+:: 🛡️ SAFE INITIALIZATION FUNCTION - FIXED
+::===========================================
+:SafeInitialization
+:: Initialize all numeric variables with safe defaults
+if not defined CPU_CORES set "CPU_CORES=2"
+if not defined TOTAL_RAM_GB set "TOTAL_RAM_GB=4"
+if not defined THREAD_COUNT set "THREAD_COUNT=2"
+if not defined WORKFLOW_STEP set "WORKFLOW_STEP=1"
+if not defined GLOBAL_START_TIME set "GLOBAL_START_TIME=0"
+if not defined INPUT_SIZE set "INPUT_SIZE=0"
+if not defined OUTPUT_SIZE set "OUTPUT_SIZE=0"
+if not defined AVAILABLE_PROFILES_COUNT set "AVAILABLE_PROFILES_COUNT=0"
+
+:: Initialize string variables safely
+if not defined SYSTEM_STATUS set "SYSTEM_STATUS=INITIALIZING"
+if not defined FILES_CONFIGURED set "FILES_CONFIGURED=N"
+if not defined PROFILE_CONFIGURED set "PROFILE_CONFIGURED=N"
+if not defined READY_TO_ENCODE set "READY_TO_ENCODE=N"
+if not defined ADVANCED_MODE set "ADVANCED_MODE=N"
+if not defined CUSTOMIZATION_ACTIVE set "CUSTOMIZATION_ACTIVE=N"
+
+:: Validate NUMBER_OF_PROCESSORS safely - FIXED VERSION
+if not defined NUMBER_OF_PROCESSORS set "NUMBER_OF_PROCESSORS=4"
+if "%NUMBER_OF_PROCESSORS%"=="" set "NUMBER_OF_PROCESSORS=4"
+if "%NUMBER_OF_PROCESSORS%"=="0" set "NUMBER_OF_PROCESSORS=4"
+
+:: Initialize time variables safely
+call :SafeTimeInitialization
+
+exit /b 0
+
+:SafeTimeInitialization
+:: Get current time safely without math operations
+set "current_time=%time%"
+if "%current_time:~0,1%"==" " set "current_time=0%current_time:~1%"
+
+:: Extract hours/minutes/seconds safely
+for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
+    set "safe_hours=%%a"
+    set "safe_minutes=%%b" 
+    set "safe_seconds=%%c"
+)
+
+:: Remove leading zeros to prevent octal interpretation - SIMPLIFIED
+if defined safe_hours (
+    if "%safe_hours:~0,1%"=="0" (
+        if not "%safe_hours%"=="0" set "safe_hours=%safe_hours:~1%"
+    )
+) else (
+    set "safe_hours=12"
+)
+
+if defined safe_minutes (
+    if "%safe_minutes:~0,1%"=="0" (
+        if not "%safe_minutes%"=="0" set "safe_minutes=%safe_minutes:~1%"
+    )
+) else (
+    set "safe_minutes=0"
+)
+
+if defined safe_seconds (
+    if "%safe_seconds:~0,1%"=="0" (
+        if not "%safe_seconds%"=="0" set "safe_seconds=%safe_seconds:~1%"
+    )
+) else (
+    set "safe_seconds=0"
+)
+
+:: Validate numeric ranges - SIMPLIFIED
+if not defined safe_hours set "safe_hours=12"
+if not defined safe_minutes set "safe_minutes=0" 
+if not defined safe_seconds set "safe_seconds=0"
+
+:: Range validation with individual checks
+if "%safe_hours%"=="" set "safe_hours=12"
+if "%safe_minutes%"=="" set "safe_minutes=0"
+if "%safe_seconds%"=="" set "safe_seconds=0"
+
+exit /b 0
 ::======================================================================
 :: 🎬 PROFESSIONAL MAIN MENU SYSTEM - V5.4 FINAL
 ::======================================================================
@@ -148,8 +233,8 @@ echo ║            🎬 INSTAGRAM ENCODER FRAMEWORK V5.4 PROFESSIONAL          
 echo ║                          🏆 HOLLYWOOD EDITION 🏆                             ║
 echo ║                                                                              ║
 echo ║    ⚡ Zero-Recompression Guaranteed  🎭 Netflix/Disney+ Quality Level        ║
-echo ║    🎛️ Advanced Customization         📊 Professional Profile System         ║
-echo ║    🔬 Scientific Parameters          🎪 Viral Content Optimized             ║
+echo ║    🎛️ Advanced Customization         📊 Professional Profile System          ║
+echo ║    🔬 Scientific Parameters          🎪 Viral Content Optimized              ║
 echo ║                                                                              ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
@@ -986,14 +1071,22 @@ set "IS_LAPTOP=N"
 wmic computersystem get PCSystemType 2>nul | findstr "2" >nul
 if not errorlevel 1 set "IS_LAPTOP=Y"
 
-:: Detect available RAM
+:: Detect available RAM - FIXED VERSION
 set "TOTAL_RAM_GB=4"
 for /f "tokens=2 delims==" %%A in ('wmic OS get TotalVisibleMemorySize /value 2^>nul ^| find "="') do (
     set "TOTAL_RAM_KB=%%A"
-    if defined TOTAL_RAM_KB (
+)
+
+:: SAFE RAM CALCULATION - NEW FIX
+if defined TOTAL_RAM_KB (
+    if !TOTAL_RAM_KB! GTR 0 (
         set /a "TOTAL_RAM_GB=!TOTAL_RAM_KB!/1024/1024"
         if !TOTAL_RAM_GB! LSS 1 set "TOTAL_RAM_GB=1"
+    ) else (
+        set "TOTAL_RAM_GB=4"
     )
+) else (
+    set "TOTAL_RAM_GB=4"
 )
 
 :: Display results
@@ -2862,9 +2955,9 @@ for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
     set /a "seconds=%%c"
 )
 
-if "%hours:~0,1%"=="0" set /a "hours=%hours:~1%"
-if "%minutes:~0,1%"=="0" set /a "minutes=%minutes:~1%"
-if "%seconds:~0,1%"=="0" set /a "seconds=%seconds:~1%"
+if "%hours:~0,1%"=="0" if not "%hours%"=="0" set /a "hours=%hours:~1%"
+if "%minutes:~0,1%"=="0" if not "%minutes%"=="0" set /a "minutes=%minutes:~1%"
+if "%seconds:~0,1%"=="0" if not "%seconds%"=="0" set /a "seconds=%seconds:~1%"
 
 set /a "total_seconds=(hours*3600)+(minutes*60)+seconds"
 exit /b %total_seconds%
