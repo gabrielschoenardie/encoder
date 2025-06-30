@@ -103,11 +103,6 @@ call :ShowProfessionalMainMenu
 
 :: Post-Processing
 call :PostProcessing
-:: Calcula tempo total do processo
-call :GetTimeInSeconds
-call :CalculateElapsedTime !GLOBAL_START_TIME! !total_seconds!
-set "TOTAL_ENCODE_TIME=!ELAPSED_TIME!"
-call :LogEntry "[TOTAL] Tempo total de processamento: !TOTAL_ENCODE_TIME!"
 
 exit /b 0
 
@@ -161,7 +156,7 @@ if "%current_time:~0,1%"==" " set "current_time=0%current_time:~1%"
 :: Extract hours/minutes/seconds safely
 for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
     set "safe_hours=%%a"
-    set "safe_minutes=%%b" 
+    set "safe_minutes=%%b"
     set "safe_seconds=%%c"
 )
 
@@ -192,7 +187,7 @@ if defined safe_seconds (
 
 :: Validações finais simplificadas (removidas redundâncias)
 if not defined safe_hours set "safe_hours=12"
-if not defined safe_minutes set "safe_minutes=0" 
+if not defined safe_minutes set "safe_minutes=0"
 if not defined safe_seconds set "safe_seconds=0"
 
 exit /b 0
@@ -220,6 +215,13 @@ exit /b 0
 :: 🎨 PROFESSIONAL HEADER
 ::==============================================
 :ShowProfessionalHeader
+echo.
+echo    ██╗███╗   ██╗███████╗████████╗ █████╗  ██████╗ ██████╗  █████╗ ███╗   ███╗
+echo    ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
+echo    ██║██╔██╗ ██║███████╗   ██║   ███████║██║  ███╗██████╔╝███████║██╔████╔██║
+echo    ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║   ██║██╔══██╗██╔══██║██║╚██╔╝██║
+echo    ██║██║ ╚████║███████║   ██║   ██║  ██║╚██████╔╝██║  ██║██║  ██║██║ ╚═╝ ██║
+echo    ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
 echo ║                                                                              ║
@@ -358,6 +360,7 @@ echo  🛠️ SYSTEM:
 echo   [7] 📋 System Information ^& Diagnostics
 echo   [8] ❓ Help ^& Documentation
 echo   [9] 🧹 Cleanup ^& Maintenance
+echo   [D] 🔍 x264 Parameters Diagnostic
 echo   [0] 🚪 Exit
 echo.
 
@@ -366,7 +369,7 @@ exit /b 0
 :: 🎯 PROCESS MENU CHOICE
 ::==============================================
 :ProcessMainMenuChoice
-set /p "main_choice=🎯 Select option [0-9]: "
+set /p "main_choice=🎯 Select option [0-9, D]: "
 
 :: Validação única e simplificada
 if not defined main_choice (
@@ -377,7 +380,7 @@ if not defined main_choice (
 
 :: Validate choice
 if "%main_choice%"=="1" goto :ConfigureFiles
-if "%main_choice%"=="2" goto :ConfigureProfile  
+if "%main_choice%"=="2" goto :ConfigureProfile
 if "%main_choice%"=="3" goto :AccessAdvanced
 if "%main_choice%"=="4" goto :AccessProfileManagement
 if "%main_choice%"=="5" goto :AnalyzeInputFile
@@ -385,9 +388,10 @@ if "%main_choice%"=="6" goto :StartEncoding
 if "%main_choice%"=="7" goto :ShowSystemInfo
 if "%main_choice%"=="8" goto :ShowHelp
 if "%main_choice%"=="9" goto :MaintenanceTools
+if /i "%main_choice%"=="D" goto :VerifyX264Parameters
 if "%main_choice%"=="0" goto :ExitProfessional
 
-echo ❌ Invalid choice. Please select 0-9.
+echo ❌ Invalid choice. Please select 0-9 or D.
 pause
 goto :ShowProfessionalMainMenu
 
@@ -410,7 +414,7 @@ call :GetInputFile
 if errorlevel 1 goto :ShowProfessionalMainMenu
 
 :: Validate input
-call :ValidateInputFile  
+call :ValidateInputFile
 if errorlevel 1 goto :ShowProfessionalMainMenu
 
 :: Get output file
@@ -674,6 +678,10 @@ echo ║                        🚀 HOLLYWOOD ENCODING INITIATION              
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
+echo 🕐 Iniciando cronômetro do encoding...
+call :GetTimeInSeconds
+set "GLOBAL_START_TIME=!total_seconds!"
+call :LogEntry "[TIMING] Encoding started at: !total_seconds! seconds"
 :: Pre-encoding summary
 echo  📋 ENCODING SUMMARY:
 echo  ═══════════════════════════════════════════════════════════════════════════
@@ -703,7 +711,7 @@ set /a "duration_estimate=5"
 if "%X264_PRESET%"=="veryslow" set /a "duration_estimate=8"
 if "%X264_PRESET%"=="placebo" set /a "duration_estimate=15"
 if defined CUSTOM_PRESET (
-    if "%CUSTOM_PRESET%"=="placebo" set /a "duration_estimate=20"
+    if "%CUSTOM_PRESET%"=="veryslow" set /a "duration_estimate=8"
 )
 echo   🕐 Estimated: %duration_estimate%-15 minutes (depends on file size and settings)
 echo.
@@ -717,6 +725,12 @@ call :CreateBackup
 call :ExecuteEncoding
 
 if not errorlevel 1 (
+    call :GetTimeInSeconds
+    set "GLOBAL_END_TIME=!total_seconds!"
+    call :CalculateElapsedTime !GLOBAL_START_TIME! !GLOBAL_END_TIME!
+    set "TOTAL_ENCODE_TIME=!ELAPSED_TIME!"
+    call :LogEntry "[TIMING] Encoding completed. Total time: !TOTAL_ENCODE_TIME!"
+
     call :PostProcessing
     call :ShowEncodingResults
 ) else (
@@ -776,6 +790,30 @@ if "%post_choice%"=="5" goto :ShowProfessionalMainMenu
 
 pause
 goto :ShowProfessionalMainMenu
+
+:ResetWorkflow
+echo.
+echo 🔄 Resetting workflow for new encoding...
+:: Clear file configuration
+set "ARQUIVO_ENTRADA="
+set "ARQUIVO_SAIDA="
+set "FILES_CONFIGURED=N"
+
+:: Reset encoding variables
+set "TOTAL_ENCODE_TIME=00h 00m 00s"
+set "GLOBAL_START_TIME=0"
+set "GLOBAL_END_TIME=0"
+set "OUTPUT_SIZE_MB=0"
+
+:: Reset workflow status
+set "WORKFLOW_STEP=1"
+set "SYSTEM_STATUS=READY"
+set "READY_TO_ENCODE=N"
+
+call :LogEntry "[WORKFLOW] Reset for new encoding session"
+echo ✅ Workflow reset. Ready for new files and encoding.
+exit /b 0
+
 ::==============================================
 :: 📋 SYSTEM INFORMATION
 ::==============================================
@@ -926,6 +964,156 @@ echo  🌟 Share your amazing content and tag us!
 echo.
 call :LogEntry "[SESSION] Professional session ended - Duration: %ELAPSED_TIME%"
 pause
+exit /b 0
+
+:ShowHelp
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                            ❓ HELP ^& DOCUMENTATION                          ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📖 Help topics will be implemented in future version
+echo  💡 For now, refer to the README.md file
+echo.
+pause
+goto :ShowProfessionalMainMenu
+
+:: ADICIONAR AQUI - NOVA FUNÇÃO DE DIAGNÓSTICO
+:VerifyX264Parameters
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                         🔍 x264 PARAMETERS DIAGNOSTIC                        ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+if not defined PROFILE_NAME (
+    echo ⚠️ PROFILE NOT SELECTED
+    echo 💡 Please select a profile first to run diagnostics
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+echo 🎬 Current Profile: %PROFILE_NAME%
+echo 📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
+echo 🎭 Preset: %X264_PRESET%
+if defined CUSTOM_PRESET echo 🎛️ Custom Preset: %CUSTOM_PRESET%
+echo.
+
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 📋 PARÂMETROS DEFINIDOS NO SCRIPT                               │
+echo └─────────────────────────────────────────────────────────────────┘
+echo.
+echo %X264_PARAMS%
+echo.
+
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 🔍 ANÁLISE DE CONFLITOS POTENCIAIS                              │
+echo └─────────────────────────────────────────────────────────────────┘
+echo.
+
+:: Verificar parâmetros específicos que podem conflitar
+echo 🎯 Parâmetros críticos para verificar no próximo encode:
+echo.
+
+echo bframes (B-frames):
+echo %X264_PARAMS% | findstr "bf=4" >nul
+if not errorlevel 1 (
+    echo   ✅ Script define: bf=4
+    echo   ⚠️  Verifique se aparece 'bframes=4' no log (não bframes=8)
+) else (
+    echo %X264_PARAMS% | findstr "bframes=4" >nul
+    if not errorlevel 1 (
+        echo   ✅ Script define: bframes=4
+        echo   ⚠️  Verifique se aparece 'bframes=4' no log (não bframes=8)
+    ) else (
+        echo   ❓ B-frames não encontrado nos parâmetros
+    )
+)
+
+echo.
+echo analyse (Motion Analysis):
+echo %X264_PARAMS% | findstr "analyse=0x3,0x133" >nul
+if not errorlevel 1 (
+    echo   ✅ Script define: analyse=0x3,0x133
+    echo   ⚠️  Verifique se aparece 'analyse=0x3,0x133' no log (não analyse=0x3:0)
+) else (
+    echo   ❓ Analyse não encontrado ou formato diferente
+)
+
+echo.
+echo aq (Adaptive Quantization):
+echo %X264_PARAMS% | findstr "aq=3" >nul
+if not errorlevel 1 (
+    echo   ✅ Script define: aq=3,1.0 ou aq=3:aq-strength=1.0
+    echo   ⚠️  Verifique se aparece 'aq=3:1.0' no log (não aq=1:1.00)
+) else (
+    echo   ❓ AQ mode não encontrado nos parâmetros
+)
+
+echo.
+echo ┌─────────────────────────────────────────────────────────────────┐
+echo │ 🧪 TESTE RECOMENDADO                                            │
+echo └─────────────────────────────────────────────────────────────────┘
+echo.
+echo 1. Faça um encode de teste (5-10 segundos)
+echo 2. Observe o output do FFmpeg durante o encoding
+echo 3. Procure pela linha que começa com "[libx264 @..."
+echo 4. Compare os parâmetros aplicados com os definidos acima
+echo.
+echo 🎯 Parâmetros que DEVEM aparecer:
+echo   • bframes=4 (não 8)
+echo   • analyse=0x3,0x133 (não 0x3:0)
+echo   • aq=3:1.0 (não aq=1:1.00)
+echo.
+echo ⚠️  Se aparecerem valores diferentes, há conflito de preset!
+echo.
+
+echo [T] 🧪 Fazer Teste de Encode Rápido (10 segundos)
+echo [B] 🔙 Voltar ao Menu Principal
+echo.
+set /p "diag_choice=Escolha [T/B]: "
+
+if /i "%diag_choice:~0,1%"=="T" goto :QuickTest
+if /i "%diag_choice:~0,1%"=="B" goto :ShowProfessionalMainMenu
+
+goto :VerifyX264Parameters
+
+:QuickTest
+if not defined ARQUIVO_ENTRADA (
+    echo.
+    echo ❌ Arquivo de entrada não configurado
+    echo 💡 Configure um arquivo primeiro no menu principal
+    pause
+    goto :VerifyX264Parameters
+)
+
+echo.
+echo 🧪 Executando teste rápido de 10 segundos...
+echo 📋 Observe os parâmetros x264 que aparecerão...
+echo.
+pause
+
+:: Comando de teste rápido
+call :BuildFFmpegCommand "PASS1"
+set "TEST_COMMAND=!FFMPEG_COMMAND! -t 10 -an -f null NUL"
+
+echo 🎬 Comando de teste:
+echo !TEST_COMMAND!
+echo.
+echo ⏱️ Executando teste... (observe os parâmetros x264)
+echo.
+
+!TEST_COMMAND! 2>&1
+
+echo.
+echo ✅ Teste concluído!
+echo 💡 Verifique se os parâmetros x264 acima correspondem aos definidos no script
+pause
+goto :VerifyX264Parameters
+
 exit /b 0
 
 :DetectSystemCapabilities
@@ -1482,8 +1670,8 @@ set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=1"
 
 :: Hollywood-Level x264 Parameters - Instagram Zero-Recompression Optimized
-set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3:0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3:aq-strength=1.0:vbv_init=0.9:scenecut=0"
-:: Instagram-native color science
+set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:scenecut=0:no-fast-pskip=1"
+
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
 goto :ShowProfileSummary
@@ -1510,7 +1698,7 @@ set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=2"
 
 :: Enhanced for square content
-set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.0,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=5:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=80:mbtree=1:qcomp=0.65:aq=3,1.0:vbv_init=0.9:nr=15:scenecut=0"
+set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:scenecut=0:no-fast-pskip=1"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
@@ -1704,7 +1892,7 @@ echo ║                        READY FOR HOLLYWOOD-LEVEL ENCODING              
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo  [S] ✅ Confirm Profile (Standard Hollywood Settings)
-echo  [A] 🎛️ Advanced Customization (Expert Mode - NEW!)
+echo  [A] 🎛️ Advanced Customization (Expert Mode)
 echo  [N] 🔙 Select Different Profile
 echo.
 
@@ -1791,7 +1979,7 @@ echo  │ 🎛️ CUSTOMIZATION OPTIONS                                        �
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 🎭 x264 Preset (Quality vs Speed Balance)
-echo  [2] 🧠 Psychovisual Settings (Detail Preservation) 
+echo  [2] 🧠 Psychovisual Settings (Detail Preservation)
 echo  [3] 🎬 GOP Structure (Keyframe Strategy)
 echo  [4] 📊 VBV Buffer Settings (Streaming Optimization)
 echo  [5] 🎵 Audio Enhancement Options
@@ -1826,49 +2014,38 @@ goto :AdvancedCustomization
 :CustomizePreset
 cls
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                        🎭 x264 PRESET CUSTOMIZATION                          ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo ╔════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎭 x264 PRESET CUSTOMIZATION                         ║
+echo ╚════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo  Current Preset: %X264_PRESET%
 if defined CUSTOM_PRESET echo  Custom Preset: %CUSTOM_PRESET% (will be applied)
 echo.
 echo  📊 PRESET COMPARISON (Quality vs Speed):
 echo.
-echo  ┌─────────────┬─────────────┬─────────────┬─────────────────────────────┐
-echo  │   PRESET    │    SPEED    │   QUALITY   │        BEST FOR             │
-echo  ├─────────────┼─────────────┼─────────────┼─────────────────────────────┤
-echo  │ ultrafast   │ ⚡⚡⚡⚡⚡  │ ⭐          │ Real-time encoding          │
-echo  │ superfast   │ ⚡⚡⚡⚡    │ ⭐⭐        │ Live streaming              │
-echo  │ veryfast    │ ⚡⚡⚡      │ ⭐⭐⭐      │ Fast preview                │
-echo  │ faster      │ ⚡⚡        │ ⭐⭐⭐⭐    │ Quick encoding              │
-echo  │ fast        │ ⚡⚡        │ ⭐⭐⭐⭐    │ Balanced workflow           │
-echo  │ medium      │ ⚡          │ ⭐⭐⭐⭐⭐  │ Default x264                │
-echo  │ slow        │ 🐌          │ ⭐⭐⭐⭐⭐  │ High quality                │
-echo  │ slower      │ 🐌🐌        │ ⭐⭐⭐⭐⭐⭐│ Very high quality (Current) │
-echo  │ veryslow    │ 🐌🐌🐌      │ ⭐⭐⭐⭐⭐⭐│ Maximum quality             │
-echo  │ placebo     │ 🐌🐌🐌🐌    │ ⭐⭐⭐⭐⭐⭐│ Cinema/Archival             │
-echo  └─────────────┴─────────────┴─────────────┴─────────────────────────────┘
+echo  ┌─────────────┬─────────────┬─────────────┬───────────────────────────┐
+echo  │   PRESET    │    SPEED    │   QUALITY   │        BEST FOR           │
+echo  ├─────────────┼─────────────┼─────────────┼───────────────────────────┤
+echo  │ fast        │ ⚡⚡        │ ⭐⭐⭐⭐    │ Balanced workflow         │
+echo  │ medium      │ ⚡          │ ⭐⭐⭐⭐⭐  │ Default x264              │
+echo  │ slow        │ 🐌          │ ⭐⭐⭐⭐⭐  │ High quality              │
+echo  │ slower      │ 🐌🐌        │ ⭐⭐⭐⭐⭐⭐│ Very high quality         │
+echo  │ veryslow    │ 🐌🐌🐌      │ ⭐⭐⭐⭐⭐⭐│ Maximum quality           │
+echo  └─────────────┴─────────────┴─────────────┴───────────────────────────┘
 echo.
 echo  💡 RECOMENDAÇÃO: 'slower' ou 'veryslow' para Instagram zero-recompression
 echo  🎬 AVISO: 'placebo' pode levar 10x mais tempo mas oferece qualidade cinema
 echo.
-echo  [1] ultrafast  [2] superfast  [3] veryfast  [4] faster  [5] fast
-echo  [6] medium     [7] slow       [8] slower     [9] veryslow [10] placebo
+echo  [1] fast       [2] medium     [3] slow       [4] slower     [5] veryslow
 echo  [B] Back to Advanced Menu
 echo.
-set /p "preset_choice=Select preset [1-10, B]: "
+set /p "preset_choice=Select preset [1-5, B]: "
 
-if "%preset_choice%"=="1" set "CUSTOM_PRESET=ultrafast"
-if "%preset_choice%"=="2" set "CUSTOM_PRESET=superfast"
-if "%preset_choice%"=="3" set "CUSTOM_PRESET=veryfast"
-if "%preset_choice%"=="4" set "CUSTOM_PRESET=faster"
-if "%preset_choice%"=="5" set "CUSTOM_PRESET=fast"
-if "%preset_choice%"=="6" set "CUSTOM_PRESET=medium"
-if "%preset_choice%"=="7" set "CUSTOM_PRESET=slow"
-if "%preset_choice%"=="8" set "CUSTOM_PRESET=slower"
-if "%preset_choice%"=="9" set "CUSTOM_PRESET=veryslow"
-if "%preset_choice%"=="10" set "CUSTOM_PRESET=placebo"
+if "%preset_choice%"=="1" set "CUSTOM_PRESET=fast"
+if "%preset_choice%"=="2" set "CUSTOM_PRESET=medium"
+if "%preset_choice%"=="3" set "CUSTOM_PRESET=slow"
+if "%preset_choice%"=="4" set "CUSTOM_PRESET=slower"
+if "%preset_choice%"=="5" set "CUSTOM_PRESET=veryslow"
 if /i "%preset_choice%"=="B" goto :AdvancedCustomization
 
 if defined CUSTOM_PRESET (
@@ -2133,7 +2310,7 @@ echo  │ 📊 PROFILE MANAGEMENT OPTIONS                                   │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 📤 Export Current Profile (Save to File)
-echo  [2] 📥 Import Profile (Load from File)  
+echo  [2] 📥 Import Profile (Load from File)
 echo  [3] 📚 Browse Profile Library
 echo  [4] 🗂️ Quick Load Recent Profiles
 echo  [5] 🏭 Create Profile Template
@@ -2317,7 +2494,7 @@ for %%F in ("profiles\*.prof") do (
     echo ┌─────────────────────────────────────────────────────────────────┐
     echo │ [!PROFILE_NUM!] %%~nF
     echo └─────────────────────────────────────────────────────────────────┘
-    
+
     :: Try to read first few lines for preview
     set "line_count=0"
     for /f "tokens=*" %%L in ('type "%%F" 2^>nul') do (
@@ -2337,7 +2514,7 @@ if %PROFILE_NUM% EQU 0 (
     echo 📊 Total profiles: %PROFILE_NUM%
     echo.
     echo [L] 📥 Load selected profile
-    echo [D] 🗑️ Delete selected profile  
+    echo [D] 🗑️ Delete selected profile
     echo [I] 📋 Show detailed info
 )
 
@@ -2460,7 +2637,7 @@ if not defined PROFILE_NAME (
 )
 
 if not defined VIDEO_WIDTH (
-    echo ❌ Invalid profile: VIDEO_WIDTH missing  
+    echo ❌ Invalid profile: VIDEO_WIDTH missing
     exit /b 1
 )
 
@@ -2626,17 +2803,12 @@ if not defined VIDEO_WIDTH (
     exit /b 1
 )
 
-if not defined X264_PARAMS (
-    echo   ❌ ERRO: X264_PARAMS não definido! Sistema V5.1 requer perfil selecionado.
-    exit /b 1
-)
-
 echo   ✅ Sistema V5.1 Hollywood detectado: %PROFILE_NAME%
 
 :: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
 
-:: Video codec
+:: Video codec e preset
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 if defined CUSTOM_PRESET (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
@@ -2647,16 +2819,38 @@ if defined CUSTOM_PRESET (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: Apply advanced customizations if any
-if "%ADVANCED_MODE%"=="Y" (
-    echo   🎛️ Aplicando customizações avançadas V5.2...
-    call :ProcessAdvancedCustomizations
-) else (
-    echo   🎬 Aplicando parâmetros Hollywood V5.1 padrão...
-)
+echo   🎬 Aplicando parâmetros Hollywood V5.1 (método individual)...
 
-:: x264 Hollywood Parameters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
+:: Definir parâmetros baseados no perfil atual
+if "%CURRENT_PROFILE_ID%"=="1" (
+    :: REELS Profile - Parâmetros individuais
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -8x8dct 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+    echo   💎 REELS profile: Hollywood parameters applied individually
+) else (
+    :: Para outros perfis, usar método similar adaptado
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+    echo   💎 Profile !CURRENT_PROFILE_ID!: Hollywood parameters applied
+)
 
 :: Threading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
@@ -2669,17 +2863,13 @@ echo   📏 Resolução: !VIDEO_WIDTH!x!VIDEO_HEIGHT!
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE! -keyint_min !KEYINT_MIN! -sc_threshold 40 -r 30"
 
 :: Color parameters
-if defined COLOR_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
-) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-)
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
 :: Pass-specific settings
 if "!PASS_TYPE!"=="PASS1" (
-    echo   🔄 PASS 1 - Análise V5.1...
+    echo   🔄 PASS 1 - Análise V5.1
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
@@ -2688,7 +2878,7 @@ if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
     echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
 ) else if "!PASS_TYPE!"=="PASS2" (
-    echo   🎬 PASS 2 - Encoding Final V5.1...
+    echo   🎬 PASS 2 - Encoding Final V5.1
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
@@ -2700,7 +2890,7 @@ if "!PASS_TYPE!"=="PASS1" (
     echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
 )
 
-call :LogEntry "[COMMAND] V5.1 Pure System: !FFMPEG_COMMAND!"
+call :LogEntry "[COMMAND] V5.1 System: !FFMPEG_COMMAND!"
 exit /b 0
 
 :PostProcessing
