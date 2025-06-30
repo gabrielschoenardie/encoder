@@ -1,11 +1,14 @@
-# AGENTS.md
+# 🤖 AGENTS.md
 
 ![Hollywood Ready](https://img.shields.io/badge/Hollywood--Ready-🎬-gold?style=for-the-badge&logo=filmstrip&logoColor=white)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-H.264-green?logo=ffmpeg)
 ![Instagram Ready](https://img.shields.io/badge/Instagram-Ready-purple)
 
-> ⚡️ **Documentação oficial do encoder profissional de vídeos para Instagram – padrão Hollywood e máxima compatibilidade.**  
-> Projeto para criadores, editores e agências que buscam qualidade cinematográfica, automação e workflow sem stress.
+**Instagram Encoder Framework V5 – Agent Definitions & Architecture**
+
+This document defines *all agents (scripts/modules)* in the repository, their responsibilities, technical interfaces, and interdependencies.  
+
+Designed for maintainers, contributors, and advanced users seeking to understand the internal structure of the encoder framework.
 
 ---
 
