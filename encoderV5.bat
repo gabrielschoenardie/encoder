@@ -1,15 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-title Instagram Encoder Framework V5 - Optimized Professional Edition
+title Instagram Encoder Framework V5 - Professional Edition
 chcp 65001 >nul 2>&1
 color 0A
 
-:: ============================================================================
-::                    INSTAGRAM ENCODER FRAMEWORK V5
-::                         OPTIMIZED EDITION
-::         Instagram Encoder Framework V5 - Optimized Professional Edition
-::         Version: 5.1 | Author: Gabriel Schoenardie | Date: 2025
-:: ============================================================================
+:: INSTAGRAM ENCODER FRAMEWORK V5.1 - Professional Edition
+:: Zero-Recompression Video Encoder | Gabriel Schoenardie | 2025
 
 :: Global Variables
 set "SCRIPT_VERSION=5.1"
@@ -78,9 +74,7 @@ set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
 
-::===========================================
 :: 🛡️ SAFE INITIALIZATION - V5.4
-::===========================================
 call :SafeInitialization
 
 :: Initialize Logging
@@ -140,7 +134,6 @@ if not defined CUSTOMIZATION_ACTIVE set "CUSTOMIZATION_ACTIVE=N"
 
 :: Validate NUMBER_OF_PROCESSORS safely - FIXED VERSION
 if not defined NUMBER_OF_PROCESSORS set "NUMBER_OF_PROCESSORS=4"
-if "%NUMBER_OF_PROCESSORS%"=="" set "NUMBER_OF_PROCESSORS=4"
 if "%NUMBER_OF_PROCESSORS%"=="0" set "NUMBER_OF_PROCESSORS=4"
 
 :: Initialize time variables safely
@@ -160,40 +153,19 @@ for /f "tokens=1-3 delims=:." %%a in ("%current_time%") do (
     set "safe_seconds=%%c"
 )
 
-:: Remove leading zeros to prevent octal interpretation
-if defined safe_hours (
-    if "%safe_hours:~0,1%"=="0" (
-        if not "%safe_hours%"=="0" set "safe_hours=%safe_hours:~1%"
-    )
-) else (
-    set "safe_hours=12"
-)
-
-if defined safe_minutes (
-    if "%safe_minutes:~0,1%"=="0" (
-        if not "%safe_minutes%"=="0" set "safe_minutes=%safe_minutes:~1%"
-    )
-) else (
-    set "safe_minutes=0"
-)
-
-if defined safe_seconds (
-    if "%safe_seconds:~0,1%"=="0" (
-        if not "%safe_seconds%"=="0" set "safe_seconds=%safe_seconds:~1%"
-    )
-) else (
-    set "safe_seconds=0"
-)
-
 :: Validações finais simplificadas (removidas redundâncias)
 if not defined safe_hours set "safe_hours=12"
 if not defined safe_minutes set "safe_minutes=0"
 if not defined safe_seconds set "safe_seconds=0"
 
+:: Remove leading zeros to prevent octal interpretation
+if "%safe_hours:~0,1%"=="0" if not "%safe_hours%"=="0" set "safe_hours=%safe_hours:~1%"
+if "%safe_minutes:~0,1%"=="0" if not "%safe_minutes%"=="0" set "safe_minutes=%safe_minutes:~1%"
+if "%safe_seconds:~0,1%"=="0" if not "%safe_seconds%"=="0" set "safe_seconds=%safe_seconds:~1%"
+
 exit /b 0
-::======================================================================
+
 :: 🎬 PROFESSIONAL MAIN MENU SYSTEM - V5.4 FINAL
-::======================================================================
 :InitializeProfessionalSystem
 :: Initialize session
 call :GetTimeInSeconds
@@ -211,9 +183,7 @@ call :ShowMainMenuOptions
 call :ProcessMainMenuChoice
 exit /b 0
 
-::==============================================
 :: 🎨 PROFESSIONAL HEADER
-::==============================================
 :ShowProfessionalHeader
 echo.
 echo    ██╗███╗   ██╗███████╗████████╗ █████╗  ██████╗ ██████╗  █████╗ ███╗   ███╗
@@ -236,9 +206,7 @@ echo ╚════════════════════════
 echo.
 exit /b 0
 
-::==============================================
 :: 📊 SYSTEM DASHBOARD
-::==============================================
 :ShowSystemDashboard
 echo  ┌─────────────────────────────────────────────────────────────────────────────┐
 echo  │ 📊 SYSTEM DASHBOARD                                                         │
@@ -310,9 +278,7 @@ if "%FILES_CONFIGURED%"=="Y" if "%PROFILE_CONFIGURED%"=="Y" (
 echo.
 exit /b 0
 
-::==============================================
 :: 🎛️ MAIN MENU OPTIONS
-::==============================================
 :ShowMainMenuOptions
 echo  ┌─────────────────────────────────────────────────────────────────────────────┐
 echo  │ 🎛️ PROFESSIONAL WORKFLOW                                                    │
@@ -365,9 +331,8 @@ echo   [0] 🚪 Exit
 echo.
 
 exit /b 0
-::==============================================
+
 :: 🎯 PROCESS MENU CHOICE
-::==============================================
 :ProcessMainMenuChoice
 set /p "main_choice=🎯 Select option [0-9, D]: "
 
@@ -395,9 +360,7 @@ echo ❌ Invalid choice. Please select 0-9 or D.
 pause
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 📁 CONFIGURE FILES
-::==============================================
 :ConfigureFiles
 cls
 echo.
@@ -436,9 +399,7 @@ echo 🎯 Next step: Select a professional profile
 pause
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 🎬 CONFIGURE PROFILE
-::==============================================
 :ConfigureProfile
 cls
 echo.
@@ -455,9 +416,8 @@ if "%FILES_CONFIGURED%"=="N" (
 
 call :SelectProfileForWorkflow
 goto :ShowProfessionalMainMenu
-::==============================================
+
 :: ⚙️ ACCESS ADVANCED
-::==============================================
 :AccessAdvanced
 if "%PROFILE_CONFIGURED%"=="N" (
     echo.
@@ -471,16 +431,12 @@ if "%PROFILE_CONFIGURED%"=="N" (
 call :AdvancedCustomization
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 📊 ACCESS PROFILE MANAGEMENT
-::==============================================
 :AccessProfileManagement
 call :ProfileManagement
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 🔍 ANALYZE INPUT FILE
-::==============================================
 :AnalyzeInputFile
 cls
 echo.
@@ -667,9 +623,7 @@ echo 💡 Analysis complete. File is ready for processing.
 pause
 goto :ShowProfessionalMainMenu
 
-::==============================================
-:: 🚀 START ENCODING (INTEGRATED)
-::==============================================
+:: 🚀 START ENCODING
 :StartEncoding
 cls
 echo.
@@ -740,9 +694,7 @@ if not errorlevel 1 (
 
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 📊 SHOW ENCODING RESULTS
-::==============================================
 :ShowEncodingResults
 cls
 echo.
@@ -814,9 +766,7 @@ call :LogEntry "[WORKFLOW] Reset for new encoding session"
 echo ✅ Workflow reset. Ready for new files and encoding.
 exit /b 0
 
-::==============================================
 :: 📋 SYSTEM INFORMATION
-::==============================================
 :ShowSystemInfo
 cls
 echo.
@@ -876,9 +826,7 @@ echo.
 pause
 goto :ShowProfessionalMainMenu
 
-::==============================================
 :: 🧹 MAINTENANCE TOOLS
-::==============================================
 :MaintenanceTools
 cls
 echo.
@@ -939,9 +887,7 @@ if !deleted_count! GTR 0 (
 pause
 goto :MaintenanceTools
 
-::==============================================
 :: 🚪 PROFESSIONAL EXIT
-::==============================================
 :ExitProfessional
 cls
 echo.
@@ -979,7 +925,6 @@ echo.
 pause
 goto :ShowProfessionalMainMenu
 
-:: ADICIONAR AQUI - NOVA FUNÇÃO DE DIAGNÓSTICO
 :VerifyX264Parameters
 cls
 echo.
@@ -1119,10 +1064,7 @@ exit /b 0
 :DetectSystemCapabilities
 echo 🔍 Detectando capacidades do sistema...
 
-:: ============================================================================
-::                        DETECÇÃO DE ARQUITETURA CPU
-:: ============================================================================
-
+:: DETECÇÃO DE ARQUITETURA CPU
 set "CPU_ARCH=Unknown"
 
 :: Método 1: PROCESSOR_ARCHITECTURE (mais confiável)
@@ -1142,10 +1084,7 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="x86" (
 :: Fallback final
 if "!CPU_ARCH!"=="Unknown" set "CPU_ARCH=x64"
 
-:: ============================================================================
-::                    DETECÇÃO OTIMIZADA DO MODELO DO PROCESSADOR
-:: ============================================================================
-
+:: DETECÇÃO OTIMIZADA DO MODELO DO PROCESSADOR
 :: Obter nome do processador
 set "CPU_MODEL=Unknown"
 for /f "tokens=2 delims==" %%A in ('wmic cpu get Name /value 2^>nul ^| find "=" 2^>nul') do (
@@ -1203,9 +1142,7 @@ call :LogEntry "[SYSTEM] RAM: !TOTAL_RAM_GB!GB, Type: !IS_LAPTOP:Y=Laptop!!IS_LA
 
 exit /b 0
 
-:: ============================================================================
-::                    FUNÇÃO OTIMIZADA DE DETECÇÃO
-:: ============================================================================
+:: FUNÇÃO OTIMIZADA DE DETECÇÃO
 :DetectCPUFromDatabase
 :: Database compacta de CPUs - AMD PRIMEIRO para evitar falsos matches
 
@@ -1219,18 +1156,9 @@ for %%D in (
     "5800X|8|AMD Ryzen 7 5800X (8C/16T)"
     "5900X|12|AMD Ryzen 9 5900X (12C/24T)"
     "5950X|16|AMD Ryzen 9 5950X (16C/32T)"
-    "Athlon.*Silver.*3050|2|AMD Athlon Silver 3050U (2C/2T)"
-    "Athlon.*Gold.*3150|2|AMD Athlon Gold 3150U (2C/4T)"
-    "Ryzen.*3.*1200|4|AMD Ryzen 3 1200 (4C/4T)"
-    "Ryzen.*3.*[23][0-9][0-9][0-9]|4|AMD Ryzen 3 2nd/3rd Gen (4C/8T)"
-    "Ryzen.*3.*[456][0-9][0-9][0-9]|4|AMD Ryzen 3 4th-6th Gen (4C/8T)"
-    "Ryzen.*5.*[12][0-9][0-9][0-9]|6|AMD Ryzen 5 1st/2nd Gen (6C/12T)"
-    "Ryzen.*5.*[3456][0-9][0-9][0-9]|6|AMD Ryzen 5 3rd-6th Gen (6C/12T)"
-    "Ryzen.*5.*7[0-9][0-9][0-9]|8|AMD Ryzen 5 7th Gen (8C/16T)"
-    "Ryzen.*7.*[1234567][0-9][0-9][0-9]|8|AMD Ryzen 7 (8C/16T)"
-    "Ryzen.*9.*[3456789][0-9][0-9][0-9]|12|AMD Ryzen 9 3rd+ Gen (12C/24T)"
-    "Ryzen.*9.*[5789][0-9][0-9][0-9]X|16|AMD Ryzen 9 High-End (16C/32T)"
-    "Athlon|2|AMD Athlon (2C/2T)"
+    "Ryzen.*9.*7[0-9][0-9][0-9]|16|AMD Ryzen 9 7000 series"
+    "Ryzen.*7.*7[0-9][0-9][0-9]|8|AMD Ryzen 7 7000 series"
+    "Ryzen.*5.*7[0-9][0-9][0-9]|8|AMD Ryzen 5 7000 series"
     "Ryzen.*3|4|AMD Ryzen 3 (4C/8T)"
     "Ryzen.*5|6|AMD Ryzen 5 (6C/12T)"
     "Ryzen.*7|8|AMD Ryzen 7 (8C/16T)"
@@ -1245,34 +1173,32 @@ for %%D in (
     "1007U|2|Intel Celeron 1007U (2C/2T, 1.5GHz)"
     "1005M|2|Intel Celeron 1005M (2C/2T, 1.9GHz)"
     "N3350|2|Intel Celeron N3350 (2C/2T, Apollo Lake)"
-    "N4[0-9][0-9][0-9]|4|Intel Celeron N4xxx (4C/4T, Gemini Lake)"
     "Celeron.*N[0-9]|2|Intel Celeron N-Series (2C/2T)"
-    "Pentium.*Gold|2|Intel Pentium Gold (2C/4T)"
-    "Pentium.*Silver|4|Intel Pentium Silver (4C/4T)"
     "i3.*1[0-9][0-9][0-9][0-9]|4|Intel Core i3 10th+ Gen (4C/8T)"
     "i3.*[456789][0-9][0-9][0-9]|2|Intel Core i3 4th-9th Gen (2C/4T)"
-    "i3.*[23][0-9][0-9][0-9]|2|Intel Core i3 2nd/3rd Gen (2C/4T)"
     "i5.*1[0-9][0-9][0-9][0-9]|6|Intel Core i5 10th+ Gen (6C/12T)"
-    "i5.*[456789][0-9][0-9][0-9]|4|Intel Core i5 4th-9th Gen (4C/4T)"
-    "i5.*[23][0-9][0-9][0-9]|2|Intel Core i5 2nd/3rd Gen (2C/4T)"
+    "i5.*[89][0-9][0-9][0-9]|4|Intel Core i5 8th-9th Gen"
+    "i5.*[456789][0-9][0-9][0-9]|4|Intel Core i5 4th-8th Gen (4C/4T)"
     "i7.*1[0-9][0-9][0-9][0-9]|8|Intel Core i7 10th+ Gen (8C/16T)"
+    "i7.*[89][0-9][0-9][0-9]|6|Intel Core i7 8th-9th Gen"
     "i7.*[456789][0-9][0-9][0-9]|4|Intel Core i7 4th-9th Gen (4C/8T)"
-    "i7.*[23][0-9][0-9][0-9]|4|Intel Core i7 2nd/3rd Gen (4C/8T)"
     "Core.*i9|8|Intel Core i9 (8C/16T+)"
     "Core.*i7|4|Intel Core i7 (Generic 4C/8T)"
     "Core.*i5|4|Intel Core i5 (Generic 4C/4T)"
     "Core.*i3|2|Intel Core i3 (Generic 2C/4T)"
-    "Pentium[^.]|2|Intel Pentium (2C/2T)"
     "Celeron[^.]|2|Intel Celeron (Generic 2C/2T)"
 ) do (
     call :CheckCPUPattern %%D
     if "!CPU_MATCHED!"=="Y" exit /b 0
 )
 
-:: Se não encontrou na database, usar detecção automática
-echo   ⚠️  Processador não encontrado na database - Usando detecção automática...
+:: Se não encontrou, usar detecção automática
+echo   ⚠️  CPU não identificado - usando detecção automática...
+call :AutoDetectCPU
+exit /b 0
 
-:: Tentar detectar cores físicos via WMIC
+:AutoDetectCPU
+:: Detecção automática simplificada
 set "PHYSICAL_CORES=0"
 for /f "tokens=2 delims==" %%A in ('wmic cpu get NumberOfCores /value 2^>nul ^| find "="') do (
     set "PHYSICAL_CORES=%%A"
@@ -1280,59 +1206,30 @@ for /f "tokens=2 delims==" %%A in ('wmic cpu get NumberOfCores /value 2^>nul ^| 
 
 if !PHYSICAL_CORES! GTR 0 (
     set "CPU_CORES=!PHYSICAL_CORES!"
-    set "CPU_FAMILY=Auto-detected (!PHYSICAL_CORES! physical cores)"
-    exit /b 0
-)
-
-:: Fallback para NUMBER_OF_PROCESSORS dividido por 2 (assumindo HyperThreading)
-if defined NUMBER_OF_PROCESSORS (
-    set "AUTO_CORES=%NUMBER_OF_PROCESSORS%"
-    if !AUTO_CORES! GEQ 1 if !AUTO_CORES! LEQ 128 (
-        :: Para CPUs com HyperThreading, dividir por 2
-        if !AUTO_CORES! GTR 4 (
-            set /a "CPU_CORES=!AUTO_CORES!/2"
-        ) else (
-            set "CPU_CORES=!AUTO_CORES!"
-        )
-        set "CPU_FAMILY=Auto-detected (!CPU_CORES! cores estimated)"
-        exit /b 0
-    )
-)
-
-:: Fallback final baseado na arquitetura
-if "!CPU_ARCH!"=="x86" (
-    set "CPU_CORES=1"
-    set "CPU_FAMILY=x86 Fallback (Single Core)"
+    set "CPU_FAMILY=Auto-detected (!PHYSICAL_CORES! cores)"
+) else if defined NUMBER_OF_PROCESSORS (
+    :: Estimar cores físicos (assumir HyperThreading em CPUs modernas)
+    set /a "CPU_CORES=!NUMBER_OF_PROCESSORS!/2"
+    if !CPU_CORES! LSS 2 set "CPU_CORES=2"
+    set "CPU_FAMILY=Auto-detected (estimated)"
 ) else (
-    set "CPU_CORES=2"
-    set "CPU_FAMILY=Generic Fallback (Dual Core)"
+    :: Fallback seguro
+    set "CPU_CORES=4"
+    set "CPU_FAMILY=Generic (4 cores assumed)"
 )
-
 exit /b 0
 
-:: ============================================================================
-::                    FUNÇÃO AUXILIAR DE MATCHING
-:: ============================================================================
+:: FUNÇÃO AUXILIAR DE MATCHING
 :CheckCPUPattern
-:: Recebe uma string no formato "PATTERN|CORES|DESCRIPTION"
 set "CPU_MATCHED=N"
-set "PATTERN_DATA=%~1"
-
-:: Extrair componentes
-for /f "tokens=1,2,3 delims=|" %%A in ("!PATTERN_DATA!") do (
-    set "PATTERN=%%A"
-    set "CORES=%%B"
-    set "DESCRIPTION=%%C"
+for /f "tokens=1,2,3 delims=|" %%A in ("%~1") do (
+    echo "!CPU_MODEL!" | findstr /i "%%A" >nul
+    if not errorlevel 1 (
+        set "CPU_CORES=%%B"
+        set "CPU_FAMILY=%%C"
+        set "CPU_MATCHED=Y"
+    )
 )
-
-:: Verificar se o padrão corresponde
-echo "!CPU_MODEL!" | findstr /i "!PATTERN!" >nul
-if not errorlevel 1 (
-    set "CPU_CORES=!CORES!"
-    set "CPU_FAMILY=!DESCRIPTION!"
-    set "CPU_MATCHED=Y"
-)
-
 exit /b 0
 
 :CheckFFmpeg
@@ -1569,25 +1466,22 @@ if errorlevel 1 (
 
 exit /b 0
 
-::==============================================
 :: 🎬 SELECT PROFILE FOR WORKFLOW
-::==============================================
 :SelectProfileForWorkflow
 echo  🎬 Select the optimal profile for your Instagram content:
 echo.
 echo  Professional Profile System - Choose your encoding profile:
 echo.
 echo  [1] 📱 REELS/STORIES (Vertical 9:16) - Zero-Recompression Optimized
-echo  [2] 🔲 FEED SQUARE (1:1) - Universal Compatibility
-echo  [3] 📺 FEED/IGTV (Horizontal 16:9) - Broadcast Standard
-echo  [4] 🎬 CINEMA ULTRA-WIDE (21:9) - Cinematic Quality
-echo  [5] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion Optimized
-echo  [6] ⚙️ CUSTOM PROFILE - Advanced Manual Configuration
+echo  [2] 📺 FEED/IGTV (Horizontal 16:9) - Broadcast Standard
+echo  [3] 🎬 CINEMA ULTRA-WIDE (21:9) - Cinematic Quality
+echo  [4] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion Optimized
+echo  [5] ⚙️ CUSTOM PROFILE - Advanced Manual Configuration
 echo.
 echo  [C] 📊 Compare All Profiles
 echo  [B] 🔙 Back to Main Menu
 echo.
-set /p "profile_choice=Select your profile [1-6, C, B]: "
+set /p "profile_choice=Select your profile [1-5, C, B]: "
 
 :: VALIDATE EMPTY INPUT
 if not defined profile_choice (
@@ -1602,22 +1496,18 @@ if /i "%profile_choice%"=="1" (
     goto :ProfileWorkflowComplete
 )
 if /i "%profile_choice%"=="2" (
-    call :SetSquareProfile
-    goto :ProfileWorkflowComplete
-)
-if /i "%profile_choice%"=="3" (
     call :SetFeedProfile
     goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="4" (
+if /i "%profile_choice%"=="3" (
     call :SetCinemaProfile
     goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="5" (
+if /i "%profile_choice%"=="4" (
     call :SetSpeedRampProfile
     goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="6" (
+if /i "%profile_choice%"=="5" (
     call :SetCustomProfile
     goto :ProfileWorkflowComplete
 )
@@ -1647,9 +1537,7 @@ echo 🎯 Profile ready! You can now proceed to encoding or advanced customizati
 pause
 exit /b 0
 
-:: ============================================================================
-:: 📱 REELS/STORIES PROFILE - Zero-Recompression Optimized
-:: ============================================================================
+:: 📱 REELS/STORIES PROFILE - Zero-Recompression
 :SetReelsProfile
 echo.
 echo 🎬 Loading REELS/STORIES Profile (Hollywood Zero-Recompression)...
@@ -1676,37 +1564,7 @@ set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -color
 
 goto :ShowProfileSummary
 
-:: ============================================================================
-:: 🔲 FEED SQUARE PROFILE - Universal Compatibility
-:: ============================================================================
-:SetSquareProfile
-echo.
-echo 🎬 Loading FEED SQUARE Profile (Universal Compatibility)...
-
-set "PROFILE_NAME=FEED SQUARE 1:1 Universal"
-set "VIDEO_WIDTH=1080"
-set "VIDEO_HEIGHT=1080"
-set "VIDEO_ASPECT=1:1"
-set "TARGET_BITRATE=12M"
-set "MAX_BITRATE=20M"
-set "BUFFER_SIZE=24M"
-set "GOP_SIZE=60"
-set "KEYINT_MIN=30"
-set "X264_PRESET=veryslow"
-set "X264_TUNE=film"
-set "PROFILE_SELECTED=Y"
-set "CURRENT_PROFILE_ID=2"
-
-:: Enhanced for square content
-set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:scenecut=0:no-fast-pskip=1"
-
-set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-
-goto :ShowProfileSummary
-
-:: ============================================================================
 :: 📺 FEED/IGTV PROFILE - Broadcast Standard
-:: ============================================================================
 :SetFeedProfile
 echo.
 echo 🎬 Loading FEED/IGTV Profile (Broadcast Standard)...
@@ -1723,7 +1581,7 @@ set "KEYINT_MIN=25"
 set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
-set "CURRENT_PROFILE_ID=3"
+set "CURRENT_PROFILE_ID=2"
 
 :: Broadcast-level parameters
 set "X264_PARAMS=cabac=1:ref=12:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.0,0.25:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=6:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2:vbv_init=0.9:nr=10:scenecut=0"
@@ -1732,9 +1590,7 @@ set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -color
 
 goto :ShowProfileSummary
 
-:: ============================================================================
 :: 🎬 CINEMA ULTRA-WIDE PROFILE - Cinematic Quality
-:: ============================================================================
 :SetCinemaProfile
 echo.
 echo 🎬 Loading CINEMA ULTRA-WIDE Profile (Cinematic Quality)...
@@ -1751,7 +1607,7 @@ set "KEYINT_MIN=24"
 set "X264_PRESET=placebo"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
-set "CURRENT_PROFILE_ID=4"
+set "CURRENT_PROFILE_ID=3"
 
 :: Cinema-grade parameters
 set "X264_PARAMS=cabac=1:ref=16:deblock=1,-2,-2:analyse=0x3,0x133:me=tesa:subme=11:psy=1:psy_rd=1.0,0.30:mixed_ref=1:me_range=64:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=8:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=250:mbtree=1:qcomp=0.70:aq=3,1.5:vbv_init=0.9:nr=5:scenecut=0"
@@ -1760,9 +1616,7 @@ set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -color
 
 goto :ShowProfileSummary
 
-:: ============================================================================
 :: 🚗 SPEEDRAMP VIRAL CAR PROFILE - High-Motion Optimized
-:: ============================================================================
 :SetSpeedRampProfile
 echo.
 echo 🎬 Loading SPEEDRAMP VIRAL CAR Profile (High-Motion Optimized)...
@@ -1779,7 +1633,7 @@ set "KEYINT_MIN=24"
 set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
-set "CURRENT_PROFILE_ID=5"
+set "CURRENT_PROFILE_ID=4"
 
 :: SpeedRamp-optimized parameters for viral car content
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.2,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=18,10:bf=6:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2:vbv_init=0.9:nr=15:scenecut=0:no-fast-pskip=1"
@@ -1788,9 +1642,7 @@ set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -color
 
 goto :ShowProfileSummary
 
-:: ============================================================================
 :: ⚙️ CUSTOM PROFILE - Advanced Manual Configuration
-:: ============================================================================
 :SetCustomProfile
 echo.
 echo ⚙️ CUSTOM PROFILE CONFIGURATION
@@ -1819,7 +1671,7 @@ set "KEYINT_MIN=30"
 set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
-set "CURRENT_PROFILE_ID=6"
+set "CURRENT_PROFILE_ID=5"
 
 :: Standard Hollywood parameters for custom content
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.20:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:nr=15:scenecut=0"
@@ -1828,9 +1680,7 @@ set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -color
 
 goto :ShowProfileSummary
 
-:: ============================================================================
 :: 📊 HOLLYWOOD-LEVEL TECHNICAL PROFILE SUMMARY
-:: ============================================================================
 :ShowProfileSummary
 cls
 echo.
@@ -1910,9 +1760,7 @@ call :LogEntry "[PROFILE] V5.1 Profile selected: %PROFILE_NAME% (%VIDEO_WIDTH%x%
 echo ✅ Profile confirmed! Proceeding with encoding...
 exit /b 0
 
-:: ============================================================================
 :: 📊 COMPARE ALL PROFILES
-:: ============================================================================
 :CompareAllProfiles
 cls
 echo.
@@ -1920,24 +1768,24 @@ echo ╔════════════════════════
 echo ║                    📊 INSTAGRAM PROFILE COMPARISON MATRIX                    ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo ┌─────────────────┬───────────┬───────────┬───────────┬─────────────┬─────────────┐
-echo │ SPECIFICATION   │   REELS   │  SQUARE   │   FEED    │   CINEMA    │  SPEEDRAMP  │
-echo │                 │   (9:16)  │   (1:1)   │  (16:9)   │   (21:9)    │   (9:16)    │
-echo ├─────────────────┼───────────┼───────────┼───────────┼─────────────┼─────────────┤
-echo │ Resolution      │ 1080x1920 │ 1080x1080 │ 1920x1080 │ 2560x1080   │ 1080x1920   │
-echo │ Target Bitrate  │    15M    │    12M    │    18M    │     25M     │     18M     │
-echo │ Max Bitrate     │    25M    │    20M    │    30M    │     40M     │     30M     │
-echo │ Audio Bitrate   │   320k    │   256k    │   320k    │    320k     │    320k     │
-echo │ x264 Preset     │ veryslow  │ veryslow  │ veryslow  │   placebo   │  veryslow   │
-echo │ Reference Frames│     6     │     8     │    12     │     16      │      8      │
-echo │ B-Frames        │     4     │     5     │     6     │      8      │      6      │
-echo │ Motion Range    │    24     │    32     │    32     │     64      │     32      │
-echo │ Psychovisual    │ 1.0,0.15  │ 1.0,0.20  │ 1.0,0.25  │  1.0,0.30   │  1.2,0.20   │
-echo │ Use Case        │  General  │Universal  │Broadcast  │ Cinematic   │ Viral/Cars  │
-echo │ File Size (1min)│   ~110MB  │   ~90MB   │  ~135MB   │   ~190MB    │   ~140MB    │
-echo │ Encoding Speed  │  Medium   │  Medium   │   Slow    │ Very Slow   │    Slow     │
-echo │ Instagram Rate  │  99.5%%    │  99.5%%    │  99.5%%    │   99.0%%     │   99.8%%     │
-echo └─────────────────┴───────────┴───────────┴───────────┴─────────────┴─────────────┘
+echo ┌─────────────────┬───────────┬───────────┬─────────────┬─────────────┐
+echo │ SPECIFICATION   │   REELS   │   FEED    │   CINEMA    │  SPEEDRAMP  │
+echo │                 │   (9:16)  │  (16:9)   │   (21:9)    │   (9:16)    │
+echo ├─────────────────┼───────────┼───────────┼─────────────┼─────────────┤
+echo │ Resolution      │ 1080x1920 │ 1920x1080 │ 2560x1080   │ 1080x1920   │
+echo │ Target Bitrate  │    15M    │    18M    │     25M     │     18M     │
+echo │ Max Bitrate     │    25M    │    30M    │     40M     │     30M     │
+echo │ Audio Bitrate   │   320k    │   320k    │    320k     │    320k     │
+echo │ x264 Preset     │ veryslow  │ veryslow  │   placebo   │  veryslow   │
+echo │ Reference Frames│     6     │    12     │     16      │      8      │
+echo │ B-Frames        │     4     │     6     │      8      │      6      │
+echo │ Motion Range    │    24     │    32     │     64      │     32      │
+echo │ Psychovisual    │ 1.0,0.15  │ 1.0,0.25  │  1.0,0.30   │  1.2,0.20   │
+echo │ Use Case        │  General  │ Broadcast │ Cinematic   │ Viral/Cars  │
+echo │ File Size (1min)│   ~110MB  │  ~135MB   │   ~190MB    │   ~140MB    │
+echo │ Encoding Speed  │  Medium   │   Slow    │ Very Slow   │    Slow     │
+echo │ Instagram Rate  │  99.5%%    │  99.5%%    │   99.0%%     │   99.8%%     │
+echo └─────────────────┴───────────┴───────────┴─────────────┴─────────────┘
 echo.
 echo  📌 All profiles use 2-Pass Professional Encoding (Hollywood Standard)
 echo  🎬 All profiles guarantee ZERO recompression on Instagram
@@ -1945,7 +1793,6 @@ echo  🏆 All profiles use Netflix/Disney+ level quality parameters
 echo.
 echo  🎯 CHOOSE YOUR PROFILE BASED ON:
 echo    • REELS: General vertical content, talking head, lifestyle
-echo    • SQUARE: Universal compatibility, feed posts
 echo    • FEED: Traditional horizontal, IGTV, longer content
 echo    • CINEMA: Ultra-wide cinematic content, film-style
 echo    • SPEEDRAMP: Car content, speed changes, high motion, viral
@@ -1953,9 +1800,6 @@ echo.
 pause
 goto :SelectProfileForWorkflow
 
-::=====================================================================
-:: ⚙️ ADVANCED PROFILE CUSTOMIZATION - V5.2
-::=====================================================================
 :AdvancedCustomization
 cls
 echo.
@@ -2008,9 +1852,6 @@ echo ❌ Invalid choice. Please select 0-9.
 pause
 goto :AdvancedCustomization
 
-::==============================================
-:: 🎭 x264 PRESET CUSTOMIZATION
-::==============================================
 :CustomizePreset
 cls
 echo.
@@ -2058,9 +1899,6 @@ if defined CUSTOM_PRESET (
 
 goto :AdvancedCustomization
 
-::==============================================
-:: 🧠 PSYCHOVISUAL ENHANCEMENT
-::==============================================
 :CustomizePsychovisual
 cls
 echo.
@@ -2118,9 +1956,7 @@ if defined CUSTOM_PSY_RD (
 pause
 goto :AdvancedCustomization
 
-::==============================================
 :: 📋 PREVIEW CUSTOMIZATIONS
-::==============================================
 :PreviewCustomizations
 cls
 echo.
@@ -2167,9 +2003,7 @@ echo.
 pause
 goto :AdvancedCustomization
 
-::==============================================
 :: 🔄 RESTORE ORIGINAL PROFILE
-::==============================================
 :RestoreOriginalProfile
 echo.
 echo 🔄 Restaurando configurações originais do profile...
@@ -2181,9 +2015,7 @@ echo ✅ Profile restaurado para configurações Hollywood padrão
 pause
 goto :AdvancedCustomization
 
-::==============================================
 :: ✅ APPLY ADVANCED CUSTOMIZATIONS
-::==============================================
 :ApplyAdvancedCustomizations
 if "%CUSTOMIZATION_ACTIVE%"=="N" (
     echo.
@@ -2209,9 +2041,8 @@ call :LogEntry "[ADVANCED] V5.2 Advanced customizations applied"
 pause
 goto :ProfileConfirmed
 
-::==============================================
+
 :: 🎬 STUBS PARA FUNCIONALIDADES FUTURAS
-::==============================================
 :CustomizeGOP
 echo.
 echo ⏳ GOP Structure customization será implementado na próxima fase
@@ -2240,9 +2071,8 @@ echo 💡 Por enquanto, usando BT.709 otimizado para Instagram compliance
 pause
 goto :AdvancedCustomization
 
-::==============================================
+
 :: 🔧 PROCESS ADVANCED CUSTOMIZATIONS
-::==============================================
 :ProcessAdvancedCustomizations
 :: Backup original parameters if not already done
 if not defined PROFILE_BACKUP (
@@ -2274,9 +2104,6 @@ for /f "tokens=1,2* delims=:" %%a in ("!TEMP_PARAMS!") do (
 set "X264_PARAMS=!TEMP_PARAMS!"
 exit /b 0
 
-::======================================================================
-:: 📊 PROFILE MANAGEMENT SYSTEM - V5.3
-::======================================================================
 :ProfileManagement
 cls
 echo.
@@ -2333,9 +2160,6 @@ echo ❌ Invalid choice. Please select 1-8.
 pause
 goto :ProfileManagement
 
-::==============================================
-:: 📤 EXPORT CURRENT PROFILE
-::==============================================
 :ExportCurrentProfile
 cls
 echo.
@@ -2388,9 +2212,6 @@ echo.
 pause
 goto :ProfileManagement
 
-::==============================================
-:: 📥 IMPORT PROFILE
-::==============================================
 :ImportProfile
 cls
 echo.
@@ -2477,9 +2298,7 @@ echo.
 pause
 goto :ProfileManagement
 
-::==============================================
 :: 📚 BROWSE PROFILE LIBRARY
-::==============================================
 :BrowseProfileLibrary
 cls
 echo.
@@ -2564,9 +2383,7 @@ echo.
 pause
 goto :BrowseProfileLibrary
 
-::==============================================
 :: 📁 CREATE PROFILE FILE
-::==============================================
 :CreateProfileFile
 set "file_path=%~1"
 
@@ -2611,9 +2428,7 @@ echo COLOR_PARAMS=%COLOR_PARAMS%
 
 exit /b 0
 
-::==============================================
 :: 📖 PARSE PROFILE FILE
-::==============================================
 :ParseProfileFile
 set "profile_file=%~1"
 set "PROFILE_LOADED=N"
@@ -2655,9 +2470,7 @@ set "PROFILE_LOADED=Y"
 set "PROFILE_SELECTED=Y"
 exit /b 0
 
-::==============================================
 :: 📋 STUBS PARA FUNCIONALIDADES FUTURAS
-::==============================================
 :QuickLoadProfiles
 echo.
 echo ⏳ Quick Load será implementado em uma versão futura
@@ -2710,7 +2523,7 @@ goto :ProfileManagement
 :Execute2Pass
 echo.
 echo 🔄 PASS 1/2 - Análise
-echo ════════════════════════════════════════════════════════════════════
+echo ══════════════════════════════════════════════════════
 call :BuildFFmpegCommand "PASS1"
 set "PASS1_RESULT_BUILD=!ERRORLEVEL!"
 
@@ -2743,7 +2556,7 @@ echo 📋 Código de retorno: !PASS1_RESULT!
 
 echo.
 echo 🔄 PASS 2/2 - Encoding
-echo ════════════════════════════════════════════════════════════════════
+echo ═══════════════════════════════════════════════════════
 call :BuildFFmpegCommand "PASS2"
 set "PASS2_RESULT_BUILD=!ERRORLEVEL!"
 
@@ -2986,10 +2799,7 @@ if "!BACKUP_CREATED!"=="Y" (
 call :LogEntry "[RECOVERY] Error recovery attempted"
 exit /b 0
 
-:: ============================================================================
-::                    SISTEMA DE TEMPO E LOGGING OTIMIZADO
-:: ============================================================================
-
+:: SISTEMA DE TEMPO E LOGGING OTIMIZADO
 :GetTimeInSeconds
 set "current_time=%time%"
 if "%current_time:~0,1%"==" " set "current_time=%current_time:~1%"
@@ -3042,7 +2852,3 @@ if not defined EXEC_LOG (
 )
 echo [%time:~0,8%] %~1>>"!EXEC_LOG!"
 exit /b 0
-
-:: ============================================================================
-::                                END OF SCRIPT
-:: ============================================================================
