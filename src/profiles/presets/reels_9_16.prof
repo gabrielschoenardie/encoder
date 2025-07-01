@@ -4,6 +4,7 @@ PROFILE_VERSION=5.2
 PROFILE_DESCRIPTION=Optimized for Instagram Reels 9:16 content
 PROFILE_AUTHOR=Gabriel Schoenardie
 CONTENT_TYPE=vertical_social
+CREATED_DATE=2025-01-01
 
 [VIDEO_SETTINGS]
 VIDEO_WIDTH=1080
@@ -27,3 +28,5 @@ COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace
 ZERO_RECOMPRESSION=true
 VMAF_TARGET=96
 UPLOAD_SUCCESS_RATE=99.5
+PLATFORM_TESTED=Instagram_Reels
+LAST_VALIDATION=2025-01-01
