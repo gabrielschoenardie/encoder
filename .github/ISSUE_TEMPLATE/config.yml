@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/gabrielschoenardie/encoder/blob/main/README.md
+    about: Read the user guide and setup instructions
+  - name: 🤖 AI Context
+    url: https://github.com/gabrielschoenardie/encoder/blob/main/CLAUDE.md
+    about: Complete project context for AI-assisted development
+  - name: 💬 Discussions
+    url: https://github.com/gabrielschoenardie/encoder/discussions
+    about: General questions, ideas, and community discussions
