@@ -1,0 +1,36 @@
+{
+  "version": "5.2.0-modular",
+  "architecture": "modular",
+  "modules": {
+    "core": "src/core/encoderV5.bat",
+    "profiles": "src/profiles/",
+    "config": "src/config/",
+    "utils": "src/utils/"
+  },
+  "settings": {
+    "expert_mode": true,
+    "auto_optimize": true,
+    "telemetry_enabled": true,
+    "advanced_validation": true
+  },
+  "hardware": {
+    "auto_detect": true,
+    "threading": {
+      "laptop_multiplier": 0.67,
+      "desktop_multiplier": 0.875,
+      "max_threads": 32
+    }
+  },
+  "instagram": {
+    "compliance": {
+      "max_bitrate_reels": "25M",
+      "max_bitrate_feed": "30M",
+      "required_profile": "High",
+      "required_level": "4.1"
+    }
+  },
+  "quality": {
+    "vmaf_target": 96,
+    "psychovisual_tuning": "enhanced"
+  }
+}
