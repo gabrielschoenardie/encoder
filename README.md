@@ -1,5 +1,5 @@
-# 📱 Instagram Encoder Framework V5
-## Professional Zero-Recompression Video Encoder for Instagram
+## 📱 Instagram Encoder Framework V5
+**🎬 Professional Zero-Recompression Video Encoder for Instagram**
 
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-Enabled-brightgreen.svg)
 ![Version](https://img.shields.io/badge/version-5.0-blue.svg)
@@ -8,10 +8,14 @@
 ![Quality](https://img.shields.io/badge/quality-Hollywood%20Level-gold.svg)
 ![Instagram](https://img.shields.io/badge/Instagram-Zero%20Recompression-ff69b4.svg)
 
-**🎬 Professional-grade video encoder that produces Hollywood-level quality videos optimized for Instagram with guaranteed zero recompression.**
-**Documentação oficial do encoder profissional de vídeos para Instagram – padrão Hollywood e máxima compatibilidade.**  
-
 ---
+## 🤖 AI-Assisted Development
+This project uses AI assistance for development acceleration. See [CLAUDE.md](CLAUDE.md) for complete AI collaboration context.
+
+## 📋 Project Documentation
+- [CLAUDE.md](CLAUDE.md) - Complete AI context and technical specifications
+- [README.md](README.md) - User guide and basic setup
+  
 ## 🎯 **Overview**
 
 The Instagram Encoder Framework V5 is a cutting-edge batch script that converts your videos into Instagram-ready content with no quality loss. Built with the same encoding principles used by Netflix, Disney+, and HBO Max, but specifically optimized for Instagram's requirements.
