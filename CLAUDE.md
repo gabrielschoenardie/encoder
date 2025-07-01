@@ -1,7 +1,7 @@
 # 🤖 CLAUDE.md - Instagram Encoder Framework
 ## AI Assistant Context & Project Documentation
 
-> **This file contains all context needed for Claude AI (or any AI assistant) to understand and contribute to the Instagram Encoder Framework project. Keep this updated as the project evolves.**
+**This file contains all context needed for Claude AI (or any AI assistant) to understand and contribute to the Instagram Encoder Framework project. Keep this updated as the project evolves.**
 
 ---
 
