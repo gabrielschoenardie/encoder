@@ -8,7 +8,7 @@
 ## 📋 **PROJECT OVERVIEW**
 
 ### **Project Name:** Instagram Encoder Framework V5+
-### **Author:** Gabriel Schoenardie  
+### **Author:** Gabriel Schoenardie
 ### **Repository:** https://github.com/gabrielschoenardie/encoder
 ### **Current Version:** 5.1 (Production) → 5.2+ (Expert Development)
 ### **Language:** Windows Batch Script (.bat)
@@ -38,7 +38,7 @@ Create the most advanced, user-friendly, and technically superior video encoder 
 encoderV5.bat (4,000+ lines)
 ├── Core Engine
 │   ├── Hardware Detection & Optimization
-│   ├── FFmpeg Integration & Validation  
+│   ├── FFmpeg Integration & Validation
 │   ├── Profile Management System
 │   ├── 2-Pass Encoding Engine
 │   └── Error Handling & Recovery
@@ -80,7 +80,7 @@ encoderV5.bat (4,000+ lines)
 ```
 Goals:
 ├── Repository Restructuring
-├── Code Modularization  
+├── Code Modularization
 ├── Advanced Error Handling
 ├── Comprehensive Testing Suite
 └── CI/CD Pipeline Setup
@@ -90,7 +90,7 @@ Estimated Effort: 20-30 hours
 Dependencies: None
 ```
 
-### **PHASE 2: INTELLIGENCE (Week 3-4)**  
+### **PHASE 2: INTELLIGENCE (Week 3-4)**
 **Status:** 📋 Planned
 ```
 Goals:
@@ -100,7 +100,7 @@ Goals:
 ├── VMAF Quality Validation
 └── Performance Optimization Engine
 
-Priority: 🔴 HIGH  
+Priority: 🔴 HIGH
 Estimated Effort: 25-35 hours
 Dependencies: Phase 1 completion
 ```
@@ -116,7 +116,7 @@ Goals:
 └── Release Automation
 
 Priority: 🟡 MEDIUM
-Estimated Effort: 20-25 hours  
+Estimated Effort: 20-25 hours
 Dependencies: Phase 1-2 completion
 ```
 
@@ -162,7 +162,7 @@ Dependencies: Phase 1-3 completion
 ```
 Profile Structure:
 ├── Video Technical Specs (Resolution, Bitrate, GOP)
-├── x264 Parameters (Preset, Tune, Advanced Settings)  
+├── x264 Parameters (Preset, Tune, Advanced Settings)
 ├── Color Science (BT.709 TV Range)
 ├── Audio Configuration (AAC 320k 48kHz)
 └── Instagram Compliance Validation
@@ -188,7 +188,7 @@ Video:
   color_space: BT.709 TV Range
   frame_rate: 30fps CFR
 
-Audio:  
+Audio:
   codec: AAC-LC
   bitrate: 320kbps CBR
   sample_rate: 48kHz
@@ -207,16 +207,16 @@ Reels (9:16):
   bitrate_target: 15M
   bitrate_max: 25M
   duration_max: 90s
-  
+
 Feed (16:9):
-  resolution: 1920x1080  
+  resolution: 1920x1080
   bitrate_target: 18M
   bitrate_max: 30M
   duration_max: 60s
 
 Stories (9:16):
   resolution: 1080x1920
-  bitrate_target: 12M 
+  bitrate_target: 12M
   bitrate_max: 20M
   duration_max: 15s
 ```
@@ -228,13 +228,13 @@ Hollywood_Level_Parameters:
   tune: film (content optimization)
   profile: high (feature set)
   level: 4.1 (compatibility)
-  
+
 Quality_Control:
   ref_frames: 6-16 (content dependent)
-  b_frames: 4-8 (motion dependent)  
+  b_frames: 4-8 (motion dependent)
   subpixel_refinement: 10-11 (maximum quality)
   motion_estimation: umh (best quality/speed ratio)
-  
+
 Psychovisual_Optimization:
   psy_rd: 1.0-1.5 (detail preservation)
   psy_trellis: 0.15-0.30 (fine detail)
@@ -253,13 +253,13 @@ Primary_Development:
   - FFmpeg 4.0+ (encoding engine)
   - Git (version control)
   - VS Code (editing with batch syntax highlighting)
-  
+
 Testing_Tools:
   - MediaInfo (file analysis)
-  - VMAF (quality measurement)  
+  - VMAF (quality measurement)
   - Various test video samples
   - Instagram upload testing
-  
+
 Optional_Tools:
   - GitHub Desktop (GUI git management)
   - Notepad++ (alternative editor)
@@ -270,16 +270,16 @@ Optional_Tools:
 ```
 1. Feature Branch Creation
    └── git checkout -b feature/new-feature
-   
-2. Implementation & Testing  
+
+2. Implementation & Testing
    └── Code → Test → Validate → Document
-   
+
 3. Quality Assurance
    └── Test encoding → VMAF validation → Instagram upload test
-   
+
 4. Documentation Update
    └── Update CLAUDE.md → Update README.md → Code comments
-   
+
 5. Pull Request & Review
    └── Self-review → Create PR → Merge to main
 ```
@@ -295,19 +295,19 @@ Unit_Tests:
   - Hardware detection accuracy
   - Parameter generation correctness
   - Error handling robustness
-  
+
 Integration_Tests:
   - FFmpeg command generation
   - End-to-end encoding workflow
-  - File output validation  
+  - File output validation
   - Instagram compliance verification
-  
+
 Performance_Tests:
   - Encoding speed benchmarks
   - Memory usage monitoring
   - CPU utilization optimization
   - Multi-threading efficiency
-  
+
 Quality_Tests:
   - VMAF score validation (target: >95)
   - Instagram upload success rate (target: >99.5%)
@@ -323,7 +323,7 @@ Required_Test_Videos:
   - detailed_graphics_1080p_30fps.mp4 (high complexity)
   - mixed_content_1080p_30fps.mp4 (varied scenes)
   - vertical_content_1080x1920_30fps.mp4 (Reels format)
-  
+
 Duration_Variants:
   - 10_second_samples (quick testing)
   - 60_second_samples (full workflow)
@@ -343,7 +343,7 @@ Focus_Areas:
   - Performance optimization opportunities
   - Error handling improvements
   - Code organization suggestions
-  
+
 Review_Criteria:
   - Maintainability and readability
   - Performance implications
@@ -358,7 +358,7 @@ Research_Topics:
   - Instagram specification updates
   - Hardware optimization opportunities
   - Video encoding best practices
-  
+
 Implementation_Support:
   - Algorithm design
   - Code structure planning
@@ -398,7 +398,7 @@ Current_State:
   vmaf_score: "95-98 (profile dependent)"
   instagram_acceptance: "99.5%"
   file_size_efficiency: "Optimal for quality target"
-  
+
 Improvement_Targets:
   encoding_speed: ">1.5x realtime (15-25% improvement)"
   vmaf_score: ">96 (consistent across all profiles)"
@@ -413,7 +413,7 @@ Current_State:
   test_coverage: "Manual testing only"
   documentation_coverage: "README + inline comments"
   modularity: "Single file architecture"
-  
+
 Target_State:
   total_lines: "Distributed across modules"
   test_coverage: ">80% automated"
@@ -442,10 +442,10 @@ V5.1_to_V5.2:
   - Content-aware optimization
   - Automated quality validation
   - CI/CD pipeline integration
-  
+
 V5.2_Future_Roadmap:
   - Machine learning integration
-  - Batch processing capabilities  
+  - Batch processing capabilities
   - Real-time performance monitoring
   - Professional API development
 ```
@@ -461,7 +461,7 @@ Repository_Structure:
   - [ ] Split monolithic script into modules
   - [ ] Setup CI/CD pipeline basics
   - [ ] Create comprehensive test suite
-  
+
 Code_Quality:
   - [ ] Implement advanced error handling
   - [ ] Add comprehensive logging system
@@ -492,11 +492,11 @@ Core_Files:
   - src/core/encoderV5.bat (main script)
   - README.md (user documentation)
   - CLAUDE.md (this file - AI context)
-  
+
 Configuration:
   - src/config/encoder_config.json (settings)
   - src/profiles/*.prof (encoding profiles)
-  
+
 Documentation:
   - docs/ (technical documentation)
   - .github/workflows/ (CI/CD configuration)
@@ -520,7 +520,7 @@ Documentation:
 
 ### **Next Update Schedule:**
 - **Weekly during active development**
-- **After each major feature implementation**  
+- **After each major feature implementation**
 - **Before any architectural changes**
 - **When onboarding new contributors**
 
