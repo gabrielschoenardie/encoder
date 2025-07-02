@@ -8,7 +8,10 @@ color 0A
 :: Zero-Recompression Video Encoder | Gabriel Schoenardie | 2025
 
 :: Global Variables
-set "SCRIPT_VERSION=5.1"
+set "SCRIPT_VERSION=5.2-modular"
+set "MODULAR_MODE=Y"
+set "CONFIG_FILE=src\config\encoder_config.json"
+set "PROFILES_DIR=src\profiles\presets"
 set "EXEC_LOG="
 set "BACKUP_CREATED=N"
 set "CPU_CORES=0"
@@ -74,6 +77,33 @@ set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
 
+:: 🏗️ MODULAR SYSTEM INTEGRATION - V5.2
+:LoadModularConfig
+echo 🔧 Loading modular configuration...
+if exist "%CONFIG_FILE%" (
+    echo   ✅ Found: %CONFIG_FILE%
+    call :ParseModularConfig
+) else (
+    echo   ⚠️ Modular config not found, using defaults
+)
+call :LoadModularConfig
+:: Check modular profiles
+if exist "%PROFILES_DIR%" (
+    echo   🎬 Modular profiles directory found
+    set "MODULAR_PROFILES_AVAILABLE=Y"
+) else (
+    echo   ⚠️ Using embedded profiles
+    set "MODULAR_PROFILES_AVAILABLE=N"
+)
+exit /b 0
+
+:ParseModularConfig
+:: Simple JSON parsing for key values
+for /f "tokens=1,2 delims=:" %%A in ('type "%CONFIG_FILE%" 2^>nul ^| findstr "version\|architecture"') do (
+    set "line=%%A:%%B"
+    echo     📋 Config: !line!
+)
+exit /b 0
 :: 🛡️ SAFE INITIALIZATION - V5.4
 call :SafeInitialization
 

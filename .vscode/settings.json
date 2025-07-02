@@ -1,0 +1,19 @@
+{
+    "terminal.integrated.profiles.linux": {
+        "Wine CMD": {
+            "path": "wine",
+            "args": ["cmd"],
+            "icon": "terminal-cmd"
+        },
+        "Bash": {
+            "path": "/bin/bash",
+            "args": ["-l"],
+            "icon": "terminal-bash"
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "Bash",
+    "files.associations": {
+        "*.bat": "bat"
+    },
+    "terminal.integrated.env.windows": {}
+}
