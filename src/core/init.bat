@@ -1,12 +1,11 @@
 @echo off
 title Instagram Encoder Framework V5.2 - Modular Edition
 color 0A
-
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║        🎬 INSTAGRAM ENCODER FRAMEWORK V5.2 - MODULAR EDITION 🎬             ║
-echo ║                        🏗️ Professional Architecture 🏗️                      ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo 
+echo 🎬 INSTAGRAM ENCODER FRAMEWORK V5.2 - MODULAR EDITION
+echo ===========🏗️ Professional Architecture==============
+echo
 echo.
 
 :: Set module paths
@@ -39,7 +38,7 @@ echo 🎯 Starting main encoder...
 echo.
 
 :: Start main encoder
-call "%CORE_PATH%\encoderV5.bat" %*
+"%PROJECT_ROOT%\terminal\wt.exe" --title "Instagram Encoder V5.2" cmd /k "cd /d %PROJECT_ROOT% && src\core\encoderV5.bat"
 
 :: Only show completion if encoder actually finished encoding
 if errorlevel 1 (
