@@ -1,7 +1,4 @@
 @echo off
-:: Instagram Encoder Framework - Modular Initialization
-:: Version 5.2.0-modular
-
 title Instagram Encoder Framework V5.2 - Modular Edition
 color 0A
 
@@ -44,6 +41,9 @@ echo.
 :: Start main encoder
 call "%CORE_PATH%\encoderV5.bat" %*
 
-echo.
-echo ✅ Encoding session completed
-pause
+:: Only show completion if encoder actually finished encoding
+if errorlevel 1 (
+    echo ❌ Encoder ended with error
+) else (
+    echo 💡 Encoder session ended
+)

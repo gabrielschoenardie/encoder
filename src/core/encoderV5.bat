@@ -77,6 +77,33 @@ set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
 
+:: 3. SAFE INITIALIZATION 
+call :SafeInitialization
+
+:: 4. LOGGING
+call :LogEntry "===== INICIO V5.2 UPGRADE (%date% %time%) ====="
+call :LogEntry "[SYSTEM] Profile System V5.2 initialized"
+
+:: 5. MOSTRAR HEADER
+call :ShowProfessionalHeader
+
+:: 6. DETECÇÃO DE SISTEMA
+call :DetectSystemCapabilities
+call :CheckFFmpeg
+if errorlevel 1 goto :ErrorExit
+
+:: 7. CARREGAR CONFIGURAÇÃO MODULAR
+call :LoadModularConfig
+
+:: 8. INICIALIZAR SISTEMA PROFISSIONAL
+call :InitializeProfessionalSystem
+
+:: 9. MOSTRAR MENU PRINCIPAL
+call :ShowProfessionalMainMenu
+
+:: 10. PÓS-PROCESSAMENTO
+call :PostProcessing
+
 :: 🏗️ MODULAR SYSTEM INTEGRATION - V5.2
 :LoadModularConfig
 echo 🔧 Loading modular configuration...
@@ -86,7 +113,6 @@ if exist "%CONFIG_FILE%" (
 ) else (
     echo   ⚠️ Modular config not found, using defaults
 )
-call :LoadModularConfig
 :: Check modular profiles
 if exist "%PROFILES_DIR%" (
     echo   🎬 Modular profiles directory found
@@ -103,31 +129,6 @@ for /f "tokens=1,2 delims=:" %%A in ('type "%CONFIG_FILE%" 2^>nul ^| findstr "ve
     set "line=%%A:%%B"
     echo     📋 Config: !line!
 )
-exit /b 0
-:: 🛡️ SAFE INITIALIZATION - V5.4
-call :SafeInitialization
-
-:: Initialize Logging
-call :LogEntry "===== INICIO V5.1 UPGRADE (%date% %time%) ====="
-call :LogEntry "[SYSTEM] Profile System V5.1 initialized"
-
-:: Show Professional Header
-call :ShowProfessionalHeader
-
-:: System Detection & Validation
-call :DetectSystemCapabilities
-call :CheckFFmpeg
-if errorlevel 1 goto :ErrorExit
-
-:: Show Professional Header
-call :ShowProfessionalHeader
-
-call :InitializeProfessionalSystem
-call :ShowProfessionalMainMenu
-
-:: Post-Processing
-call :PostProcessing
-
 exit /b 0
 
 :ErrorExit
@@ -940,7 +941,7 @@ echo  🌟 Share your amazing content and tag us!
 echo.
 call :LogEntry "[SESSION] Professional session ended - Duration: %ELAPSED_TIME%"
 pause
-exit /b 0
+exit
 
 :ShowHelp
 cls
