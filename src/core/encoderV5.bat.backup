@@ -8,7 +8,10 @@ color 0A
 :: Zero-Recompression Video Encoder | Gabriel Schoenardie | 2025
 
 :: Global Variables
-set "SCRIPT_VERSION=5.1"
+set "SCRIPT_VERSION=5.2-modular"
+set "MODULAR_MODE=Y"
+set "CONFIG_FILE=src\config\encoder_config.json"
+set "PROFILES_DIR=src\profiles\presets"
 set "EXEC_LOG="
 set "BACKUP_CREATED=N"
 set "CPU_CORES=0"
@@ -74,30 +77,253 @@ set "SYSTEM_STATUS=READY"
 set "LAST_EXPORTED_PROFILE="
 set "AVAILABLE_PROFILES_COUNT=0"
 
-:: 🛡️ SAFE INITIALIZATION - V5.4
+:: Modular System Variables - V5.2 Integration
+set "MODULAR_PROFILES_DIR="
+set "MODULAR_VALIDATOR="
+set "MODULAR_PROFILES_AVAILABLE=N"
+set "MODULAR_VALIDATION_STATUS=NOT_CHECKED"
+set "PROFILE_SOURCE=EMBEDDED"
+set "MODULAR_SYSTEM_VERSION=5.2"
+
+:: 3. SAFE INITIALIZATION
 call :SafeInitialization
 
-:: Initialize Logging
-call :LogEntry "===== INICIO V5.1 UPGRADE (%date% %time%) ====="
-call :LogEntry "[SYSTEM] Profile System V5.1 initialized"
+:: 4. LOGGING
+call :LogEntry "===== INICIO V5.2 UPGRADE (%date% %time%) ====="
+call :LogEntry "[SYSTEM] Profile System V5.2 initialized"
 
-:: Show Professional Header
+:: 5. MOSTRAR HEADER
 call :ShowProfessionalHeader
 
-:: System Detection & Validation
+:: 6. DETECÇÃO DE SISTEMA
 call :DetectSystemCapabilities
 call :CheckFFmpeg
 if errorlevel 1 goto :ErrorExit
 
-:: Show Professional Header
-call :ShowProfessionalHeader
+:: 7. CARREGAR CONFIGURAÇÃO MODULAR
+call :LoadModularConfig
 
+:: 8. INICIALIZAR SISTEMA PROFISSIONAL
 call :InitializeProfessionalSystem
+
+:: 9. MOSTRAR MENU PRINCIPAL
 call :ShowProfessionalMainMenu
 
-:: Post-Processing
+:: 10. PÓS-PROCESSAMENTO
 call :PostProcessing
 
+:: 🏗️ MODULAR SYSTEM INTEGRATION - V5.2
+:LoadModularConfig
+echo 🔧 Loading modular configuration...
+:: CORRECTED PATHS - V5.2 FIX
+set "PROFILES_DIR=%~dp0..\profiles\presets"
+set "CONFIG_FILE=%~dp0..\config\encoder_config.json"
+echo   📁 Modular system detected
+echo   📂 Profiles: %PROFILES_DIR%
+echo   🔧 Config: %CONFIG_FILE%
+
+if exist "%CONFIG_FILE%" (
+    echo   ✅ Found: %CONFIG_FILE%
+) else (
+    echo   ⚠️ Modular config not found, using defaults
+)
+
+if exist "%PROFILES_DIR%" (
+    echo   🎬 Modular profiles system: ACTIVE
+    set "MODULAR_PROFILES_AVAILABLE=Y"
+    echo   🔍 Validating modular profiles...
+    set "MODULAR_PROFILE_COUNT=0"
+    for %%F in ("%PROFILES_DIR%\\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+    echo   ✅ Found ^!MODULAR_PROFILE_COUNT^! modular profiles
+) else (
+    echo   ⚠️ Using embedded profiles
+    set "MODULAR_PROFILES_AVAILABLE=N"
+)
+exit /b 0
+
+:: 🔍 DETECTAR ESTRUTURA MODULAR
+:DetectModularStructure
+set "CURRENT_SCRIPT_DIR=%~dp0"
+set "PROJECT_ROOT="
+
+:: Método 1: Assumir que estamos em src/core, subir 2 níveis
+for %%I in ("%CURRENT_SCRIPT_DIR%..\") do set "PROJECT_ROOT=%%~fI"
+
+:: Verificar se estrutura modular existe
+set "MODULAR_PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
+set "MODULAR_VALIDATOR=%PROJECT_ROOT%\src\tools\validate_profiles_fixed.bat"
+
+if exist "%MODULAR_PROFILES_DIR%" (
+    if exist "%MODULAR_VALIDATOR%" (
+        echo   📁 Modular system detected
+        echo   📂 Profiles: %MODULAR_PROFILES_DIR%
+        echo   🔧 Validator: %MODULAR_VALIDATOR%
+        set "MODULAR_PROFILES_AVAILABLE=Y"
+    ) else (
+        echo   ⚠️ Modular profiles found but validator missing
+        set "MODULAR_PROFILES_AVAILABLE=N"
+    )
+) else (
+    echo   📁 Modular profiles directory not found
+    set "MODULAR_PROFILES_AVAILABLE=N"
+)
+
+exit /b 0
+:ParseModularConfig
+:: Enhanced JSON parsing for key values
+for /f "tokens=1,2 delims=:" %%A in ('type "%CONFIG_FILE%" 2^>nul ^| findstr "version\|architecture"') do (
+    set "line=%%A:%%B"
+    echo     📋 Config: !line!
+)
+exit /b 0
+
+:: 🔍 VALIDATE MODULAR PROFILES
+:ValidateModularProfiles
+echo 🔍 Validating modular profile system...
+set "VALID_PROFILES=0"
+set "INVALID_PROFILES=0"
+
+for %%P in ("%PROFILES_DIR%\*.prof") do (
+    call :ValidateSingleProfile "%%P"
+    if not errorlevel 1 (
+        set /a "VALID_PROFILES+=1"
+    ) else (
+        set /a "INVALID_PROFILES+=1"
+    )
+)
+
+set "AVAILABLE_PROFILES_COUNT=%VALID_PROFILES%"
+
+if %VALID_PROFILES% GTR 0 (
+    echo   ✅ Modular profiles validated: %VALID_PROFILES% valid, %INVALID_PROFILES% invalid
+    call :LogEntry "[MODULAR] Validated %VALID_PROFILES% profiles"
+) else (
+    echo   ❌ No valid profiles found! Creating defaults...
+    call :CreateDefaultProfiles
+)
+exit /b 0
+
+:: 📥 CARREGAR PROFILE MODULAR
+:LoadModularProfiles
+echo   📋 Loading modular profiles:
+
+:: Load each profile file
+for %%F in ("%PROFILES_DIR%\*.prof") do (
+    set "profile_name=%%~nF"
+    echo     • !profile_name!
+)
+
+set "MODULAR_PROFILES_AVAILABLE=Y"
+echo   ✅ Modular profiles loaded successfully
+exit /b 0
+
+:: Salvar configurações atuais como backup
+call :BackupCurrentProfileSettings
+
+:: 💾 BACKUP DAS CONFIGURAÇÕES ATUAIS
+:BackupCurrentProfileSettings
+set "BACKUP_PROFILE_NAME=%PROFILE_NAME%"
+set "BACKUP_VIDEO_WIDTH=%VIDEO_WIDTH%"
+set "BACKUP_VIDEO_HEIGHT=%VIDEO_HEIGHT%"
+set "BACKUP_VIDEO_ASPECT=%VIDEO_ASPECT%"
+set "BACKUP_TARGET_BITRATE=%TARGET_BITRATE%"
+set "BACKUP_MAX_BITRATE=%MAX_BITRATE%"
+set "BACKUP_BUFFER_SIZE=%BUFFER_SIZE%"
+set "BACKUP_GOP_SIZE=%GOP_SIZE%"
+set "BACKUP_KEYINT_MIN=%KEYINT_MIN%"
+set "BACKUP_X264_PRESET=%X264_PRESET%"
+set "BACKUP_X264_TUNE=%X264_TUNE%"
+set "BACKUP_X264_PARAMS=%X264_PARAMS%"
+set "BACKUP_COLOR_PARAMS=%COLOR_PARAMS%"
+exit /b 0
+
+:: 🔄 RESTAURAR CONFIGURAÇÕES
+:RestoreProfileSettings
+set "PROFILE_NAME=%BACKUP_PROFILE_NAME%"
+set "VIDEO_WIDTH=%BACKUP_VIDEO_WIDTH%"
+set "VIDEO_HEIGHT=%BACKUP_VIDEO_HEIGHT%"
+set "VIDEO_ASPECT=%BACKUP_VIDEO_ASPECT%"
+set "TARGET_BITRATE=%BACKUP_TARGET_BITRATE%"
+set "MAX_BITRATE=%BACKUP_MAX_BITRATE%"
+set "BUFFER_SIZE=%BACKUP_BUFFER_SIZE%"
+set "GOP_SIZE=%BACKUP_GOP_SIZE%"
+set "KEYINT_MIN=%BACKUP_KEYINT_MIN%"
+set "X264_PRESET=%BACKUP_X264_PRESET%"
+set "X264_TUNE=%BACKUP_X264_TUNE%"
+set "X264_PARAMS=%BACKUP_X264_PARAMS%"
+set "COLOR_PARAMS=%BACKUP_COLOR_PARAMS%"
+exit /b 0
+
+
+
+:: ADD THIS NEW FUNCTION TO LOAD MODULAR PROFILES IN WORKFLOW
+:LoadModularProfileForWorkflow
+set "profile_file=%~1"
+if not exist "%profile_file%" (
+    echo ❌ Modular profile not found: %profile_file%
+    exit /b 1
+)
+
+echo 📥 Loading modular profile: %profile_file%
+call :ParseModularProfileFile "%profile_file%"
+if "%PROFILE_LOADED%"=="Y" (
+    echo ✅ Modular profile loaded: %PROFILE_NAME%
+    set "PROFILE_SELECTED=Y"
+    set "PROFILE_CONFIGURED=Y"
+) else (
+    echo ❌ Failed to load modular profile
+    exit /b 1
+)
+exit /b 0
+
+:: 📖 PARSER DE PROFILE MODULAR
+:ParseModularProfileFile
+set "profile_file=%~1"
+set "PROFILE_LOADED=N"
+
+if not exist "%profile_file%" exit /b 1
+
+echo   📖 Parsing modular profile...
+
+:: Reset all profile variables first
+set "PROFILE_NAME="
+set "VIDEO_WIDTH="
+set "VIDEO_HEIGHT="
+set "VIDEO_ASPECT="
+set "TARGET_BITRATE="
+set "MAX_BITRATE="
+set "BUFFER_SIZE="
+set "GOP_SIZE="
+set "KEYINT_MIN="
+set "X264_PRESET="
+set "X264_TUNE="
+set "X264_PARAMS="
+set "COLOR_PARAMS="
+
+:: Read profile file line by line
+for /f "tokens=1,2 delims==" %%A in ('type "%profile_file%" ^| findstr "=" ^| findstr /v "^#"') do (
+    set "%%A=%%B"
+)
+
+:: Validate required fields
+if not defined PROFILE_NAME (
+    echo   ❌ Invalid profile: PROFILE_NAME missing
+    exit /b 1
+)
+
+if not defined VIDEO_WIDTH (
+    echo   ❌ Invalid profile: VIDEO_WIDTH missing
+    exit /b 1
+)
+
+if not defined VIDEO_HEIGHT (
+    echo   ❌ Invalid profile: VIDEO_HEIGHT missing
+    exit /b 1
+)
+
+echo   ✅ Profile validation passed
+set "PROFILE_LOADED=Y"
+set "CURRENT_PROFILE_ID=modular"
 exit /b 0
 
 :ErrorExit
@@ -220,10 +446,21 @@ if "%IS_LAPTOP%"=="Y" (
     echo   💻 Device: Desktop - full performance
 )
 
+:: Modular System Status
+echo   🏗️ Architecture: V%SCRIPT_VERSION% Modular Edition
+echo   📁 Profiles: Modular system (file-based)
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    echo   🔍 Validation: %MODULAR_VALIDATION_STATUS%
+    echo   🎬 Available: %AVAILABLE_PROFILES_COUNT% validated profiles
+    echo   📁 Source: %PROFILES_DIR%
+) else (
+    echo   ⚠️ Profiles: Not available
+)
+
 :: Workflow Progress
 echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
 
-:: File Status - Check and set FILES_CONFIGURED
+:: File Status
 if defined ARQUIVO_ENTRADA (
     if defined ARQUIVO_SAIDA (
         echo   📥 Input: %ARQUIVO_ENTRADA%
@@ -239,15 +476,18 @@ if defined ARQUIVO_ENTRADA (
     echo   📤 Output: Not configured
     set "FILES_CONFIGURED=N"
 )
-:: Profile Status - CHECK AND SET PROFILE_CONFIGURED
+:: Profile Status
 if defined PROFILE_NAME (
     if defined VIDEO_WIDTH if defined VIDEO_HEIGHT (
         echo   🎬 Profile: "%PROFILE_NAME%"
         echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% - "%VIDEO_ASPECT%"
+		if defined CURRENT_PROFILE_FILE (
+            echo   📁 Source: %CURRENT_PROFILE_FILE%
+        )
         if defined TARGET_BITRATE if defined MAX_BITRATE (
             echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
         )
-        if "%ADVANCED_MODE%"=="Y" (
+        set "PROFILE_CONFIGURED=Y"
             echo   🎛️ Mode: Advanced Customizations ACTIVE
             if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
             if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
@@ -322,7 +562,14 @@ if "%READY_TO_ENCODE%"=="Y" (
 echo.
 
 :: System Section
-echo  🛠️ SYSTEM:
+echo  🛠️ SYSTEM
+echo  🏗️ MODULAR SYSTEM:
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    echo   [V] 🔍 Validate Modular Profiles - Status: %MODULAR_VALIDATION_STATUS%
+    echo   [R] 🔄 Reload Modular Profiles
+) else (
+    echo   [M] 🔧 Modular System Info - Currently Unavailable
+)
 echo   [7] 📋 System Information ^& Diagnostics
 echo   [8] ❓ Help ^& Documentation
 echo   [9] 🧹 Cleanup ^& Maintenance
@@ -334,7 +581,7 @@ exit /b 0
 
 :: 🎯 PROCESS MENU CHOICE
 :ProcessMainMenuChoice
-set /p "main_choice=🎯 Select option [0-9, D]: "
+set /p "main_choice=🎯 Select option [0-9, V, R, M, D]: "
 
 :: Validação única e simplificada
 if not defined main_choice (
@@ -350,13 +597,16 @@ if "%main_choice%"=="3" goto :AccessAdvanced
 if "%main_choice%"=="4" goto :AccessProfileManagement
 if "%main_choice%"=="5" goto :AnalyzeInputFile
 if "%main_choice%"=="6" goto :StartEncoding
+if /i "%main_choice%"=="V" goto :ValidateModularProfilesManual
+if /i "%main_choice%"=="R" goto :ReloadModularProfiles
+if /i "%main_choive%"=="M" goto :ShowModularSystemInfo
 if "%main_choice%"=="7" goto :ShowSystemInfo
 if "%main_choice%"=="8" goto :ShowHelp
 if "%main_choice%"=="9" goto :MaintenanceTools
 if /i "%main_choice%"=="D" goto :VerifyX264Parameters
 if "%main_choice%"=="0" goto :ExitProfessional
 
-echo ❌ Invalid choice. Please select 0-9 or D.
+echo ❌ Invalid choice. Please select 0-9 or V, R, M, D.
 pause
 goto :ShowProfessionalMainMenu
 
@@ -910,7 +1160,7 @@ echo  🌟 Share your amazing content and tag us!
 echo.
 call :LogEntry "[SESSION] Professional session ended - Duration: %ELAPSED_TIME%"
 pause
-exit /b 0
+exit
 
 :ShowHelp
 cls
@@ -1470,6 +1720,14 @@ exit /b 0
 :SelectProfileForWorkflow
 echo  🎬 Select the optimal profile for your Instagram content:
 echo.
+
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    echo  🏗️ MODULAR SYSTEM ACTIVE - Loading from profile files
+) else (
+    echo  🔧 EMBEDDED SYSTEM ACTIVE - Using hardcoded profiles
+)
+
+echo.
 echo  Professional Profile System - Choose your encoding profile:
 echo.
 echo  [1] 📱 REELS/STORIES (Vertical 9:16) - Zero-Recompression Optimized
@@ -1490,36 +1748,66 @@ if not defined profile_choice (
     goto :SelectProfileForWorkflow
 )
 
-:: Handle profile selection
-if /i "%profile_choice%"=="1" (
-    call :SetReelsProfile
-    goto :ProfileWorkflowComplete
+:: Handle profile selection - CORRECTED MAPPING
+echo 🔍 DEBUG: User selected option: %profile_choice%
+
+if "%profile_choice%"=="1" (
+    echo 📱 Loading REELS profile...
+    if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+        call :LoadModularProfileFile "%PROFILES_DIR%\\reels_9_16.prof" "REELS"
+    ) else (
+        call :SetReelsProfile
+    )
+    if not errorlevel 1 goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="2" (
-    call :SetFeedProfile
-    goto :ProfileWorkflowComplete
+
+if "%profile_choice%"=="2" (
+    echo 📺 Loading FEED profile...
+    if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+        call :LoadModularProfileFile "%PROFILES_DIR%\\feed_16_9.prof" "FEED"
+    ) else (
+        call :SetFeedProfile
+    )
+    if not errorlevel 1 goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="3" (
-    call :SetCinemaProfile
-    goto :ProfileWorkflowComplete
+
+if "%profile_choice%"=="3" (
+    echo 🎬 Loading CINEMA profile...
+    if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+        call :LoadModularProfileFile "%PROFILES_DIR%\\cinema_21_9.prof" "CINEMA"
+    ) else (
+        call :SetCinemaProfile
+    )
+    if not errorlevel 1 goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="4" (
-    call :SetSpeedRampProfile
-    goto :ProfileWorkflowComplete
+
+if "%profile_choice%"=="4" (
+    echo 🚗 Loading SPEEDRAMP profile...
+    if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+        call :LoadModularProfileFile "%PROFILES_DIR%\\speedramp_viral.prof" "SPEEDRAMP"
+    ) else (
+        call :SetSpeedRampProfile
+    )
+    if not errorlevel 1 goto :ProfileWorkflowComplete
 )
-if /i "%profile_choice%"=="5" (
+
+if "%profile_choice%"=="5" (
+    echo ⚙️ Loading CUSTOM profile...
     call :SetCustomProfile
     goto :ProfileWorkflowComplete
 )
+
 if /i "%profile_choice%"=="C" (
     call :CompareAllProfiles
     goto :SelectProfileForWorkflow
 )
+
 if /i "%profile_choice%"=="B" exit /b 0
 
-echo ❌ Invalid choice: "%profile_choice%". Please select 1-6, C, or B.
+echo ❌ Invalid choice: "%profile_choice%". Please select 1-5, C, or B.
 pause
 goto :SelectProfileForWorkflow
+
 
 :ProfileWorkflowComplete
 echo.
@@ -1542,7 +1830,19 @@ exit /b 0
 echo.
 echo 🎬 Loading REELS/STORIES Profile (Hollywood Zero-Recompression)...
 
-:: Define all profile variables
+:: Tentar carregar profile modular primeiro
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    call :LoadModularProfile "reels_9_16"
+    if not errorlevel 1 (
+        echo   📥 Loaded from modular system (file-based)
+        goto :ShowProfileSummary
+    ) else (
+        echo   ⚠️ Modular load failed, using embedded fallback
+    )
+)
+
+:: Fallback para profile embedded
+echo   🔧 Loading embedded profile...
 set "PROFILE_NAME=REELS/STORIES Vertical Zero-Recompression"
 set "VIDEO_WIDTH=1080"
 set "VIDEO_HEIGHT=1920"
@@ -1556,12 +1856,14 @@ set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=1"
+set "PROFILE_SOURCE=EMBEDDED"
 
 :: Hollywood-Level x264 Parameters - Instagram Zero-Recompression Optimized
 set "X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=4:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq=3,1.0:vbv_init=0.9:scenecut=0:no-fast-pskip=1"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
+echo   📥 Loaded from embedded system (hardcoded)
 goto :ShowProfileSummary
 
 :: 📺 FEED/IGTV PROFILE - Broadcast Standard
@@ -1569,6 +1871,19 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading FEED/IGTV Profile (Broadcast Standard)...
 
+:: Tentar carregar profile modular primeiro
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    call :LoadModularProfile "feed_16_9"
+    if not errorlevel 1 (
+        echo   📥 Loaded from modular system (file-based)
+        goto :ShowProfileSummary
+    ) else (
+        echo   ⚠️ Modular load failed, using embedded fallback
+    )
+)
+
+:: Fallback para profile embedded
+echo   🔧 Loading embedded profile...
 set "PROFILE_NAME=FEED/IGTV Horizontal Broadcast"
 set "VIDEO_WIDTH=1920"
 set "VIDEO_HEIGHT=1080"
@@ -1582,12 +1897,14 @@ set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=2"
+set "PROFILE_SOURCE=EMBEDDED"
 
 :: Broadcast-level parameters
 set "X264_PARAMS=cabac=1:ref=12:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.0,0.25:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=6:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2:vbv_init=0.9:nr=10:scenecut=0"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
+echo   📥 Loaded from embedded system (hardcoded)
 goto :ShowProfileSummary
 
 :: 🎬 CINEMA ULTRA-WIDE PROFILE - Cinematic Quality
@@ -1595,6 +1912,19 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading CINEMA ULTRA-WIDE Profile (Cinematic Quality)...
 
+:: Tentar carregar profile modular primeiro
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    call :LoadModularProfile "cinema_21_9"
+    if not errorlevel 1 (
+        echo   📥 Loaded from modular system (file-based)
+        goto :ShowProfileSummary
+    ) else (
+        echo   ⚠️ Modular load failed, using embedded fallback
+    )
+)
+
+:: Fallback para profile embedded
+echo   🔧 Loading embedded profile...
 set "PROFILE_NAME=CINEMA ULTRA-WIDE 21:9 Cinematic"
 set "VIDEO_WIDTH=2560"
 set "VIDEO_HEIGHT=1080"
@@ -1608,12 +1938,14 @@ set "X264_PRESET=placebo"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=3"
+set "PROFILE_SOURCE=EMBEDDED"
 
 :: Cinema-grade parameters
 set "X264_PARAMS=cabac=1:ref=16:deblock=1,-2,-2:analyse=0x3,0x133:me=tesa:subme=11:psy=1:psy_rd=1.0,0.30:mixed_ref=1:me_range=64:chroma_me=1:trellis=2:8x8dct=1:deadzone=21,11:bf=8:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=250:mbtree=1:qcomp=0.70:aq=3,1.5:vbv_init=0.9:nr=5:scenecut=0"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
+echo   📥 Loaded from embedded system (hardcoded)
 goto :ShowProfileSummary
 
 :: 🚗 SPEEDRAMP VIRAL CAR PROFILE - High-Motion Optimized
@@ -1621,6 +1953,19 @@ goto :ShowProfileSummary
 echo.
 echo 🎬 Loading SPEEDRAMP VIRAL CAR Profile (High-Motion Optimized)...
 
+:: Tentar carregar profile modular primeiro
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    call :LoadModularProfile "speedramp_viral"
+    if not errorlevel 1 (
+        echo   📥 Loaded from modular system (file-based)
+        goto :ShowProfileSummary
+    ) else (
+        echo   ⚠️ Modular load failed, using embedded fallback
+    )
+)
+
+:: Fallback para profile embedded
+echo   🔧 Loading embedded profile...
 set "PROFILE_NAME=SPEEDRAMP VIRAL CAR High-Motion Vertical"
 set "VIDEO_WIDTH=1080"
 set "VIDEO_HEIGHT=1920"
@@ -1634,12 +1979,14 @@ set "X264_PRESET=veryslow"
 set "X264_TUNE=film"
 set "PROFILE_SELECTED=Y"
 set "CURRENT_PROFILE_ID=4"
+set "PROFILE_SOURCE=EMBEDDED"
 
 :: SpeedRamp-optimized parameters for viral car content
 set "X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.2,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:deadzone=18,10:bf=6:b_pyramid=2:b_adapt=2:direct=3:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2:vbv_init=0.9:nr=15:scenecut=0:no-fast-pskip=1"
 
 set "COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
+echo   📥 Loaded from embedded system (hardcoded)
 goto :ShowProfileSummary
 
 :: ⚙️ CUSTOM PROFILE - Advanced Manual Configuration
@@ -1684,6 +2031,16 @@ goto :ShowProfileSummary
 :ShowProfileSummary
 cls
 echo.
+echo  🏗️ Profile Source: %PROFILE_SOURCE%
+if "%PROFILE_SOURCE%"=="MODULAR" (
+    echo     • Loaded from: %MODULAR_PROFILES_DIR%
+    echo     • Type: File-based modular profile
+    echo     • Validation: %MODULAR_VALIDATION_STATUS%
+) else (
+    echo     • Loaded from: Embedded system
+    echo     • Type: Hardcoded parameters
+    echo     • Fallback: Safe embedded profile used
+)
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
 echo ║                  🎬 HOLLYWOOD-LEVEL TECHNICAL SUMMARY                        ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -2851,4 +3208,343 @@ if not defined EXEC_LOG (
     echo ===== INSTAGRAM ENCODER V5 OPTIMIZED LOG - %date% %time% =====>"!EXEC_LOG!"
 )
 echo [%time:~0,8%] %~1>>"!EXEC_LOG!"
+exit /b 0
+
+:: 🔍 EXECUTAR VALIDAÇÃO MODULAR INTERATIVA
+:RunModularValidation
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                        🔍 MODULAR PROFILES VALIDATION                        ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+if "%MODULAR_PROFILES_AVAILABLE%"=="N" (
+    echo ⚠️ MODULAR SYSTEM NOT AVAILABLE
+    echo.
+    echo Status Information:
+    echo • Validation Status: %MODULAR_VALIDATION_STATUS%
+    echo • Expected Profiles Dir: %MODULAR_PROFILES_DIR%
+    echo • Expected Validator: %MODULAR_VALIDATOR%
+    echo.
+    echo Possible reasons:
+    echo • Profiles directory not found
+    echo • Validator script not found
+    echo • Previous validation failed
+    echo.
+    echo 💡 Solutions:
+    echo   1. Run setup_profiles.bat to create missing profiles
+    echo   2. Check if src\profiles\presets directory exists
+    echo   3. Verify src\tools\validate_profiles_fixed.bat exists
+    echo   4. Use embedded profiles (current fallback)
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+echo 🎬 Modular System Status: AVAILABLE
+echo 📁 Profiles Directory: %MODULAR_PROFILES_DIR%
+echo 🔧 Validator: %MODULAR_VALIDATOR%
+echo 🔍 Current Status: %MODULAR_VALIDATION_STATUS%
+echo.
+
+echo Running detailed validation...
+echo.
+
+:: Executar validação com output visível
+call "%MODULAR_VALIDATOR%"
+set "VALIDATION_EXIT_CODE=%ERRORLEVEL%"
+
+echo.
+if %VALIDATION_EXIT_CODE% EQU 0 (
+    echo ✅ Validation completed successfully
+    set "MODULAR_VALIDATION_STATUS=PASSED"
+    echo 💡 Modular profiles are ready for use
+) else (
+    echo ❌ Validation failed
+    set "MODULAR_VALIDATION_STATUS=FAILED"
+    echo 💡 System will use embedded profiles as fallback
+)
+
+echo.
+echo 🔙 Returning to main menu...
+pause
+goto :ShowProfessionalMainMenu
+
+:: 🔄 RECARREGAR SISTEMA MODULAR
+:ReloadModularProfiles
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                        🔄 RELOAD MODULAR SYSTEM                             ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo 🔄 Reloading modular profiles system...
+echo.
+
+:: Reset modular system state
+set "MODULAR_PROFILES_AVAILABLE=N"
+set "MODULAR_VALIDATION_STATUS=NOT_CHECKED"
+set "PROFILE_SOURCE=EMBEDDED"
+
+echo   🔧 Resetting modular system state...
+echo   🔍 Re-detecting modular structure...
+
+:: Re-run modular detection and validation
+call :DetectModularStructure
+call :ValidateModularProfiles
+
+echo.
+echo 📊 RELOAD RESULTS:
+echo ════════════════════════════════════════════════════════════════════════════
+echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
+echo   🔍 Validation Status: %MODULAR_VALIDATION_STATUS%
+echo   📁 Profile Source: %PROFILE_SOURCE%
+
+if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
+    echo   📂 Profiles Directory: %MODULAR_PROFILES_DIR%
+    echo   🔧 Validator: %MODULAR_VALIDATOR%
+    echo.
+    echo ✅ Modular system successfully reloaded
+    echo 💡 You can now use file-based profiles
+) else (
+    echo.
+    echo ⚠️ Modular system not available
+    echo 💡 System will continue using embedded profiles
+)
+
+call :LogEntry "[MODULAR] System reloaded - Available: %MODULAR_PROFILES_AVAILABLE%"
+
+echo.
+echo 🔙 Returning to main menu...
+pause
+goto :ShowProfessionalMainMenu
+
+:: 📊 MOSTRAR INFORMAÇÕES DO SISTEMA MODULAR
+:ShowModularSystemInfo
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                        🏗️ MODULAR SYSTEM INFORMATION                        ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🏗️ MODULAR ARCHITECTURE OVERVIEW:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📦 Framework Version: %SCRIPT_VERSION%
+echo   🏗️ Architecture: Modular Edition
+echo   📊 System Version: %MODULAR_SYSTEM_VERSION%
+echo.
+
+echo  📁 DIRECTORY STRUCTURE:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   📂 Profiles Directory: %MODULAR_PROFILES_DIR%
+if exist "%MODULAR_PROFILES_DIR%" (
+    echo   📋 Directory Status: EXISTS
+    echo   📄 Available Profiles:
+    for %%F in ("%MODULAR_PROFILES_DIR%\*.prof") do (
+        echo     • %%~nF
+    )
+) else (
+    echo   📋 Directory Status: NOT FOUND
+)
+echo.
+
+echo  🔧 VALIDATION SYSTEM:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   🔧 Validator Path: %MODULAR_VALIDATOR%
+if exist "%MODULAR_VALIDATOR%" (
+    echo   📋 Validator Status: EXISTS
+) else (
+    echo   📋 Validator Status: NOT FOUND
+)
+echo   🔍 Last Validation: %MODULAR_VALIDATION_STATUS%
+echo.
+
+echo  📊 CURRENT STATUS:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
+echo   📁 Profile Source: %PROFILE_SOURCE%
+if "%PROFILE_SELECTED%"=="Y" (
+    echo   🎬 Current Profile: %PROFILE_NAME%
+    echo   📊 Current Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
+)
+echo.
+
+echo  💡 BENEFITS OF MODULAR SYSTEM:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   ✅ Profiles stored in separate files (easy editing)
+echo   ✅ Add new profiles without code changes
+echo   ✅ Share profiles between users/systems
+echo   ✅ Version control for profile changes
+echo   ✅ Automatic validation on load
+echo   ✅ Safe fallback to embedded profiles
+echo.
+
+pause
+goto :ShowProfessionalMainMenu
+exit /b 0
+
+
+:: 🔍 MODULAR PROFILES VALIDATION - ADDED BY SIMPLE FIX
+:ValidateModularProfilesManual
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    🔍 MODULAR PROFILES VALIDATION                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+if "%MODULAR_PROFILES_AVAILABLE%"=="N" (
+    echo ❌ MODULAR SYSTEM NOT AVAILABLE
+    echo 💡 Modular profiles are not detected or accessible
+    echo.
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+echo 📂 Profiles Directory: %PROFILES_DIR%
+echo.
+echo 🔍 VALIDATING PROFILES:
+echo ═══════════════════════════════════════════════════════════════════════════
+
+set "VALIDATION_PASSED=0"
+set "VALIDATION_FAILED=0"
+set "TOTAL_PROFILES=0"
+
+for %%F in ("%PROFILES_DIR%\\*.prof") do (
+    set /a "TOTAL_PROFILES+=1"
+    call :ValidateSingleProfile "%%F"
+)
+
+echo ═══════════════════════════════════════════════════════════════════════════
+echo 📊 VALIDATION SUMMARY:
+echo ═══════════════════════════════════════════════════════════════════════════
+echo   📁 Total Profiles: ^!TOTAL_PROFILES^!
+echo   ✅ Passed: ^!VALIDATION_PASSED^!
+echo   ❌ Failed: ^!VALIDATION_FAILED^!
+
+if ^!VALIDATION_FAILED^! GTR 0 (
+    echo 🚨 VALIDATION FAILED - Some profiles have issues
+    set "MODULAR_VALIDATION_STATUS=FAILED"
+) else if ^!VALIDATION_PASSED^! GTR 0 (
+    echo ✅ VALIDATION PASSED - All profiles are valid
+    set "MODULAR_VALIDATION_STATUS=PASSED"
+) else (
+    echo ⚠️ NO PROFILES TO VALIDATE
+    set "MODULAR_VALIDATION_STATUS=NO_PROFILES"
+)
+
+echo 💡 Validation status updated in system dashboard
+echo.
+pause
+goto :ShowProfessionalMainMenu
+
+:ValidateSingleProfile
+set "profile_file=%~1"
+set "profile_name=%~n1"
+echo   🔍 Validating: %profile_name%
+
+if not exist "%profile_file%" (
+    echo     ❌ File not found
+    set /a "VALIDATION_FAILED+=1"
+    exit /b 1
+)
+
+:: Check required fields
+findstr /i "PROFILE_NAME=" "%profile_file%" >nul || exit /b 1
+findstr /i "VIDEO_WIDTH=" "%profile_file%" >nul || exit /b 1
+findstr /i "VIDEO_HEIGHT=" "%profile_file%" >nul || exit /b 1
+findstr /i "TARGET_BITRATE=" "%profile_file%" >nul || exit /b 1
+
+exit /b 0
+
+:: 📥 LOAD MODULAR PROFILE FILE - NEW FUNCTION
+:LoadModularProfileFile
+set "profile_file=%~1"
+set "profile_type=%~2"
+
+echo   📥 Loading modular profile: %profile_file%
+echo   🎬 Profile Type: %profile_type%
+
+if not exist "%profile_file%" (
+    echo  ❌ Profile file not found: %profile_file%
+    echo   💡 Falling back to embedded profile
+    exit /b 1
+)
+
+:: Reset all profile variables
+set "PROFILE_NAME="
+set "VIDEO_WIDTH="
+set "VIDEO_HEIGHT="
+set "VIDEO_ASPECT="
+set "TARGET_BITRATE="
+set "MAX_BITRATE="
+set "BUFFER_SIZE="
+set "GOP_SIZE="
+set "KEYINT_MIN="
+set "X264_PRESET="
+set "X264_TUNE="
+set "X264_PARAMS="
+set "COLOR_PARAMS="
+
+echo   📖 Parsing profile file...
+
+:: Parse the profile file
+for /f "usebackq tokens=1,2 delims==" %%A in ("%profile_file%") do (
+    set "param_name=%%A"
+    set "param_value=%%B"
+
+    :: Skip comments and empty lines
+    if not "^~0,1^"=="#" if defined param_value (
+        :: Remove leading/trailing spaces from value
+        for /f "tokens=* delims= " %%C in ("!param_value!") do set "param_value=%%C"
+		
+        :: Assign to variables
+        if "!param_name!"=="PROFILE_NAME" set "PROFILE_NAME=!param_value!"
+        if "!param_name!"=="VIDEO_WIDTH" set "VIDEO_WIDTH=!param_value!"
+        if "!param_name!"=="VIDEO_HEIGHT" set "VIDEO_HEIGHT=!param_value!"
+        if "!param_name!"=="VIDEO_ASPECT" set "VIDEO_ASPECT=!param_value!"
+        if "!param_name!"=="TARGET_BITRATE" set "TARGET_BITRATE=!param_value!"
+        if "!param_name!"=="MAX_BITRATE" set "MAX_BITRATE=!param_value!"
+        if "!param_name!"=="BUFFER_SIZE" set "BUFFER_SIZE=!param_value!"
+        if "!param_name!"=="GOP_SIZE" set "GOP_SIZE=!param_value!"
+        if "!param_name!"=="KEYINT_MIN" set "KEYINT_MIN=!param_value!"
+        if "!param_name!"=="X264_PRESET" set "X264_PRESET=!param_value!"
+        if "!param_name!"=="X264_TUNE" set "X264_TUNE=!param_value!"
+        if "!param_name!"=="X264_PARAMS" set "X264_PARAMS=!param_value!"
+        if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
+    )
+)
+
+:: Validate required parameters
+if not defined PROFILE_NAME (
+    echo   ❌ Invalid profile: PROFILE_NAME missing
+    exit /b 1
+)
+
+if not defined VIDEO_WIDTH (
+    echo   ❌ Invalid profile: VIDEO_WIDTH missing
+    exit /b 1
+)
+
+if not defined VIDEO_HEIGHT (
+    echo   ❌ Invalid profile: VIDEO_HEIGHT missing
+    exit /b 1
+)
+
+:: Debug output
+echo	✅ Profile loaded successfully:
+echo     • Name: !PROFILE_NAME!
+echo     • Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (!VIDEO_ASPECT!)
+echo     • Bitrate: !TARGET_BITRATE!/!MAX_BITRATE!
+echo     • Preset: !X264_PRESET!
+
+:: Set profile status
+set "PROFILE_SELECTED=Y"
+set "PROFILE_CONFIGURED=Y"
+set "CURRENT_PROFILE_ID=modular_%profile_type%"
+
+call :LogEntry "[MODULAR] Profile loaded: !PROFILE_NAME! (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)"
 exit /b 0

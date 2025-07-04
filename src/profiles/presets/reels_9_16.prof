@@ -1,10 +1,11 @@
+# Instagram Encoder Framework V5.2 Profile
+# REELS/STORIES Vertical Zero-Recompression
+
 [PROFILE_INFO]
 PROFILE_NAME=REELS Vertical Zero-Recompression
 PROFILE_VERSION=5.2
 PROFILE_DESCRIPTION=Optimized for Instagram Reels 9:16 content
 PROFILE_AUTHOR=Gabriel Schoenardie
-CONTENT_TYPE=vertical_social
-CREATED_DATE=2025-01-01
 
 [VIDEO_SETTINGS]
 VIDEO_WIDTH=1080
@@ -23,10 +24,3 @@ X264_PARAMS=cabac=1:ref=6:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=
 
 [COLOR_SETTINGS]
 COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
-
-[INSTAGRAM_COMPLIANCE]
-ZERO_RECOMPRESSION=true
-VMAF_TARGET=96
-UPLOAD_SUCCESS_RATE=99.5
-PLATFORM_TESTED=Instagram_Reels
-LAST_VALIDATION=2025-01-01

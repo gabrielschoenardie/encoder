@@ -1,0 +1,26 @@
+# Instagram Encoder Framework V5.2 Profile
+# SPEEDRAMP VIRAL CAR High-Motion Vertical
+
+[PROFILE_INFO]
+PROFILE_NAME=SPEEDRAMP VIRAL CAR High-Motion Vertical
+PROFILE_VERSION=5.2
+PROFILE_DESCRIPTION=Optimized for high-motion viral car content
+PROFILE_AUTHOR=Gabriel Schoenardie
+
+[VIDEO_SETTINGS]
+VIDEO_WIDTH=1080
+VIDEO_HEIGHT=1920
+VIDEO_ASPECT=9:16
+TARGET_BITRATE=18M
+MAX_BITRATE=30M
+BUFFER_SIZE=40M
+GOP_SIZE=48
+KEYINT_MIN=24
+
+[X264_SETTINGS]
+X264_PRESET=veryslow
+X264_TUNE=film
+X264_PARAMS=cabac=1:ref=8:deblock=1,-1,-1:analyse=0x3,0x133:me=umh:subme=11:psy=1:psy_rd=1.2,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:bf=6:b_pyramid=2:b_adapt=2:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.65:aq=3,1.2
+
+[COLOR_SETTINGS]
+COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
