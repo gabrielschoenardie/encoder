@@ -124,14 +124,17 @@ set "X264_TUNE="
 set "X264_PARAMS="
 set "COLOR_PARAMS="
 
-:: Parse profile file
-for /f "usebackq tokens=1,2 delims==" %%A in ("%profile_file%") do (
+:: Parse profile file - CORREÇÃO DO DELIMITADOR
+for /f "usebackq tokens=1* delims==" %%A in ("%profile_file%") do (
     set "param_name=%%A"
     set "param_value=%%B"
-
+    
+    :: Skip comments and empty lines
     if not "!param_name:~0,1!"=="#" if defined param_value (
+        :: Remove leading/trailing spaces
         for /f "tokens=* delims= " %%C in ("!param_value!") do set "param_value=%%C"
         
+        :: Assign to variables
         if "!param_name!"=="PROFILE_NAME" set "PROFILE_NAME=!param_value!"
         if "!param_name!"=="VIDEO_WIDTH" set "VIDEO_WIDTH=!param_value!"
         if "!param_name!"=="VIDEO_HEIGHT" set "VIDEO_HEIGHT=!param_value!"
@@ -147,6 +150,9 @@ for /f "usebackq tokens=1,2 delims==" %%A in ("%profile_file%") do (
         if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
     )
 )
+
+:: Debug output para verificar
+echo   🔍 DEBUG X264_PARAMS: !X264_PARAMS!
 
 :: Validate required parameters
 if not defined PROFILE_NAME (
@@ -419,7 +425,9 @@ echo   X264_TUNE: "%X264_TUNE%"
 echo   X264_PARAMS: "%X264_PARAMS%"
 echo   COLOR_PARAMS: "%COLOR_PARAMS%"
 echo.
-
+echo 📋 FULL COMMAND:
+echo !FFMPEG_COMMAND!
+echo.
 echo 🔧 STATUS VARIABLES:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   PROFILE_SELECTED: "%PROFILE_SELECTED%"
@@ -461,7 +469,6 @@ if defined MAX_BITRATE (echo   ✅ MAX_BITRATE is defined) else (echo   ❌ MAX_
 if defined X264_PRESET (echo   ✅ X264_PRESET is defined) else (echo   ❌ X264_PRESET is NOT defined)
 if defined X264_PARAMS (echo   ✅ X264_PARAMS is defined) else (echo   ❌ X264_PARAMS is NOT defined)
 echo.
-
 echo 💡 This debug info helps identify why encoding might not be available.
 echo.
 pause
@@ -945,53 +952,55 @@ if defined CUSTOM_PRESET (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
     echo   🎭 Standard preset: !X264_PRESET!
 )
+
+:: Profile and tune
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
 :: x264 parameters
 if defined X264_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
-    echo   🧠 x264 params: Applied from profile
-) else (
-    echo   ⚠️ WARNING: X264_PARAMS not defined, using defaults
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params !X264_PARAMS!"
 )
 
 :: Threading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 
 :: Video filters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos""
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int""
 
-:: GOP structure
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE! -keyint_min !KEYINT_MIN! -r 30"
+:: Frame rate e GOP
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30 -g !GOP_SIZE! -keyint_min !KEYINT_MIN!"
 
 :: Color parameters
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 if defined COLOR_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p !COLOR_PARAMS!"
-) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
 )
+
+:: Buffer control
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
 :: Pass-specific settings
 if "!PASS_TYPE!"=="PASS1" (
     echo   🔄 Configuring Pass 1 (Analysis)
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE! -maxrate !MAX_BITRATE! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1 -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+	:: Verificar se o arquivo de log do Pass 1 existe
+if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
+    echo   ✅ Pass 1 log file found: !ARQUIVO_LOG_PASSAGEM!-0.log
+) else (
+    echo   ❌ WARNING: Pass 1 log file not found!
+    echo   📁 Looking for: !ARQUIVO_LOG_PASSAGEM!-0.log
+    dir "*passlog*" 2>nul
+)
 ) else if "!PASS_TYPE!"=="PASS2" (
     echo   🎬 Configuring Pass 2 (Final Encoding)
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE! -maxrate !MAX_BITRATE! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2 -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
-	echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
 )
 
 echo ✅ FFmpeg command built successfully
