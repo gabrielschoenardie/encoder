@@ -128,12 +128,12 @@ set "COLOR_PARAMS="
 for /f "usebackq tokens=1* delims==" %%A in ("%profile_file%") do (
     set "param_name=%%A"
     set "param_value=%%B"
-    
+
     :: Skip comments and empty lines
     if not "!param_name:~0,1!"=="#" if defined param_value (
         :: Remove leading/trailing spaces
         for /f "tokens=* delims= " %%C in ("!param_value!") do set "param_value=%%C"
-        
+
         :: Assign to variables
         if "!param_name!"=="PROFILE_NAME" set "PROFILE_NAME=!param_value!"
         if "!param_name!"=="VIDEO_WIDTH" set "VIDEO_WIDTH=!param_value!"
@@ -346,7 +346,7 @@ if "%PROFILE_CONFIGURED%"=="Y" (
 echo.
 echo  🎛️ ADVANCED OPTIONS:
 echo   [3] ⚙️ Advanced Customization - Presets/Psychovisual
-echo   [4] 📊 Profile Management - Export/Import/Library  
+echo   [4] 📊 Profile Management - Export/Import/Library
 echo   [5] 🔍 Analyze Input File - MediaInfo/Properties
 echo.
 
@@ -424,10 +424,7 @@ echo   X264_PRESET: "%X264_PRESET%"
 echo   X264_TUNE: "%X264_TUNE%"
 echo   X264_PARAMS: "%X264_PARAMS%"
 echo   COLOR_PARAMS: "%COLOR_PARAMS%"
-echo.
-echo 📋 FULL COMMAND:
-echo !FFMPEG_COMMAND!
-echo.
+
 echo 🔧 STATUS VARIABLES:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   PROFILE_SELECTED: "%PROFILE_SELECTED%"
@@ -733,6 +730,67 @@ if /i not "!CONTINUE:~0,1!"=="Y" exit /b 1
 :ext_ok
 echo   ✅ Format recognized: !FILE_EXT!
 call :LogEntry "[VALIDATION] Input file validated"
+
+:: OPTIMIZED: Single FFmpeg call for all metadata
+echo   📊 Analisando propriedades do vídeo...
+set "TEMP_INFO=video_analysis_!RANDOM!.txt"
+"%FFMPEG_CMD%" -i "!ARQUIVO_ENTRADA!" -hide_banner 2>"!TEMP_INFO!"
+
+if not exist "!TEMP_INFO!" (
+    echo ❌ ERRO: Falha ao analisar arquivo!
+    call :LogEntry "[ERROR] Failed to analyze input file"
+    exit /b 1
+)
+
+:: Extract all metadata in one pass
+set "INPUT_RESOLUTION=Unknown"
+set "INPUT_FPS=Unknown"
+set "DURATION_STR=Unknown"
+
+:: Duration
+for /f "tokens=2 delims= " %%A in ('findstr /C:"Duration:" "!TEMP_INFO!" 2^>nul') do (
+    set "DURATION_STR=%%A"
+    goto :dur_done
+)
+:dur_done
+
+:: Resolution - optimized check
+for %%R in (3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080 720x1280) do (
+    findstr "%%R" "!TEMP_INFO!" >nul 2>&1
+    if not errorlevel 1 (
+        set "INPUT_RESOLUTION=%%R"
+        goto :res_done
+    )
+)
+:res_done
+
+:: FPS - simplified detection
+for %%F in (29.97 23.976 59.94 25.00 24.00 30.00 50.00 60.00) do (
+    findstr "%%F fps" "!TEMP_INFO!" >nul 2>&1
+    if not errorlevel 1 (
+        set "INPUT_FPS=%%F"
+        goto :fps_done
+    )
+)
+:fps_done
+
+del "!TEMP_INFO!" 2>nul
+
+:: Normalize values
+if "!DURATION_STR:~-1!"=="," set "DURATION_STR=!DURATION_STR:~0,-1!"
+if "!INPUT_FPS!"=="59.94" set "INPUT_FPS=60"
+if "!INPUT_FPS!"=="29.97" set "INPUT_FPS=30"
+if "!INPUT_FPS!"=="23.976" set "INPUT_FPS=24"
+if "!INPUT_FPS!"=="Unknown" set "INPUT_FPS=30"
+
+echo.
+echo   📋 INFORMAÇÕES DO ARQUIVO:
+echo   ├─ Duração: !DURATION_STR!
+echo   ├─ Resolução: !INPUT_RESOLUTION!
+echo   └─ FPS: !INPUT_FPS!
+
+call :LogEntry "[ANALYSIS] Duration: !DURATION_STR!, Resolution: !INPUT_RESOLUTION!, FPS: !INPUT_FPS!"
+echo   ✅ Análise concluída!
 exit /b 0
 
 :GetOutputFile
@@ -864,6 +922,8 @@ if !PASS1_RESULT_BUILD! NEQ 0 (
 
 call :GetTimeInSeconds
 set "PASS1_START=!total_seconds!"
+echo ⏱️ Iniciado em %time%
+
 echo 🎬 Analyzing video (Pass 1)...
 !FFMPEG_COMMAND! 2>&1
 set "PASS1_RESULT=!ERRORLEVEL!"
@@ -872,6 +932,11 @@ set "PASS1_RESULT=!ERRORLEVEL!"
 call :GetTimeInSeconds
 set "PASS1_END=!total_seconds!"
 call :CalculateElapsedTime !PASS1_START! !PASS1_END!
+set "PASS1_TIME=!ELAPSED_TIME!"
+
+echo.
+echo ⏱️ Tempo de execução Pass 1: !PASS1_TIME!
+echo 📋 Código de retorno: !PASS1_RESULT!
 
 echo.
 echo 🔄 PASS 2/2 - Encoding
@@ -885,8 +950,11 @@ if !PASS2_RESULT_BUILD! NEQ 0 (
     exit /b 1
 )
 
+echo 🎬 Iniciando encoding final (Pass 2)...
 call :GetTimeInSeconds
 set "PASS2_START=!total_seconds!"
+echo ⏱️ Iniciado em %time%
+
 echo 🎬 Creating final file...
 !FFMPEG_COMMAND! 2>&1
 set "PASS2_RESULT=!ERRORLEVEL!"
@@ -895,50 +963,33 @@ set "PASS2_RESULT=!ERRORLEVEL!"
 call :GetTimeInSeconds
 set "PASS2_END=!total_seconds!"
 call :CalculateElapsedTime !PASS2_START! !PASS2_END!
+set "PASS2_TIME=!ELAPSED_TIME!"
 
 if !PASS2_RESULT! EQU 0 (
-    echo ✅ Encoding completed successfully!
+    echo ✅ Pass 2 concluído: !PASS2_TIME!
+    echo.
+    echo 📊 RESUMO:
+    echo   • Pass 1: !PASS1_TIME!
+    echo   • Pass 2: !PASS2_TIME!
+    call :GetTimeInSeconds
+    call :CalculateElapsedTime !PASS1_START! !total_seconds!
+    echo   • Total: !ELAPSED_TIME!
+    echo.
     call :LogEntry "[SUCCESS] 2-Pass encoding completed"
     exit /b 0
 ) else (
-    echo ❌ Pass 2 failed
+    echo ❌ Pass 2 falhou (código: !PASS2_RESULT!)
     call :LogEntry "[ERROR] Pass 2 failed"
+    pause
     exit /b 1
 )
+
+exit /b 0
 
 :BuildFFmpegCommand
 set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
-
-:: Validate profile is loaded - ENHANCED VALIDATION
-if not defined PROFILE_NAME (
-    echo ❌ ERROR: PROFILE_NAME not defined! Please select a profile first.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: PROFILE_NAME missing"
-    exit /b 1
-)
-
-if not defined VIDEO_WIDTH (
-    echo ❌ ERROR: VIDEO_WIDTH not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_WIDTH missing"
-    exit /b 1
-)
-
-if not defined VIDEO_HEIGHT (
-    echo ❌ ERROR: VIDEO_HEIGHT not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_HEIGHT missing"
-    exit /b 1
-)
-
-if not defined TARGET_BITRATE (
-    echo ❌ ERROR: TARGET_BITRATE not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: TARGET_BITRATE missing"
-    exit /b 1
-)
-
-echo   ✅ Profile validation passed: %PROFILE_NAME%
-echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
-echo   🎯 Bitrate: %TARGET_BITRATE%/%MAX_BITRATE%
 
 :: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
@@ -957,11 +1008,6 @@ if defined CUSTOM_PRESET (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: x264 parameters
-if defined X264_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params !X264_PARAMS!"
-)
-
 :: Threading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 
@@ -972,39 +1018,34 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:fla
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30 -g !GOP_SIZE! -keyint_min !KEYINT_MIN!"
 
 :: Color parameters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
-if defined COLOR_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
-)
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 
-:: Buffer control
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
 :: Pass-specific settings
 if "!PASS_TYPE!"=="PASS1" (
-    echo   🔄 Configuring Pass 1 (Analysis)
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE! -maxrate !MAX_BITRATE! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1 -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+    echo   🔄 PASS 1 - Análise V5.1
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
-	:: Verificar se o arquivo de log do Pass 1 existe
-if exist "!ARQUIVO_LOG_PASSAGEM!-0.log" (
-    echo   ✅ Pass 1 log file found: !ARQUIVO_LOG_PASSAGEM!-0.log
-) else (
-    echo   ❌ WARNING: Pass 1 log file not found!
-    echo   📁 Looking for: !ARQUIVO_LOG_PASSAGEM!-0.log
-    dir "*passlog*" 2>nul
-)
+    echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
 ) else if "!PASS_TYPE!"=="PASS2" (
-    echo   🎬 Configuring Pass 2 (Final Encoding)
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE! -maxrate !MAX_BITRATE! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2 -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+    echo   🎬 PASS 2 - Encoding Final V5.1
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+    echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
 )
 
-echo ✅ FFmpeg command built successfully
-call :LogEntry "[COMMAND] !FFMPEG_COMMAND!"
+call :LogEntry "[COMMAND] V5.1 System: !FFMPEG_COMMAND!"
 exit /b 0
 
 :PostProcessing
@@ -1031,10 +1072,23 @@ echo   🎯 Verifying Instagram compliance...
 set "TEMP_CHECK=compliance_!RANDOM!.txt"
 "%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>"!TEMP_CHECK!" 1>nul
 
+:: Quick compliance checks
 set "COMPLIANCE_CHECKS=0"
-findstr /i "yuv420p" "!TEMP_CHECK!" >nul && set /a "COMPLIANCE_CHECKS+=1"
-findstr /i "High.*4\.1" "!TEMP_CHECK!" >nul && set /a "COMPLIANCE_CHECKS+=1"
-findstr /i "mp4" "!TEMP_CHECK!" >nul && set /a "COMPLIANCE_CHECKS+=1"
+
+findstr /i "yuv420p" "!TEMP_CHECK!" >nul && (
+    echo     ✅ Pixel format: yuv420p
+    set /a "COMPLIANCE_CHECKS+=1"
+)
+
+findstr /i "High.*4\.1" "!TEMP_CHECK!" >nul && (
+    echo    ✅ Profile/Level: High 4.1
+    set /a "COMPLIANCE_CHECKS+=1"
+)
+
+findstr /i "mp4" "!TEMP_CHECK!" >nul && (
+    echo    ✅ Container: MP4
+    set /a "COMPLIANCE_CHECKS+=1"
+)
 
 del "!TEMP_CHECK!" 2>nul
 
