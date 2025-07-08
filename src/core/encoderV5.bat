@@ -1507,89 +1507,120 @@ echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
 echo   🎯 Bitrate: %TARGET_BITRATE%/%MAX_BITRATE%
 echo   🧠 x264 params loaded: %X264_PARAMS:~0,50%...
 
-:: Base command
-set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
+:: ========================================
+:: BASE COMMAND - COMUM PARA AMBOS PASSES
+:: ========================================
+set "FFMPEG_BASE="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
+
 :: VIDEO CODEC E PROFILE/LEVEL
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
+set "FFMPEG_BASE=!FFMPEG_BASE! -c:v libx264"
+set "FFMPEG_BASE=!FFMPEG_BASE! -profile:v high -level:v 4.1"
+
 :: PRESET E TUNE
 if defined CUSTOM_PRESET (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+    set "FFMPEG_BASE=!FFMPEG_BASE! -preset !CUSTOM_PRESET!"
     echo   🎭 Custom preset: !CUSTOM_PRESET!
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+    set "FFMPEG_BASE=!FFMPEG_BASE! -preset !X264_PRESET!"
     echo   🎭 Profile preset: !X264_PRESET!
 )
 
 if defined X264_TUNE (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-    echo    Tune: !X264_TUNE!
+    set "FFMPEG_BASE=!FFMPEG_BASE! -tune !X264_TUNE!"
+    echo   🎵 Tune: !X264_TUNE!
 )
-:: APLICAR PARÂMETROS x264 COMPLEXOS - CORREÇÃO CRÍTICA
+
+:: APLICAR PARÂMETROS x264 COMPLEXOS
 echo   🧠 Applying Hollywood-level x264 parameters...
 if defined X264_PARAMS (
-    :: Preservar sintaxe complexa como analyse=0x3,0x133 e psy_rd=1.0,0.15
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
+    set "FFMPEG_BASE=!FFMPEG_BASE! -x264-params "!X264_PARAMS!""
     echo   ✅ x264 complex parameters applied: !X264_PARAMS:~0,60!...
 ) else (
     echo   ⚠️ WARNING: No x264 parameters found, using preset defaults
 )
-:: Threading
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
-:: Video filters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
+
+:: THREADING
+set "FFMPEG_BASE=!FFMPEG_BASE! -threads !THREAD_COUNT!"
+
+:: VIDEO FILTERS
+set "FFMPEG_BASE=!FFMPEG_BASE! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
 echo   📏 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (Lanczos scaling)
+
 :: FRAME RATE E GOP STRUCTURE
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
+set "FFMPEG_BASE=!FFMPEG_BASE! -r 30"
 if defined GOP_SIZE (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
+    set "FFMPEG_BASE=!FFMPEG_BASE! -g !GOP_SIZE!"
 )
 if defined KEYINT_MIN (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+    set "FFMPEG_BASE=!FFMPEG_BASE! -keyint_min !KEYINT_MIN!"
 )
 echo   🎬 Frame rate: 30fps CFR, GOP: !GOP_SIZE!/!KEYINT_MIN!
-:: COLOR SCIENCE - BT.709 COMPLIANCE
+
+:: COLOR SCIENCE - BT.709 COMPLIANCE (APLICAR APENAS UMA VEZ)
 if defined COLOR_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
+    set "FFMPEG_BASE=!FFMPEG_BASE! !COLOR_PARAMS!"
     echo   🌈 Color: Profile-specific (!COLOR_PARAMS!)
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
+    set "FFMPEG_BASE=!FFMPEG_BASE! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
     echo   🌈 Color: BT.709 TV range (default)
 )
-:: PIXEL FORMAT FORÇADO PARA INSTAGRAM
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
-:: QUEUE MUXING PARA ARQUIVOS GRANDES
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA
-if "!PASS_TYPE!"=="PASS1" (
-    echo   🔄 Configuring PASS 1 (Analysis)
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
-	echo   💎 Pass 1 bitrate: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
-) else if "!PASS_TYPE!"=="PASS2" (
-    echo   🎬 Configuring PASS 2 (Final Encoding)
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+:: PIXEL FORMAT E QUEUE MUXING
+set "FFMPEG_BASE=!FFMPEG_BASE! -pix_fmt yuv420p"
+set "FFMPEG_BASE=!FFMPEG_BASE! -max_muxing_queue_size 9999"
+
+:: BITRATE SETTINGS (COMUM PARA AMBOS PASSES)
+set "FFMPEG_BASE=!FFMPEG_BASE! -b:v !TARGET_BITRATE!"
+set "FFMPEG_BASE=!FFMPEG_BASE! -maxrate !MAX_BITRATE!"
+set "FFMPEG_BASE=!FFMPEG_BASE! -bufsize !BUFFER_SIZE!"
+
+:: ========================================
+:: CONSTRUÇÃO ESPECÍFICA POR PASSADA - VERSÃO CORRIGIDA
+:: ========================================
+
+:: Normalizar PASS_TYPE (remover aspas e espaços)
+set "PASS_TYPE=%PASS_TYPE:"=%"
+set "PASS_TYPE=%PASS_TYPE: =%"
+
+echo   🔍 Processing PASS_TYPE: [%PASS_TYPE%]
+
+:: PASS 1 - ANÁLISE
+if /i "%PASS_TYPE%"=="PASS1" (
+    echo   🔄 Configuring PASS 1 ^(Analysis^)
+    set "FFMPEG_COMMAND=!FFMPEG_BASE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+    echo   💎 Pass 1: Analysis only, no audio, null output
+    goto :pass_configured
+)
+
+:: PASS 2 - ENCODING FINAL
+if /i "%PASS_TYPE%"=="PASS2" (
+    echo   🎬 Configuring PASS 2 ^(Final Encoding^)
+    set "FFMPEG_COMMAND=!FFMPEG_BASE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
-	echo   💎 Pass 2 bitrate: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
+    echo   💎 Pass 2: Final encoding with audio and output file
     echo   🎵 Audio: AAC 320k 48kHz Stereo
     echo   📦 Container: MP4 with faststart
+    goto :pass_configured
 )
 
-echo   ✅ FFmpeg command built successfully
-echo   📝 Command length: !FFMPEG_COMMAND:~0,100!...
+:: ERRO - PASS_TYPE INVÁLIDO
+echo ❌ ERROR: Invalid PASS_TYPE: [%PASS_TYPE%]
+echo   💡 Expected: PASS1 or PASS2
+call :LogEntry "[ERROR] Invalid PASS_TYPE: [%PASS_TYPE%]"
+exit /b 1
 
-call :LogEntry "[COMMAND] Built: !FFMPEG_COMMAND:~0,200!..."
+:pass_configured
+echo   ✅ FFmpeg command built successfully for %PASS_TYPE%
+echo   📝 Command preview: !FFMPEG_COMMAND:~0,100!...
+
+call :LogEntry "[COMMAND] %PASS_TYPE% Built: !FFMPEG_COMMAND:~0,200!..."
 exit /b 0
 
 :PostProcessing
