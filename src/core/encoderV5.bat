@@ -385,11 +385,8 @@ if "%IS_LAPTOP%"=="Y" (
 
 echo   🏗️ Architecture: V%SCRIPT_VERSION% Modular Edition
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
-    echo   📁 Profiles: Modular system (file-based)
+    echo   📁 Profiles: Modular system ACTIVE
     echo   🔍 Validation: %MODULAR_VALIDATION_STATUS%
-) else (
-    echo   📁 Profiles: Embedded fallback
-)
 
 echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
 
@@ -405,8 +402,7 @@ if defined ARQUIVO_ENTRADA (
         set "FILES_CONFIGURED=N"
     )
 ) else (
-    echo   📥 Input: Not configured
-    echo   📤 Output: Not configured
+    echo   📁 Files: Not configured
     set "FILES_CONFIGURED=N"
 )
 
