@@ -75,27 +75,111 @@ call :PostProcessing
 :: ========================================
 :LoadModularConfig
 echo 🔧 Loading modular configuration...
-set "PROFILES_DIR=%~dp0..\profiles\presets"
-set "CONFIG_FILE=%~dp0..\config\encoder_config.json"
-echo   📂 Profiles: %PROFILES_DIR%
-echo   🔧 Config: %CONFIG_FILE%
 
-if exist "%CONFIG_FILE%" (
-    echo   ✅ Found: %CONFIG_FILE%
-) else (
-    echo   ⚠️ Config not found, using defaults
-)
+:: DETECÇÃO AUTOMÁTICA DO PATH CORRETO
+echo   🔍 Detecting correct paths...
+
+:: Método 1: Path absoluto baseado no script atual
+set "SCRIPT_DIR=%~dp0"
+echo   📂 Script directory: %SCRIPT_DIR%
+
+:: Construir path absoluto para profiles
+for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
+set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
+set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
+
+echo   📂 Project root: %PROJECT_ROOT%
+echo   📂 Profiles dir: %PROFILES_DIR%
+echo   🔧 Config file: %CONFIG_FILE%
+
+:: VERIFICAÇÃO DE EXISTÊNCIA COM DEBUG DETALHADO
+echo   🔍 Checking directory existence...
 
 if exist "%PROFILES_DIR%" (
-    echo   🎬 Modular profiles system: ACTIVE
-    set "MODULAR_PROFILES_AVAILABLE=Y"
+    echo   ✅ Profiles directory EXISTS: %PROFILES_DIR%
+    
+    :: Listar arquivos .prof encontrados
+    echo   📋 Scanning for .prof files...
     set "MODULAR_PROFILE_COUNT=0"
-    for %%F in ("%PROFILES_DIR%\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
-    echo   ✅ Found !MODULAR_PROFILE_COUNT! modular profiles
+    
+    for %%F in ("%PROFILES_DIR%\*.prof") do (
+        set /a "MODULAR_PROFILE_COUNT+=1"
+        echo   📄 Found: %%~nxF
+    )
+    
+    if !MODULAR_PROFILE_COUNT! GTR 0 (
+        echo   ✅ Found !MODULAR_PROFILE_COUNT! modular profiles
+        set "MODULAR_PROFILES_AVAILABLE=Y"
+        echo   🎬 Modular profiles system: ACTIVE
+    ) else (
+        echo   ⚠️ Directory exists but no .prof files found
+        echo   💡 Expected files: reels_9_16.prof, feed_16_9.prof, cinema_21_9.prof, speedramp_viral.prof
+        set "MODULAR_PROFILES_AVAILABLE=N"
+    )
+    
 ) else (
-    echo   ⚠️ Using embedded profiles
+    echo   ❌ Profiles directory NOT FOUND: %PROFILES_DIR%
+    echo   💡 Expected location: C:\Users\Gabriel\encoder\src\profiles\presets
     set "MODULAR_PROFILES_AVAILABLE=N"
+    
+    :: Tentar caminhos alternativos
+    echo   🔍 Trying alternative paths...
+    
+    :: Método 2: Path direto baseado no usuário
+    set "ALT_PROFILES_DIR=C:\Users\Gabriel\encoder\src\profiles\presets"
+    if exist "!ALT_PROFILES_DIR!" (
+        echo   ✅ FOUND at alternative path: !ALT_PROFILES_DIR!
+        set "PROFILES_DIR=!ALT_PROFILES_DIR!"
+        set "CONFIG_FILE=C:\Users\Gabriel\encoder\src\config\encoder_config.json"
+        set "MODULAR_PROFILES_AVAILABLE=Y"
+        
+        :: Contar profiles no path alternativo
+        set "MODULAR_PROFILE_COUNT=0"
+        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do (
+            set /a "MODULAR_PROFILE_COUNT+=1"
+            echo   📄 Found: %%~nxF
+        )
+        echo   ✅ Found !MODULAR_PROFILE_COUNT! profiles in alternative location
+    )
 )
+
+:: VERIFICAÇÃO DO ARQUIVO DE CONFIG
+if exist "%CONFIG_FILE%" (
+    echo   ✅ Config file found: %CONFIG_FILE%
+) else (
+    echo   ⚠️ Config file not found: %CONFIG_FILE%
+    echo   💡 Will use default configuration
+)
+
+:: RESUMO FINAL
+echo.
+echo   📊 MODULAR SYSTEM SUMMARY:
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   🏗️ Status: %MODULAR_PROFILES_AVAILABLE%
+echo   📂 Profiles Directory: %PROFILES_DIR%
+echo   📄 Profile Count: !MODULAR_PROFILE_COUNT!
+echo   🔧 Config File: %CONFIG_FILE%
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+call :LogEntry "[MODULAR] System loaded - Available: %MODULAR_PROFILES_AVAILABLE%, Profiles: !MODULAR_PROFILE_COUNT!"
+exit /b 0
+
+::========================================
+:: VERIFICAÇÃO DETALHADA DE PROFILES ESPECÍFICOS
+::========================================
+:CheckSpecificProfiles
+echo   🔍 Checking specific profile files...
+
+set "REQUIRED_PROFILES=reels_9_16.prof feed_16_9.prof cinema_21_9.prof speedramp_viral.prof"
+
+for %%P in (%REQUIRED_PROFILES%) do (
+    if exist "%PROFILES_DIR%\%%P" (
+        echo   ✅ %%P - FOUND
+    ) else (
+        echo   ❌ %%P - MISSING
+    )
+)
+
 exit /b 0
 
 :LoadModularProfileFile
@@ -103,13 +187,16 @@ set "profile_file=%~1"
 set "profile_type=%~2"
 
 echo   📥 Loading modular profile: %profile_file%
+echo   🎬 Profile Type: %profile_type%
 
 if not exist "%profile_file%" (
     echo   ❌ Profile file not found: %profile_file%
+    call :LogEntry "[ERROR] Profile file not found: %profile_file%"
     exit /b 1
 )
 
-:: Reset profile variables
+echo   🔍 Resetting profile variables...
+:: Reset ALL profile variables to prevent contamination
 set "PROFILE_NAME="
 set "VIDEO_WIDTH="
 set "VIDEO_HEIGHT="
@@ -124,15 +211,16 @@ set "X264_TUNE="
 set "X264_PARAMS="
 set "COLOR_PARAMS="
 
-:: Parse profile file - CORREÇÃO DO DELIMITADOR
-for /f "usebackq tokens=1* delims==" %%A in ("%profile_file%") do (
+:: MÉTODO SEGURO DE PARSING - Preserva sintaxe complexa
+:: Usar tokens=1* para capturar o valor completo após o =
+for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
     set "param_name=%%A"
     set "param_value=%%B"
 
-    :: Skip comments and empty lines
-    if not "!param_name:~0,1!"=="#" if defined param_value (
-        :: Remove leading/trailing spaces
-        for /f "tokens=* delims= " %%C in ("!param_value!") do set "param_value=%%C"
+:: Skip empty lines and process only valid parameters
+    if defined param_value (
+        :: Remove leading/trailing spaces from parameter name
+        for /f "tokens=* delims= " %%C in ("!param_name!") do set "param_name=%%C"
 
         :: Assign to variables
         if "!param_name!"=="PROFILE_NAME" set "PROFILE_NAME=!param_value!"
@@ -148,31 +236,87 @@ for /f "usebackq tokens=1* delims==" %%A in ("%profile_file%") do (
         if "!param_name!"=="X264_TUNE" set "X264_TUNE=!param_value!"
         if "!param_name!"=="X264_PARAMS" set "X264_PARAMS=!param_value!"
         if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
+		
+		:: CRITICAL: Preserve complex x264 parameters exactly
+        if /i "!param_name!"=="X264_PARAMS" (
+            set "X264_PARAMS=!param_value!"
+            echo   🧠 Complex x264 params preserved: !param_value:~0,60!...
+        )
+        :: CRITICAL: Preserve color parameters exactly  
+        if /i "!param_name!"=="COLOR_PARAMS" (
+            set "COLOR_PARAMS=!param_value!"
+            echo   🌈 Color params preserved: !param_value:~0,40!...
+        )
     )
 )
 
-:: Debug output para verificar
-echo   🔍 DEBUG X264_PARAMS: !X264_PARAMS!
+echo   ✅ Profile parsing completed
 
-:: Validate required parameters
-if not defined PROFILE_NAME (
-    echo   ❌ Invalid profile: PROFILE_NAME missing
-    exit /b 1
+
 )
+
 if not defined VIDEO_WIDTH (
-    echo   ❌ Invalid profile: VIDEO_WIDTH missing
-    exit /b 1
-)
-if not defined VIDEO_HEIGHT (
-    echo   ❌ Invalid profile: VIDEO_HEIGHT missing
+    echo   ❌ CRITICAL ERROR: VIDEO_WIDTH missing from profile file
+    call :LogEntry "[ERROR] VIDEO_WIDTH missing from: %profile_file%"
     exit /b 1
 )
 
-echo   ✅ Profile loaded: !PROFILE_NAME! (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
+if not defined VIDEO_HEIGHT (
+    echo   ❌ CRITICAL ERROR: VIDEO_HEIGHT missing from profile file
+    call :LogEntry "[ERROR] VIDEO_HEIGHT missing from: %profile_file%"
+    exit /b 1
+)
+
+if not defined TARGET_BITRATE (
+    echo   ❌ CRITICAL ERROR: TARGET_BITRATE missing from profile file
+    call :LogEntry "[ERROR] TARGET_BITRATE missing from: %profile_file%"
+    exit /b 1
+)
+
+if not defined MAX_BITRATE (
+    echo   ❌ CRITICAL ERROR: MAX_BITRATE missing from profile file
+    call :LogEntry "[ERROR] MAX_BITRATE missing from: %profile_file%"
+    exit /b 1
+)
+
+if not defined X264_PRESET (
+    echo   ❌ CRITICAL ERROR: X264_PRESET missing from profile file
+    call :LogEntry "[ERROR] X264_PRESET missing from: %profile_file%"
+    exit /b 1
+)
+
+if not defined X264_PARAMS (
+    echo   ⚠️ WARNING: X264_PARAMS missing - will use preset defaults
+    call :LogEntry "[WARNING] X264_PARAMS missing from: %profile_file%"
+) else (
+    echo   ✅ x264 complex parameters loaded successfully
+)
+
+:: DISPLAY LOADED PROFILE SUMMARY
+echo.
+echo   ✅ PROFILE SUCCESSFULLY LOADED:
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   🎬 Name: !PROFILE_NAME!
+echo   📊 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (!VIDEO_ASPECT!)
+echo   🎯 Bitrate: !TARGET_BITRATE! target / !MAX_BITRATE! max
+echo   ⚙️ Preset: !X264_PRESET! / Tune: !X264_TUNE!
+if defined X264_PARAMS (
+    echo   🧠 x264: !X264_PARAMS:~0,70!...
+)
+if defined COLOR_PARAMS (
+    echo   🌈 Color: !COLOR_PARAMS!
+)
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+:: SET WORKFLOW STATUS
 set "PROFILE_SELECTED=Y"
 set "PROFILE_CONFIGURED=Y"
 set "CURRENT_PROFILE_ID=modular_%profile_type%"
-call :LogEntry "[MODULAR] Profile loaded: !PROFILE_NAME!"
+set "CURRENT_PROFILE_FILE=%profile_file%"
+
+call :LogEntry "[MODULAR] Profile loaded successfully: !PROFILE_NAME! from %profile_file%"
+call :LogEntry "[PARAMS] x264: !X264_PARAMS:~0,100!"
+
 exit /b 0
 
 :: ========================================
@@ -422,9 +566,37 @@ echo   GOP_SIZE: "%GOP_SIZE%"
 echo   KEYINT_MIN: "%KEYINT_MIN%"
 echo   X264_PRESET: "%X264_PRESET%"
 echo   X264_TUNE: "%X264_TUNE%"
-echo   X264_PARAMS: "%X264_PARAMS%"
-echo   COLOR_PARAMS: "%COLOR_PARAMS%"
+echo.
 
+echo 🧠 COMPLEX x264 PARAMETERS:
+echo ═══════════════════════════════════════════════════════════════════════════
+if defined X264_PARAMS (
+    echo   X264_PARAMS: "%X264_PARAMS%"
+    echo.
+    echo   🔍 PARAMETER ANALYSIS:
+    echo %X264_PARAMS% | findstr "analyse=" >nul && echo     ✅ analyse parameter found
+    echo %X264_PARAMS% | findstr "psy_rd=" >nul && echo     ✅ psy_rd parameter found  
+    echo %X264_PARAMS% | findstr "ref=" >nul && echo     ✅ ref parameter found
+    echo %X264_PARAMS% | findstr "bf=" >nul && echo     ✅ bf parameter found
+    echo %X264_PARAMS% | findstr "me=" >nul && echo     ✅ me parameter found
+    echo %X264_PARAMS% | findstr "subme=" >nul && echo     ✅ subme parameter found
+    echo %X264_PARAMS% | findstr "trellis=" >nul && echo     ✅ trellis parameter found
+    echo %X264_PARAMS% | findstr "aq=" >nul && echo     ✅ aq parameter found
+) else (
+    echo   X264_PARAMS: NOT DEFINED
+    echo   ❌ This will cause encoding to use only preset defaults
+)
+
+echo.
+echo 🌈 COLOR PARAMETERS:
+echo ═══════════════════════════════════════════════════════════════════════════
+if defined COLOR_PARAMS (
+    echo   COLOR_PARAMS: "%COLOR_PARAMS%"
+) else (
+    echo   COLOR_PARAMS: NOT DEFINED (will use BT.709 defaults)
+)
+
+echo.
 echo 🔧 STATUS VARIABLES:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   PROFILE_SELECTED: "%PROFILE_SELECTED%"
@@ -434,39 +606,150 @@ echo   READY_TO_ENCODE: "%READY_TO_ENCODE%"
 echo   WORKFLOW_STEP: "%WORKFLOW_STEP%"
 echo   SYSTEM_STATUS: "%SYSTEM_STATUS%"
 echo   CURRENT_PROFILE_ID: "%CURRENT_PROFILE_ID%"
-echo.
+echo   CURRENT_PROFILE_FILE: "%CURRENT_PROFILE_FILE%"
 
+echo.
 echo 🏗️ MODULAR SYSTEM:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   MODULAR_PROFILES_AVAILABLE: "%MODULAR_PROFILES_AVAILABLE%"
 echo   PROFILES_DIR: "%PROFILES_DIR%"
-echo.
+echo   MODULAR_VALIDATION_STATUS: "%MODULAR_VALIDATION_STATUS%"
 
+echo.
 echo 📁 FILES:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   ARQUIVO_ENTRADA: "%ARQUIVO_ENTRADA%"
 echo   ARQUIVO_SAIDA: "%ARQUIVO_SAIDA%"
-echo.
+echo   ARQUIVO_LOG_PASSAGEM: "%ARQUIVO_LOG_PASSAGEM%"
 
+echo.
 echo 🎛️ ADVANCED SETTINGS:
 echo ═══════════════════════════════════════════════════════════════════════════
 echo   ADVANCED_MODE: "%ADVANCED_MODE%"
 echo   CUSTOMIZATION_ACTIVE: "%CUSTOMIZATION_ACTIVE%"
 echo   CUSTOM_PRESET: "%CUSTOM_PRESET%"
 echo   CUSTOM_PSY_RD: "%CUSTOM_PSY_RD%"
-echo.
 
-echo 🔍 VARIABLE VALIDATION:
+echo.
+echo 💻 HARDWARE SETTINGS:
 echo ═══════════════════════════════════════════════════════════════════════════
-if defined PROFILE_NAME (echo   ✅ PROFILE_NAME is defined) else (echo   ❌ PROFILE_NAME is NOT defined)
-if defined VIDEO_WIDTH (echo   ✅ VIDEO_WIDTH is defined) else (echo   ❌ VIDEO_WIDTH is NOT defined)
-if defined VIDEO_HEIGHT (echo   ✅ VIDEO_HEIGHT is defined) else (echo   ❌ VIDEO_HEIGHT is NOT defined)
-if defined TARGET_BITRATE (echo   ✅ TARGET_BITRATE is defined) else (echo   ❌ TARGET_BITRATE is NOT defined)
-if defined MAX_BITRATE (echo   ✅ MAX_BITRATE is defined) else (echo   ❌ MAX_BITRATE is NOT defined)
-if defined X264_PRESET (echo   ✅ X264_PRESET is defined) else (echo   ❌ X264_PRESET is NOT defined)
-if defined X264_PARAMS (echo   ✅ X264_PARAMS is defined) else (echo   ❌ X264_PARAMS is NOT defined)
+echo   CPU_CORES: "%CPU_CORES%"
+echo   THREAD_COUNT: "%THREAD_COUNT%"
+echo   IS_LAPTOP: "%IS_LAPTOP%"
+echo   TOTAL_RAM_GB: "%TOTAL_RAM_GB%"
+
+echo.
+echo 🔍 CRITICAL VARIABLE VALIDATION:
+echo ═══════════════════════════════════════════════════════════════════════════
+set "CRITICAL_ERRORS=0"
+
+if defined PROFILE_NAME (
+    echo   ✅ PROFILE_NAME is defined
+) else (
+    echo   ❌ PROFILE_NAME is NOT defined
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined VIDEO_WIDTH (
+    echo   ✅ VIDEO_WIDTH is defined
+) else (
+    echo   ❌ VIDEO_WIDTH is NOT defined  
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined VIDEO_HEIGHT (
+    echo   ✅ VIDEO_HEIGHT is defined
+) else (
+    echo   ❌ VIDEO_HEIGHT is NOT defined
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined TARGET_BITRATE (
+    echo   ✅ TARGET_BITRATE is defined
+) else (
+    echo   ❌ TARGET_BITRATE is NOT defined
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined MAX_BITRATE (
+    echo   ✅ MAX_BITRATE is defined
+) else (
+    echo   ❌ MAX_BITRATE is NOT defined
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined X264_PRESET (
+    echo   ✅ X264_PRESET is defined
+) else (
+    echo   ❌ X264_PRESET is NOT defined
+    set /a "CRITICAL_ERRORS+=1"
+)
+
+if defined X264_PARAMS (
+    echo   ✅ X264_PARAMS is defined
+) else (
+    echo   ⚠️ X264_PARAMS is NOT defined (will use preset defaults)
+)
+
+echo.
+echo 📊 VALIDATION SUMMARY:
+echo ═══════════════════════════════════════════════════════════════════════════
+if !CRITICAL_ERRORS! EQU 0 (
+    echo   🏆 STATUS: ALL CRITICAL VARIABLES DEFINED
+    echo   ✅ Profile is ready for encoding
+) else (
+    echo   ❌ STATUS: !CRITICAL_ERRORS! CRITICAL ERRORS FOUND
+    echo   🔧 Profile configuration incomplete
+)
+
+echo.
+echo 💡 TROUBLESHOOTING TIPS:
+echo ═══════════════════════════════════════════════════════════════════════════
+if !CRITICAL_ERRORS! GTR 0 (
+    echo   1. 🔄 Try reloading the profile (option [2])
+    echo   2. 📂 Check if profile files exist in: %PROFILES_DIR%
+    echo   3. 🔍 Validate modular profiles (option [V])
+    echo   4. 🔄 Reload modular system (option [R])
+    echo   5. 📝 Check profile file syntax and format
+)
+
+if not defined X264_PARAMS (
+    echo   📋 X264_PARAMS missing - this means:
+    echo     • Only basic preset parameters will be used
+    echo     • Complex Hollywood-level parameters won't be applied
+    echo     • Encoding quality may be reduced
+    echo     • Instagram zero-recompression not guaranteed
+)
+
+echo.
+echo 🔧 PROFILE FILE DIAGNOSTICS:
+echo ═══════════════════════════════════════════════════════════════════════════
+if defined CURRENT_PROFILE_FILE (
+    echo   📂 Profile File: %CURRENT_PROFILE_FILE%
+    if exist "%CURRENT_PROFILE_FILE%" (
+        echo   ✅ File exists and is accessible
+        
+        echo   🔍 File structure check:
+        findstr /C:"[PROFILE_INFO]" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ [PROFILE_INFO] section found
+        findstr /C:"[VIDEO_SETTINGS]" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ [VIDEO_SETTINGS] section found  
+        findstr /C:"[X264_SETTINGS]" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ [X264_SETTINGS] section found
+        findstr /C:"[COLOR_SETTINGS]" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ [COLOR_SETTINGS] section found
+        
+        echo   🔍 Critical parameters check:
+        findstr /C:"X264_PARAMS=" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ X264_PARAMS found in file
+        findstr /C:"TARGET_BITRATE=" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ TARGET_BITRATE found in file
+        findstr /C:"VIDEO_WIDTH=" "%CURRENT_PROFILE_FILE%" >nul && echo     ✅ VIDEO_WIDTH found in file
+        
+    ) else (
+        echo   ❌ File does not exist or is not accessible
+    )
+) else (
+    echo   ❌ No profile file path stored (CURRENT_PROFILE_FILE not set)
+)
+
 echo.
 echo 💡 This debug info helps identify why encoding might not be available.
+echo 🔧 Use this information to troubleshoot profile loading issues.
 echo.
 pause
 goto :ShowProfessionalMainMenu
@@ -478,7 +761,7 @@ goto :ShowProfessionalMainMenu
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                         🎬 PROFESSIONAL PROFILE SELECTION                    ║
+echo ║                      🎬 PROFESSIONAL PROFILE SELECTION                       ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 call :SelectProfileForWorkflow
@@ -488,26 +771,131 @@ goto :ShowProfessionalMainMenu
 echo  🎬 Select the optimal profile for your Instagram content:
 echo.
 
+:: DEBUG DETALHADO DO SISTEMA MODULAR
+echo  🔍 SYSTEM DIAGNOSTICS:
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   📂 Profiles Directory: %PROFILES_DIR%
+echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
+
+:: VERIFICAÇÃO CRÍTICA DO SISTEMA MODULAR
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
-    echo  🏗️ MODULAR SYSTEM ACTIVE - Loading from profile files
+    echo   ✅ MODULAR SYSTEM ACTIVE - Loading from profile files
+    
+    :: Re-verificar se o diretório ainda existe (pode ter mudado)
+    if exist "%PROFILES_DIR%" (
+        echo   ✅ Directory confirmed: %PROFILES_DIR%
+    ) else (
+        echo   ❌ Directory missing: %PROFILES_DIR%
+        echo   🔄 Attempting to reload modular config...
+        call :LoadModularConfig
+    )
+	
+:: Verificar cada arquivo individualmente
+    echo   📋 Profile Files Status:
+    set "PROFILES_FOUND=0"
+    
+    if exist "%PROFILES_DIR%\reels_9_16.prof" (
+        echo     ✅ reels_9_16.prof
+        set /a "PROFILES_FOUND+=1"
+    ) else (
+        echo     ❌ reels_9_16.prof - NOT FOUND
+    )
+    
+    if exist "%PROFILES_DIR%\feed_16_9.prof" (
+        echo     ✅ feed_16_9.prof
+        set /a "PROFILES_FOUND+=1"
+    ) else (
+        echo     ❌ feed_16_9.prof - NOT FOUND
+    )
+    
+    if exist "%PROFILES_DIR%\cinema_21_9.prof" (
+        echo     ✅ cinema_21_9.prof
+        set /a "PROFILES_FOUND+=1"
+    ) else (
+        echo     ❌ cinema_21_9.prof - NOT FOUND
+    )
+    
+    if exist "%PROFILES_DIR%\speedramp_viral.prof" (
+        echo     ✅ speedramp_viral.prof
+        set /a "PROFILES_FOUND+=1"
+    ) else (
+        echo     ❌ speedramp_viral.prof - NOT FOUND
+    )
+    
+    echo   📊 Total profiles found: !PROFILES_FOUND!/4
+    
+    if !PROFILES_FOUND! EQU 0 (
+        echo.
+        echo   ❌ CRITICAL ERROR: No profile files found!
+        echo   💡 Expected location: %PROFILES_DIR%
+        echo.
+        echo   🔧 MANUAL PATH VERIFICATION:
+        echo     1. Open Windows Explorer
+        echo     2. Navigate to: C:\Users\Gabriel\encoder\src\profiles\presets
+        echo     3. Verify these files exist:
+        echo        • reels_9_16.prof
+        echo        • feed_16_9.prof  
+        echo        • cinema_21_9.prof
+        echo        • speedramp_viral.prof
+        echo.
+        echo   💡 If files exist but not detected, try option [R] Reload Modular Profiles
+        pause
+        exit /b 1
+    )
+    
 ) else (
-    echo  ❌ MODULAR SYSTEM NOT AVAILABLE
-    echo  💡 Please ensure profile files exist in: %PROFILES_DIR%
+    echo   ❌ MODULAR SYSTEM NOT AVAILABLE
+    echo   💡 Modular profiles directory not accessible
+    echo.
+    echo   🔧 TROUBLESHOOTING STEPS:
+    echo     1. Check if directory exists: %PROFILES_DIR%
+    echo     2. Verify .prof files are present
+    echo     3. Run [R] Reload Modular Profiles option
+    echo     4. Check file permissions
     echo.
     pause
     exit /b 1
 )
 
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo.
+
+echo  📋 AVAILABLE PROFILES:
 echo.
 echo  [1] 📱 REELS/STORIES (Vertical 9:16) - Zero-Recompression Optimized
-echo  [2] 📺 FEED/IGTV (Horizontal 16:9) - Broadcast Standard
+if exist "%PROFILES_DIR%\reels_9_16.prof" (
+    echo      ✅ Profile ready: reels_9_16.prof
+) else (
+    echo      ❌ Profile missing: reels_9_16.prof
+)
+
+echo  [2] 📺 FEED/IGTV (Horizontal 16:9) - Broadcast Standard  
+if exist "%PROFILES_DIR%\feed_16_9.prof" (
+    echo      ✅ Profile ready: feed_16_9.prof
+) else (
+    echo      ❌ Profile missing: feed_16_9.prof
+)
+
 echo  [3] 🎬 CINEMA ULTRA-WIDE (21:9) - Cinematic Quality
+if exist "%PROFILES_DIR%\cinema_21_9.prof" (
+    echo      ✅ Profile ready: cinema_21_9.prof  
+) else (
+    echo      ❌ Profile missing: cinema_21_9.prof
+)
+
 echo  [4] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion Optimized
+if exist "%PROFILES_DIR%\speedramp_viral.prof" (
+    echo      ✅ Profile ready: speedramp_viral.prof
+) else (
+    echo      ❌ Profile missing: speedramp_viral.prof
+)
+
 echo.
 echo  [C] 📊 Compare All Profiles
+echo  [P] 🔍 Show Full Profile Paths (Debug)
 echo  [B] 🔙 Back to Main Menu
 echo.
-set /p "profile_choice=Select your profile [1-4, C, B]: "
+set /p "profile_choice=Select your profile [1-4, C, P, B]: "
 
 if not defined profile_choice (
     echo ❌ Please select an option
@@ -515,53 +903,119 @@ if not defined profile_choice (
     goto :SelectProfileForWorkflow
 )
 
+:: NOVA OPÇÃO DE DEBUG
+if /i "%profile_choice%"=="P" (
+    echo.
+    echo 🔍 FULL PROFILE PATHS DEBUG:
+    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    echo Profile 1: %PROFILES_DIR%\reels_9_16.prof
+    echo Profile 2: %PROFILES_DIR%\feed_16_9.prof
+    echo Profile 3: %PROFILES_DIR%\cinema_21_9.prof
+    echo Profile 4: %PROFILES_DIR%\speedramp_viral.prof
+    echo.
+    echo Current working directory: %CD%
+    echo Script directory: %~dp0
+    echo.
+    pause
+    goto :SelectProfileForWorkflow
+)
+
+:: CARREGAMENTO DE PROFILES COM PATH ABSOLUTO
 if "%profile_choice%"=="1" (
+    echo.
     echo 📱 Loading REELS profile...
-    call :LoadModularProfileFile "%PROFILES_DIR%\reels_9_16.prof" "REELS"
-    if not errorlevel 1 (
-        goto :ProfileWorkflowComplete
+    set "PROFILE_PATH=%PROFILES_DIR%\reels_9_16.prof"
+    echo   📂 Attempting to load: !PROFILE_PATH!
+    
+    if exist "!PROFILE_PATH!" (
+        call :LoadModularProfileFile "!PROFILE_PATH!" "REELS"
+        if not errorlevel 1 (
+            echo   ✅ REELS profile loaded successfully
+            goto :ProfileWorkflowComplete
+        ) else (
+            echo   ❌ Failed to parse REELS profile
+            echo   💡 Check profile file format and syntax
+            pause
+            goto :SelectProfileForWorkflow
+        )
     ) else (
-        echo ❌ Failed to load REELS profile from modular system
-        echo 💡 Please check if reels_9_16.prof exists in %PROFILES_DIR%
+        echo   ❌ REELS profile file not found: !PROFILE_PATH!
+        echo   💡 Verify file exists and is accessible
         pause
         goto :SelectProfileForWorkflow
     )
 )
 
 if "%profile_choice%"=="2" (
+    echo.
     echo 📺 Loading FEED profile...
-    call :LoadModularProfileFile "%PROFILES_DIR%\feed_16_9.prof" "FEED"
-    if not errorlevel 1 (
-        goto :ProfileWorkflowComplete
+    set "PROFILE_PATH=%PROFILES_DIR%\feed_16_9.prof"
+    echo   📂 Attempting to load: !PROFILE_PATH!
+    
+    if exist "!PROFILE_PATH!" (
+        call :LoadModularProfileFile "!PROFILE_PATH!" "FEED"
+        if not errorlevel 1 (
+            echo   ✅ FEED profile loaded successfully
+            goto :ProfileWorkflowComplete
+        ) else (
+            echo   ❌ Failed to parse FEED profile
+            echo   💡 Check profile file format and syntax
+            pause
+            goto :SelectProfileForWorkflow
+        )
     ) else (
-        echo ❌ Failed to load FEED profile from modular system
-        echo 💡 Please check if feed_16_9.prof exists in %PROFILES_DIR%
+        echo   ❌ FEED profile file not found: !PROFILE_PATH!
+        echo   💡 Verify file exists and is accessible
         pause
         goto :SelectProfileForWorkflow
     )
 )
 
 if "%profile_choice%"=="3" (
+    echo.
     echo 🎬 Loading CINEMA profile...
-    call :LoadModularProfileFile "%PROFILES_DIR%\cinema_21_9.prof" "CINEMA"
-    if not errorlevel 1 (
-        goto :ProfileWorkflowComplete
+    set "PROFILE_PATH=%PROFILES_DIR%\cinema_21_9.prof"
+    echo   📂 Attempting to load: !PROFILE_PATH!
+    
+    if exist "!PROFILE_PATH!" (
+        call :LoadModularProfileFile "!PROFILE_PATH!" "CINEMA"
+        if not errorlevel 1 (
+            echo   ✅ CINEMA profile loaded successfully
+            goto :ProfileWorkflowComplete
+        ) else (
+            echo   ❌ Failed to parse CINEMA profile
+            echo   💡 Check profile file format and syntax
+            pause
+            goto :SelectProfileForWorkflow
+        )
     ) else (
-        echo ❌ Failed to load CINEMA profile from modular system
-        echo 💡 Please check if cinema_21_9.prof exists in %PROFILES_DIR%
+        echo   ❌ CINEMA profile file not found: !PROFILE_PATH!
+        echo   💡 Verify file exists and is accessible
         pause
         goto :SelectProfileForWorkflow
     )
 )
 
 if "%profile_choice%"=="4" (
+    echo.
     echo 🚗 Loading SPEEDRAMP profile...
-    call :LoadModularProfileFile "%PROFILES_DIR%\speedramp_viral.prof" "SPEEDRAMP"
-    if not errorlevel 1 (
-        goto :ProfileWorkflowComplete
+    set "PROFILE_PATH=%PROFILES_DIR%\speedramp_viral.prof"
+    echo   📂 Attempting to load: !PROFILE_PATH!
+    
+    if exist "!PROFILE_PATH!" (
+        call :LoadModularProfileFile "!PROFILE_PATH!" "SPEEDRAMP"
+        if not errorlevel 1 (
+            echo   ✅ SPEEDRAMP profile loaded successfully
+            goto :ProfileWorkflowComplete
+        ) else (
+            echo   ❌ Failed to parse SPEEDRAMP profile
+            echo   💡 Check profile file format and syntax
+            pause
+            goto :SelectProfileForWorkflow
+        )
     ) else (
-        echo ❌ Failed to load SPEEDRAMP profile from modular system
-        echo 💡 Please check if speedramp_viral.prof exists in %PROFILES_DIR%
+        echo   ❌ SPEEDRAMP profile file not found: !PROFILE_PATH!
+        echo   💡 Verify file exists and is accessible
         pause
         goto :SelectProfileForWorkflow
     )
@@ -574,54 +1028,80 @@ if /i "%profile_choice%"=="C" (
 
 if /i "%profile_choice%"=="B" exit /b 0
 
-echo ❌ Invalid choice. Please select 1-4, C, or B.
+echo ❌ Invalid choice. Please select 1-4, C, P, or B.
 pause
 goto :SelectProfileForWorkflow
 
 :ProfileWorkflowComplete
 echo.
-echo ✅ Profile configured successfully!
-echo   🎬 Profile: %PROFILE_NAME%
-echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
-echo   🎯 Bitrate: %TARGET_BITRATE% / %MAX_BITRATE%
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    ✅ PROFILE CONFIGURATION SUCCESSFUL                       ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-set "PROFILE_CONFIGURED=Y"
+echo  📊 PROFILE SUMMARY:
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   🎬 Profile Name: %PROFILE_NAME%
+echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
+echo   ⚙️ x264 Preset: %X264_PRESET%
+if defined X264_TUNE echo   🎵 x264 Tune: %X264_TUNE%
+if defined X264_PARAMS echo   🧠 Complex Params: %X264_PARAMS:~0,60%...
+if defined COLOR_PARAMS echo   🌈 Color Science: %COLOR_PARAMS%
+echo   📂 Source: %CURRENT_PROFILE_FILE%
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+:: SET WORKFLOW STATUS
 set "PROFILE_SELECTED=Y"
+set "PROFILE_CONFIGURED=Y"
 set "WORKFLOW_STEP=3"
 set "SYSTEM_STATUS=PROFILE_CONFIGURED"
 
-:: Validate that we have all required variables
-if not defined PROFILE_NAME (
-    echo ❌ ERROR: PROFILE_NAME not set!
-    set "PROFILE_CONFIGURED=N"
-    goto :profile_error
-)
-if not defined VIDEO_WIDTH (
-    echo ❌ ERROR: VIDEO_WIDTH not set!
-    set "PROFILE_CONFIGURED=N"
-    goto :profile_error
-)
-if not defined VIDEO_HEIGHT (
-    echo ❌ ERROR: VIDEO_HEIGHT not set!
-    set "PROFILE_CONFIGURED=N"
-    goto :profile_error
-)
-if not defined TARGET_BITRATE (
-    echo ❌ ERROR: TARGET_BITRATE not set!
-    set "PROFILE_CONFIGURED=N"
-    goto :profile_error
-)
+:: LOG DE SUCESSO
+call :LogEntry "[WORKFLOW] Profile configured successfully: %PROFILE_NAME%"
+call :LogEntry "[PROFILE] Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%, Bitrate: %TARGET_BITRATE%/%MAX_BITRATE%"
+call :LogEntry "[PROFILE] Source file: %CURRENT_PROFILE_FILE%"
 
-echo 🔍 Profile validation: ALL VARIABLES SET CORRECTLY
-call :LogEntry "[WORKFLOW] Profile configured: %PROFILE_NAME% (%VIDEO_WIDTH%x%VIDEO_HEIGHT%)"
-call :LogEntry "[DEBUG] PROFILE_CONFIGURED=%PROFILE_CONFIGURED%, PROFILE_SELECTED=%PROFILE_SELECTED%"
 pause
 exit /b 0
 
 :profile_error
-echo ❌ Profile configuration failed - missing required variables
-call :LogEntry "[ERROR] Profile configuration incomplete"
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    ❌ PROFILE CONFIGURATION FAILED                           ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🔧 TROUBLESHOOTING GUIDE:
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   1. 📂 Check profile file exists and is readable
+echo   2. 🔍 Verify profile file format (.prof extension)
+echo   3. ✏️ Check profile file syntax (sections, parameters)
+echo   4. 🔄 Try reloading modular system [R]
+echo   5. 🔍 Use Debug Profile Variables [D] for details
+echo.
+
+echo  📁 EXPECTED PROFILE LOCATION:
+echo   %PROFILES_DIR%
+echo.
+
+echo  📋 EXPECTED PROFILE FILES:
+echo   • reels_9_16.prof
+echo   • feed_16_9.prof
+echo   • cinema_21_9.prof  
+echo   • speedramp_viral.prof
+echo.
+
+:: Resetar status
+set "PROFILE_CONFIGURED=N"
+set "PROFILE_SELECTED=N"
+set "WORKFLOW_STEP=2"
+set "SYSTEM_STATUS=PROFILE_ERROR"
+
+call :LogEntry "[ERROR] Profile configuration failed - resetting workflow"
+
+echo  💡 Try selecting a different profile or check the files.
+echo.
 pause
 exit /b 1
 
@@ -991,113 +1471,283 @@ set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
+:: VALIDAÇÃO CRÍTICA DOS PROFILES
+if not defined PROFILE_NAME (
+    echo ❌ ERROR: PROFILE_NAME not defined! Please select a profile first.
+    call :LogEntry "[ERROR] BuildFFmpegCommand: PROFILE_NAME missing"
+    exit /b 1
+)
+
+if not defined VIDEO_WIDTH (
+    echo ❌ ERROR: VIDEO_WIDTH not defined! Profile not loaded correctly.
+    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_WIDTH missing"
+    exit /b 1
+)
+
+if not defined VIDEO_HEIGHT (
+    echo ❌ ERROR: VIDEO_HEIGHT not defined! Profile not loaded correctly.
+    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_HEIGHT missing"
+    exit /b 1
+)
+
+if not defined TARGET_BITRATE (
+    echo ❌ ERROR: TARGET_BITRATE not defined! Profile not loaded correctly.
+    call :LogEntry "[ERROR] BuildFFmpegCommand: TARGET_BITRATE missing"
+    exit /b 1
+)
+
+if not defined X264_PARAMS (
+    echo ❌ ERROR: X264_PARAMS not defined! Profile parameters missing.
+    call :LogEntry "[ERROR] BuildFFmpegCommand: X264_PARAMS missing"
+    exit /b 1
+)
+
+echo   ✅ Profile validation passed: %PROFILE_NAME%
+echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
+echo   🎯 Bitrate: %TARGET_BITRATE%/%MAX_BITRATE%
+echo   🧠 x264 params loaded: %X264_PARAMS:~0,50%...
+
 :: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
-
-:: Video codec and preset
+:: VIDEO CODEC E PROFILE/LEVEL
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
+:: PRESET E TUNE
 if defined CUSTOM_PRESET (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
     echo   🎭 Custom preset: !CUSTOM_PRESET!
 ) else (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
-    echo   🎭 Standard preset: !X264_PRESET!
+    echo   🎭 Profile preset: !X264_PRESET!
 )
 
-:: Profile and tune
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
-
+if defined X264_TUNE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+    echo    Tune: !X264_TUNE!
+)
+:: APLICAR PARÂMETROS x264 COMPLEXOS - CORREÇÃO CRÍTICA
+echo   🧠 Applying Hollywood-level x264 parameters...
+if defined X264_PARAMS (
+    :: Preservar sintaxe complexa como analyse=0x3,0x133 e psy_rd=1.0,0.15
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
+    echo   ✅ x264 complex parameters applied: !X264_PARAMS:~0,60!...
+) else (
+    echo   ⚠️ WARNING: No x264 parameters found, using preset defaults
+)
 :: Threading
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
-
 :: Video filters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int""
-
-:: Frame rate e GOP
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30 -g !GOP_SIZE! -keyint_min !KEYINT_MIN!"
-
-:: Color parameters
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
+echo   📏 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (Lanczos scaling)
+:: FRAME RATE E GOP STRUCTURE
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
+if defined GOP_SIZE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
+)
+if defined KEYINT_MIN (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+)
+echo   🎬 Frame rate: 30fps CFR, GOP: !GOP_SIZE!/!KEYINT_MIN!
+:: COLOR SCIENCE - BT.709 COMPLIANCE
+if defined COLOR_PARAMS (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
+    echo   🌈 Color: Profile-specific (!COLOR_PARAMS!)
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
+    echo   🌈 Color: BT.709 TV range (default)
+)
+:: PIXEL FORMAT FORÇADO PARA INSTAGRAM
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
+:: QUEUE MUXING PARA ARQUIVOS GRANDES
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: Pass-specific settings
+:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA
 if "!PASS_TYPE!"=="PASS1" (
-    echo   🔄 PASS 1 - Análise V5.1
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
-    echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
+    echo   🔄 Configuring PASS 1 (Analysis)
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+	echo   💎 Pass 1 bitrate: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
 ) else if "!PASS_TYPE!"=="PASS2" (
-    echo   🎬 PASS 2 - Encoding Final V5.1
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    echo   🎬 Configuring PASS 2 (Final Encoding)
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
-    echo   💎 Bitrate V5.1: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
+	echo   💎 Pass 2 bitrate: !TARGET_BITRATE! / !MAX_BITRATE! / !BUFFER_SIZE!
+    echo   🎵 Audio: AAC 320k 48kHz Stereo
+    echo   📦 Container: MP4 with faststart
 )
 
-call :LogEntry "[COMMAND] V5.1 System: !FFMPEG_COMMAND!"
+echo   ✅ FFmpeg command built successfully
+echo   📝 Command length: !FFMPEG_COMMAND:~0,100!...
+
+call :LogEntry "[COMMAND] Built: !FFMPEG_COMMAND:~0,200!..."
 exit /b 0
 
 :PostProcessing
-echo 🔍 Post-processing and validation...
+echo 🔍 Advanced post-processing and validation...
 
+:: VERIFICAÇÃO CRÍTICA DE ARQUIVO
 if not exist "!ARQUIVO_SAIDA!" (
     echo ❌ CRITICAL ERROR: Output file not created!
+    echo 💡 Check FFmpeg logs for encoding errors
+    call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
     exit /b 1
 )
 
+:: CÁLCULO DE TAMANHO DO ARQUIVO
 for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
+if not defined OUTPUT_SIZE set "OUTPUT_SIZE=0"
 set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
-echo   ✅ File created: !ARQUIVO_SAIDA! (!OUTPUT_SIZE_MB! MB)
+set /a "OUTPUT_SIZE_KB=!OUTPUT_SIZE!/1024"
 
+echo   ✅ File creation confirmed: !ARQUIVO_SAIDA!
+echo   📊 File size: !OUTPUT_SIZE_MB! MB (!OUTPUT_SIZE_KB! KB)
+
+:: VALIDAÇÃO BÁSICA DE INSTAGRAM COMPLIANCE  
+echo   🎯 Running basic Instagram compliance check...
 call :ValidateInstagramCompliance
 
-echo 🧹 Cleaning temporary files...
-del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
-del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
+:: VALIDAÇÃO AVANÇADA COM FFPROBE
+echo   🔬 Running advanced FFprobe validation...
+set "VALIDATION_SCORE=0"
+call :ValidateOutputWithFFprobe
+
+:: VALIDAÇÃO DE ASPECT RATIO
+call :ValidateAspectRatio
+
+:: VERIFICAÇÃO DE TAMANHO PARA INSTAGRAM
+echo   📏 Instagram size compliance check...
+if !OUTPUT_SIZE_MB! LSS 100 (
+    echo   ✅ File size: Within Instagram limits (!OUTPUT_SIZE_MB! MB < 100 MB)
+) else if !OUTPUT_SIZE_MB! LSS 500 (
+    echo   ⚠️ File size: Large but acceptable (!OUTPUT_SIZE_MB! MB)
+    echo   💡 Consider reducing bitrate for faster uploads
+) else (
+    echo   ❌ File size: Too large for Instagram (!OUTPUT_SIZE_MB! MB > 500 MB)
+    echo   🔧 Reduce bitrate or duration
+)
+
+:: VERIFICAÇÃO DE DURAÇÃO PARA DIFERENTES TIPOS
+echo   ⏱️ Duration compliance check...
+set "TEMP_DURATION=duration_!RANDOM!.txt"
+"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
+
+for /f "tokens=2 delims= " %%D in ('type "!TEMP_DURATION!" 2^>nul') do set "DURATION_RAW=%%D"
+del "!TEMP_DURATION!" 2>nul
+
+if defined DURATION_RAW (
+    echo   ⏱️ Duration detected: !DURATION_RAW!
+    
+    :: Parse duration to check limits based on profile
+    for /f "tokens=1-3 delims=:" %%H in ("!DURATION_RAW!") do (
+        set "dur_hours=%%H"
+        set "dur_minutes=%%I"
+        set "dur_seconds=%%J"
+    )
+    
+    :: Remove leading zeros to prevent octal interpretation
+    if "!dur_hours:~0,1!"=="0" if not "!dur_hours!"=="0" set "dur_hours=!dur_hours:~1!"
+    if "!dur_minutes:~0,1!"=="0" if not "!dur_minutes!"=="0" set "dur_minutes=!dur_minutes:~1!"
+    
+    set /a "total_seconds=!dur_hours!*3600+!dur_minutes!*60"
+    
+    :: Check duration limits based on profile type
+    if "!VIDEO_WIDTH!"=="1080" if "!VIDEO_HEIGHT!"=="1920" (
+        :: Reels/Stories - 90 seconds max
+        if !total_seconds! LEQ 90 (
+            echo   ✅ Duration: Perfect for Reels/Stories (!total_seconds!s ≤ 90s)
+        ) else (
+            echo   ⚠️ Duration: Too long for optimal Reels (!total_seconds!s > 90s)
+        )
+    ) else (
+        :: Feed/IGTV - 60 minutes max
+        if !total_seconds! LEQ 3600 (
+            echo   ✅ Duration: Suitable for Feed/IGTV (!total_seconds!s ≤ 60min)
+        ) else (
+            echo   ⚠️ Duration: May be too long for some formats (!total_seconds!s > 60min)
+        )
+    )
+)
+
+:: RELATÓRIO FINAL DE QUALIDADE
+echo.
+echo   📊 FINAL QUALITY REPORT:
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo   🎬 Profile Used: %PROFILE_NAME%
+echo   📁 Output File: !ARQUIVO_SAIDA!
+echo   📊 File Size: !OUTPUT_SIZE_MB! MB
+echo   🔬 Validation Score: !VALIDATION_SCORE!/9
+echo   🎯 Instagram Ready: !VALIDATION_RESULT!
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+:: LIMPEZA DE ARQUIVOS TEMPORÁRIOS
+echo   🧹 Cleaning temporary files...
+set /p "CLEAN_LOGS=Delete encoding logs? (Y/N): "
+if /i "!CLEAN_LOGS:~0,1!"=="Y" (
+    del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
+    del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
+    echo   ✅ Temporary encoding files cleaned
+) else (
+    echo   💾 Encoding logs preserved for analysis
+)
+
+:: LOG FINAL
+call :LogEntry "[POST] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB, Score: !VALIDATION_SCORE!/9"
+call :LogEntry "[POST] Validation result: !VALIDATION_RESULT!"
+
+echo   ✅ Post-processing completed successfully
 exit /b 0
 
+::========================================
+:: INSTAGRAM COMPLIANCE - BÁSICA
+::========================================
 :ValidateInstagramCompliance
-echo   🎯 Verifying Instagram compliance...
+echo   🎯 Verifying basic Instagram compliance...
 set "TEMP_CHECK=compliance_!RANDOM!.txt"
 "%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>"!TEMP_CHECK!" 1>nul
 
 :: Quick compliance checks
-set "COMPLIANCE_CHECKS=0"
+set "BASIC_COMPLIANCE=0"
 
 findstr /i "yuv420p" "!TEMP_CHECK!" >nul && (
     echo     ✅ Pixel format: yuv420p
-    set /a "COMPLIANCE_CHECKS+=1"
+    set /a "BASIC_COMPLIANCE+=1"
 )
 
 findstr /i "High.*4\.1" "!TEMP_CHECK!" >nul && (
-    echo    ✅ Profile/Level: High 4.1
-    set /a "COMPLIANCE_CHECKS+=1"
+    echo     ✅ Profile/Level: High 4.1  
+    set /a "BASIC_COMPLIANCE+=1"
 )
 
 findstr /i "mp4" "!TEMP_CHECK!" >nul && (
-    echo    ✅ Container: MP4
-    set /a "COMPLIANCE_CHECKS+=1"
+    echo     ✅ Container: MP4
+    set /a "BASIC_COMPLIANCE+=1"
+)
+
+findstr /i "aac" "!TEMP_CHECK!" >nul && (
+    echo     ✅ Audio: AAC codec
+    set /a "BASIC_COMPLIANCE+=1"
 )
 
 del "!TEMP_CHECK!" 2>nul
 
-if !COMPLIANCE_CHECKS! GEQ 2 (
-    echo   ✅ Instagram compliance: APPROVED
-    echo   🏆 ZERO-RECOMPRESSION CERTIFICATION APPROVED!
+if !BASIC_COMPLIANCE! GEQ 3 (
+    echo     🏆 Basic compliance: PASSED (!BASIC_COMPLIANCE!/4)
+    call :LogEntry "[COMPLIANCE] Basic Instagram compliance: PASSED"
 ) else (
-    echo   ⚠️ Some parameters may need adjustment
+    echo     ⚠️ Basic compliance: REVIEW NEEDED (!BASIC_COMPLIANCE!/4)
+    call :LogEntry "[COMPLIANCE] Basic Instagram compliance: NEEDS REVIEW"
 )
+
 exit /b 0
 
 :ShowEncodingResults
@@ -1668,20 +2318,67 @@ goto :ShowProfessionalMainMenu
 :ValidateSingleProfile
 set "profile_file=%~1"
 set "profile_name=%~n1"
+
 echo   🔍 Validating: %profile_name%
 
 if not exist "%profile_file%" (
-    echo     ❌ File not found
+    echo     ❌ File not found: %profile_file%
     exit /b 1
 )
 
-findstr /C:"PROFILE_NAME=" "%profile_file%" >nul || (echo     ❌ Missing PROFILE_NAME & exit /b 1)
-findstr /C:"VIDEO_WIDTH=" "%profile_file%" >nul || (echo     ❌ Missing VIDEO_WIDTH & exit /b 1)
-findstr /C:"VIDEO_HEIGHT=" "%profile_file%" >nul || (echo     ❌ Missing VIDEO_HEIGHT & exit /b 1)
+:: Verificar estrutura básica do arquivo
+findstr /C:"[PROFILE_INFO]" "%profile_file%" >nul || (
+    echo     ❌ Missing [PROFILE_INFO] section
+    exit /b 1
+)
 
-echo     ✅ Valid profile structure
+findstr /C:"[VIDEO_SETTINGS]" "%profile_file%" >nul || (
+    echo     ❌ Missing [VIDEO_SETTINGS] section
+    exit /b 1
+)
+
+findstr /C:"[X264_SETTINGS]" "%profile_file%" >nul || (
+    echo     ❌ Missing [X264_SETTINGS] section
+    exit /b 1
+)
+
+:: Verificar parâmetros críticos
+findstr /C:"PROFILE_NAME=" "%profile_file%" >nul || (
+    echo     ❌ Missing PROFILE_NAME parameter
+    exit /b 1
+)
+
+findstr /C:"VIDEO_WIDTH=" "%profile_file%" >nul || (
+    echo     ❌ Missing VIDEO_WIDTH parameter
+    exit /b 1
+)
+
+findstr /C:"VIDEO_HEIGHT=" "%profile_file%" >nul || (
+    echo     ❌ Missing VIDEO_HEIGHT parameter
+    exit /b 1
+)
+
+findstr /C:"TARGET_BITRATE=" "%profile_file%" >nul || (
+    echo     ❌ Missing TARGET_BITRATE parameter
+    exit /b 1
+)
+
+findstr /C:"X264_PRESET=" "%profile_file%" >nul || (
+    echo     ❌ Missing X264_PRESET parameter
+    exit /b 1
+)
+
+:: Verificar se x264 params existem (warning se não tiver)
+findstr /C:"X264_PARAMS=" "%profile_file%" >nul || (
+    echo     ⚠️ Warning: X264_PARAMS not found (will use preset defaults)
+)
+
+echo     ✅ Profile structure valid
 exit /b 0
 
+::========================================
+:: RELOAD MODULAR PROFILES - CORREÇÃO DEFINITIVA
+::========================================
 :ReloadModularProfiles
 cls
 echo.
@@ -1691,25 +2388,177 @@ echo ╚════════════════════════
 echo.
 
 echo 🔄 Reloading modular profiles system...
+echo.
+
+:: RESET COMPLETE DO SISTEMA
+echo   🔄 Resetting modular system state...
 set "MODULAR_PROFILES_AVAILABLE=N"
 set "MODULAR_VALIDATION_STATUS=NOT_CHECKED"
+set "MODULAR_PROFILE_COUNT=0"
 
+:: DETECÇÃO AVANÇADA DE PATH
+echo   🔍 Advanced path detection...
+
+:: Método 1: Baseado no diretório do script
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
+set "AUTO_PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
+
+echo   📂 Method 1 - Script relative: %AUTO_PROFILES_DIR%
+
+if exist "%AUTO_PROFILES_DIR%" (
+    echo   ✅ Method 1 SUCCESS: Directory found
+    set "PROFILES_DIR=%AUTO_PROFILES_DIR%"
+    set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
+    goto :path_found
+)
+
+:: Método 2: Path absoluto Gabriel
+set "GABRIEL_PROFILES_DIR=C:\Users\Gabriel\encoder\src\profiles\presets"
+echo   📂 Method 2 - Absolute Gabriel: %GABRIEL_PROFILES_DIR%
+
+if exist "%GABRIEL_PROFILES_DIR%" (
+    echo   ✅ Method 2 SUCCESS: Directory found  
+    set "PROFILES_DIR=%GABRIEL_PROFILES_DIR%"
+    set "CONFIG_FILE=C:\Users\Gabriel\encoder\src\config\encoder_config.json"
+    goto :path_found
+)
+
+:: Método 3: Busca no disco atual
+echo   📂 Method 3 - Searching current drive...
+for /d %%D in ("C:\Users\*\encoder\src\profiles\presets") do (
+    if exist "%%D" (
+        echo   ✅ Method 3 SUCCESS: Found at %%D
+        set "PROFILES_DIR=%%D"
+        for %%P in ("%%D") do set "USER_PATH=%%~dpP"
+        set "CONFIG_FILE=!USER_PATH!config\encoder_config.json"
+        goto :path_found
+    )
+)
+
+:: Método 4: Path manual
+echo   📂 Method 4 - Manual input required
+echo   ❌ Could not auto-detect profiles directory
+echo.
+echo   💡 Please enter the full path to your profiles directory:
+echo   Example: C:\Users\Gabriel\encoder\src\profiles\presets
+echo.
+set /p "MANUAL_PROFILES_DIR=Enter profiles directory path: "
+
+if exist "%MANUAL_PROFILES_DIR%" (
+    echo   ✅ Method 4 SUCCESS: Manual path confirmed
+    set "PROFILES_DIR=%MANUAL_PROFILES_DIR%"
+    goto :path_found
+) else (
+    echo   ❌ Manual path not found: %MANUAL_PROFILES_DIR%
+    echo   🔧 Please verify the path and try again
+    pause
+    goto :ShowProfessionalMainMenu
+)
+
+:path_found
+echo.
+echo   🎯 FINAL PATH SELECTED: %PROFILES_DIR%
+
+:: RE-EXECUTAR CONFIGURAÇÃO MODULAR COM NOVO PATH
 call :LoadModularConfig
+
+:: VALIDAÇÃO DETALHADA DOS PROFILES
+echo.
+echo   🔍 Detailed profile validation...
+call :ValidateModularProfiles
+
+:: VERIFICAÇÃO INDIVIDUAL DE CADA PROFILE
+echo.
+echo   📋 Individual profile check:
+call :CheckIndividualProfiles
 
 echo.
 echo 📊 RELOAD RESULTS:
+echo ═══════════════════════════════════════════════════════════════════════════
 echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
+echo   📂 Profiles Directory: %PROFILES_DIR%
+echo   📄 Profile Count: %MODULAR_PROFILE_COUNT%
 echo   🔍 Validation Status: %MODULAR_VALIDATION_STATUS%
 
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
-    echo ✅ Modular system successfully reloaded
+    echo.
+    echo   ✅ MODULAR SYSTEM SUCCESSFULLY RELOADED
+    echo   💡 You can now use file-based profiles for encoding
+    echo   🎬 All profiles are ready for selection
 ) else (
-    echo ⚠️ Modular system not available
+    echo.
+    echo   ⚠️ MODULAR SYSTEM NOT FULLY FUNCTIONAL
+    echo   💡 System will continue but profile loading may fail
+    echo   🔧 Check if .prof files exist in: %PROFILES_DIR%
 )
 
-call :LogEntry "[MODULAR] System reloaded"
+call :LogEntry "[MODULAR] System reloaded - Available: %MODULAR_PROFILES_AVAILABLE%, Path: %PROFILES_DIR%"
+
+echo.
+echo 🔙 Returning to main menu...
 pause
 goto :ShowProfessionalMainMenu
+
+::========================================
+:: VERIFICAÇÃO INDIVIDUAL DE PROFILES
+::========================================
+:CheckIndividualProfiles
+echo   🔍 Checking individual profile files...
+
+set "REQUIRED_PROFILES=reels_9_16:REELS feed_16_9:FEED cinema_21_9:CINEMA speedramp_viral:SPEEDRAMP"
+set "PROFILES_OK=0"
+set "PROFILES_ERROR=0"
+
+for %%P in (%REQUIRED_PROFILES%) do (
+    for /f "tokens=1,2 delims=:" %%A in ("%%P") do (
+        set "prof_file=%%A.prof"
+        set "prof_name=%%B"
+        
+        if exist "%PROFILES_DIR%\!prof_file!" (
+            echo     ✅ !prof_file! - EXISTS
+            
+            :: Verificação básica de conteúdo
+            findstr /C:"PROFILE_NAME=" "%PROFILES_DIR%\!prof_file!" >nul
+            if not errorlevel 1 (
+                echo       ✓ Contains PROFILE_NAME
+                set /a "PROFILES_OK+=1"
+            ) else (
+                echo       ✗ Missing PROFILE_NAME
+                set /a "PROFILES_ERROR+=1"
+            )
+            
+            findstr /C:"X264_PARAMS=" "%PROFILES_DIR%\!prof_file!" >nul
+            if not errorlevel 1 (
+                echo       ✓ Contains X264_PARAMS
+            ) else (
+                echo       ✗ Missing X264_PARAMS
+            )
+            
+        ) else (
+            echo     ❌ !prof_file! - MISSING
+            set /a "PROFILES_ERROR+=1"
+        )
+    )
+)
+
+echo.
+echo   📊 Profile check summary: %PROFILES_OK% OK, %PROFILES_ERROR% errors
+set "MODULAR_PROFILE_COUNT=%PROFILES_OK%"
+
+if %PROFILES_OK% GTR 0 (
+    set "MODULAR_PROFILES_AVAILABLE=Y"
+    if %PROFILES_ERROR% EQU 0 (
+        set "MODULAR_VALIDATION_STATUS=PASSED"
+    ) else (
+        set "MODULAR_VALIDATION_STATUS=PARTIAL"
+    )
+) else (
+    set "MODULAR_PROFILES_AVAILABLE=N"
+    set "MODULAR_VALIDATION_STATUS=FAILED"
+)
+
+exit /b 0
 
 :ShowModularSystemInfo
 cls
