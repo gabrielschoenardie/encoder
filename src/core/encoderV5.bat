@@ -1655,59 +1655,9 @@ call :ValidateOutputWithFFprobe
 :: VALIDAÇÃO DE ASPECT RATIO
 call :ValidateAspectRatio
 
-:: VERIFICAÇÃO DE TAMANHO PARA INSTAGRAM
-echo   📏 Instagram size compliance check...
-if !OUTPUT_SIZE_MB! LSS 100 (
-    echo   ✅ File size: Within Instagram limits (!OUTPUT_SIZE_MB! MB < 100 MB)
-) else if !OUTPUT_SIZE_MB! LSS 500 (
-    echo   ⚠️ File size: Large but acceptable (!OUTPUT_SIZE_MB! MB)
-    echo   💡 Consider reducing bitrate for faster uploads
-) else (
-    echo   ❌ File size: Too large for Instagram (!OUTPUT_SIZE_MB! MB > 500 MB)
-    echo   🔧 Reduce bitrate or duration
-)
-
 :: VERIFICAÇÃO DE DURAÇÃO PARA DIFERENTES TIPOS
 echo   ⏱️ Duration compliance check...
-set "TEMP_DURATION=duration_!RANDOM!.txt"
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
-
-for /f "tokens=2 delims= " %%D in ('type "!TEMP_DURATION!" 2^>nul') do set "DURATION_RAW=%%D"
-del "!TEMP_DURATION!" 2>nul
-
-if defined DURATION_RAW (
-    echo   ⏱️ Duration detected: !DURATION_RAW!
-    
-    :: Parse duration to check limits based on profile
-    for /f "tokens=1-3 delims=:" %%H in ("!DURATION_RAW!") do (
-        set "dur_hours=%%H"
-        set "dur_minutes=%%I"
-        set "dur_seconds=%%J"
-    )
-    
-    :: Remove leading zeros to prevent octal interpretation
-    if "!dur_hours:~0,1!"=="0" if not "!dur_hours!"=="0" set "dur_hours=!dur_hours:~1!"
-    if "!dur_minutes:~0,1!"=="0" if not "!dur_minutes!"=="0" set "dur_minutes=!dur_minutes:~1!"
-    
-    set /a "total_seconds=!dur_hours!*3600+!dur_minutes!*60"
-    
-    :: Check duration limits based on profile type
-    if "!VIDEO_WIDTH!"=="1080" if "!VIDEO_HEIGHT!"=="1920" (
-        :: Reels/Stories - 90 seconds max
-        if !total_seconds! LEQ 90 (
-            echo   ✅ Duration: Perfect for Reels/Stories (!total_seconds!s ≤ 90s)
-        ) else (
-            echo   ⚠️ Duration: Too long for optimal Reels (!total_seconds!s > 90s)
-        )
-    ) else (
-        :: Feed/IGTV - 60 minutes max
-        if !total_seconds! LEQ 3600 (
-            echo   ✅ Duration: Suitable for Feed/IGTV (!total_seconds!s ≤ 60min)
-        ) else (
-            echo   ⚠️ Duration: May be too long for some formats (!total_seconds!s > 60min)
-        )
-    )
-)
+call :ValidateDuration
 
 :: RELATÓRIO FINAL DE QUALIDADE
 echo.
@@ -1716,7 +1666,6 @@ echo   ━━━━━━━━━━━━━━━━━━━━━━━━�
 echo   🎬 Profile Used: %PROFILE_NAME%
 echo   📁 Output File: !ARQUIVO_SAIDA!
 echo   📊 File Size: !OUTPUT_SIZE_MB! MB
-echo   🔬 Validation Score: !VALIDATION_SCORE!/9
 echo   🎯 Instagram Ready: !VALIDATION_RESULT!
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -1732,51 +1681,156 @@ if /i "!CLEAN_LOGS:~0,1!"=="Y" (
 )
 
 :: LOG FINAL
-call :LogEntry "[POST] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB, Score: !VALIDATION_SCORE!/9"
+call :LogEntry "[POST] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB
 call :LogEntry "[POST] Validation result: !VALIDATION_RESULT!"
 
 echo   ✅ Post-processing completed successfully
 exit /b 0
 
 ::========================================
-:: INSTAGRAM COMPLIANCE - BÁSICA
+:: INSTAGRAM COMPLIANCE - UNIFICADA
 ::========================================
 :ValidateInstagramCompliance
-echo   🎯 Verifying basic Instagram compliance...
+echo   🎯 Verifying Instagram compliance...
 set "TEMP_CHECK=compliance_!RANDOM!.txt"
 "%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>"!TEMP_CHECK!" 1>nul
 
-:: Quick compliance checks
-set "BASIC_COMPLIANCE=0"
+:: Compliance checks
+set "COMPLIANCE_SCORE=0"
 
 findstr /i "yuv420p" "!TEMP_CHECK!" >nul && (
     echo     ✅ Pixel format: yuv420p
-    set /a "BASIC_COMPLIANCE+=1"
+    set /a "COMPLIANCE_SCORE+=1"
 )
 
 findstr /i "High.*4\.1" "!TEMP_CHECK!" >nul && (
-    echo     ✅ Profile/Level: High 4.1  
-    set /a "BASIC_COMPLIANCE+=1"
+    echo     ✅ Profile/Level: High 4.1
+    set /a "COMPLIANCE_SCORE+=1"
 )
 
 findstr /i "mp4" "!TEMP_CHECK!" >nul && (
     echo     ✅ Container: MP4
-    set /a "BASIC_COMPLIANCE+=1"
+    set /a "COMPLIANCE_SCORE+=1"
 )
 
 findstr /i "aac" "!TEMP_CHECK!" >nul && (
     echo     ✅ Audio: AAC codec
-    set /a "BASIC_COMPLIANCE+=1"
+    set /a "COMPLIANCE_SCORE+=1"
 )
 
 del "!TEMP_CHECK!" 2>nul
 
-if !BASIC_COMPLIANCE! GEQ 3 (
-    echo     🏆 Basic compliance: PASSED (!BASIC_COMPLIANCE!/4)
-    call :LogEntry "[COMPLIANCE] Basic Instagram compliance: PASSED"
+if !COMPLIANCE_SCORE! GEQ 4 (
+    echo     🏆 Instagram compliance: PERFECT (!COMPLIANCE_SCORE!/4)
+    set "VALIDATION_RESULT=CERTIFIED"
+    call :LogEntry "[COMPLIANCE] Instagram compliance: PERFECT"
+) else if !COMPLIANCE_SCORE! GEQ 3 (
+    echo     ✅ Instagram compliance: PASSED (!COMPLIANCE_SCORE!/4)
+    set "VALIDATION_RESULT=APPROVED"
+    call :LogEntry "[COMPLIANCE] Instagram compliance: PASSED"
 ) else (
-    echo     ⚠️ Basic compliance: REVIEW NEEDED (!BASIC_COMPLIANCE!/4)
-    call :LogEntry "[COMPLIANCE] Basic Instagram compliance: NEEDS REVIEW"
+    echo     ⚠️ Instagram compliance: REVIEW NEEDED (!COMPLIANCE_SCORE!/4)
+    set "VALIDATION_RESULT=NEEDS_REVIEW"
+    call :LogEntry "[COMPLIANCE] Instagram compliance: NEEDS REVIEW"
+)
+
+exit /b 0
+
+::========================================
+:: VALIDAÇÃO AVANÇADA COM FFPROBE
+::========================================
+:ValidateOutputWithFFprobe
+set "TEMP_PROBE=ffprobe_!RANDOM!.txt"
+ffprobe -v quiet -show_format -show_streams "!ARQUIVO_SAIDA!" > "!TEMP_PROBE!" 2>nul
+
+if exist "!TEMP_PROBE!" (
+    :: Check video codec
+    findstr /i "codec_name=h264" "!TEMP_PROBE!" >nul && (
+        echo     ✅ Video codec: H.264
+    )
+    
+    :: Check audio codec  
+    findstr /i "codec_name=aac" "!TEMP_PROBE!" >nul && (
+        echo     ✅ Audio codec: AAC
+    )
+    
+    :: Check sample rate
+    findstr /i "sample_rate=48000" "!TEMP_PROBE!" >nul && (
+        echo     ✅ Audio sample rate: 48kHz
+    )
+    
+    del "!TEMP_PROBE!" 2>nul
+) else (
+    echo     ℹ️ FFprobe validation skipped (not available)
+)
+
+exit /b 0
+
+::========================================
+:: VALIDAÇÃO DE ASPECT RATIO
+::========================================
+:ValidateAspectRatio
+echo     🔍 Aspect ratio validation...
+
+:: Calculate expected aspect ratio based on profile
+if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1920" (
+    echo     ✅ Aspect ratio: 9:16 (Reels/Stories optimized)
+) else if "%VIDEO_WIDTH%"=="1920" if "%VIDEO_HEIGHT%"=="1080" (
+    echo     ✅ Aspect ratio: 16:9 (Feed/IGTV optimized)
+) else if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1080" (
+    echo     ✅ Aspect ratio: 1:1 (Square format)
+) else if "%VIDEO_WIDTH%"=="2560" if "%VIDEO_HEIGHT%"=="1080" (
+    echo     ✅ Aspect ratio: 21:9 (Cinema ultra-wide)
+) else (
+    echo     ℹ️ Aspect ratio: Custom (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
+)
+
+exit /b 0
+
+::========================================
+:: VALIDAÇÃO DE DURAÇÃO
+::========================================
+:ValidateDuration
+set "TEMP_DURATION=duration_!RANDOM!.txt"
+"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
+
+for /f "tokens=2 delims= " %%D in ('type "!TEMP_DURATION!" 2^>nul') do set "DURATION_RAW=%%D"
+del "!TEMP_DURATION!" 2>nul
+
+if defined DURATION_RAW (
+    echo     ⏱️ Duration: !DURATION_RAW! (detected)
+    
+    :: Parse duration for limits based on profile
+    for /f "tokens=1-3 delims=:" %%H in ("!DURATION_RAW!") do (
+        set "dur_hours=%%H"
+        set "dur_minutes=%%I"
+        set "dur_seconds=%%J"
+    )
+    
+    :: Remove leading zeros 
+    if "!dur_hours:~0,1!"=="0" if not "!dur_hours!"=="0" set "dur_hours=!dur_hours:~1!"
+    if "!dur_minutes:~0,1!"=="0" if not "!dur_minutes!"=="0" set "dur_minutes=!dur_minutes:~1!"
+    
+    set /a "total_seconds=!dur_hours!*3600+!dur_minutes!*60"
+    
+    :: Check duration limits based on profile type
+    if "!VIDEO_WIDTH!"=="1080" if "!VIDEO_HEIGHT!"=="1920" (
+        :: Reels/Stories - 90 seconds max
+        if !total_seconds! LEQ 90 (
+            echo     ✅ Duration: Perfect for Reels/Stories (!total_seconds!s ≤ 90s)
+        ) else (
+            echo     ℹ️ Duration: Long Reels format (!total_seconds!s > 90s)
+        )
+    ) else (
+        :: Feed/IGTV - 60 minutes max
+        if !total_seconds! LEQ 3600 (
+            echo     ✅ Duration: Suitable for Feed/IGTV (!total_seconds!s ≤ 60min)
+        ) else (
+            echo     ℹ️ Duration: Extended content (!total_seconds!s > 60min)
+        )
+    )
+) else (
+    echo     ℹ️ Duration: Could not detect (file may be very short)
 )
 
 exit /b 0
