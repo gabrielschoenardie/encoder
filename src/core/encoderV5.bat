@@ -76,14 +76,8 @@ call :PostProcessing
 :LoadModularConfig
 echo 🔧 Loading modular configuration...
 
-:: DETECÇÃO AUTOMÁTICA DO PATH CORRETO
-echo   🔍 Detecting correct paths...
-
-:: Método 1: Path absoluto baseado no script atual
+:: DETECÇÃO AUTOMÁTICA DO PATH - SIMPLIFIED
 set "SCRIPT_DIR=%~dp0"
-echo   📂 Script directory: %SCRIPT_DIR%
-
-:: Construir path absoluto para profiles
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
 set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
@@ -92,11 +86,9 @@ echo   📂 Project root: %PROJECT_ROOT%
 echo   📂 Profiles dir: %PROFILES_DIR%
 echo   🔧 Config file: %CONFIG_FILE%
 
-:: VERIFICAÇÃO DE EXISTÊNCIA COM DEBUG DETALHADO
-echo   🔍 Checking directory existence...
-
+:: VERIFICAÇÃO STREAMLINED
 if exist "%PROFILES_DIR%" (
-    echo   ✅ Profiles directory EXISTS: %PROFILES_DIR%
+    echo   ✅ Profiles directory: %PROFILES_DIR%
     
     :: Listar arquivos .prof encontrados
     echo   📋 Scanning for .prof files...
@@ -768,7 +760,7 @@ call :SelectProfileForWorkflow
 goto :ShowProfessionalMainMenu
 
 :SelectProfileForWorkflow
-echo  🎬 Select the optimal profile for your Instagram content:
+echo  🎬 Select Instagram profile:
 echo.
 
 :: DEBUG DETALHADO DO SISTEMA MODULAR
@@ -779,90 +771,18 @@ echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
 
 :: VERIFICAÇÃO CRÍTICA DO SISTEMA MODULAR
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
-    echo   ✅ MODULAR SYSTEM ACTIVE - Loading from profile files
-    
-    :: Re-verificar se o diretório ainda existe (pode ter mudado)
-    if exist "%PROFILES_DIR%" (
-        echo   ✅ Directory confirmed: %PROFILES_DIR%
-    ) else (
-        echo   ❌ Directory missing: %PROFILES_DIR%
-        echo   🔄 Attempting to reload modular config...
-        call :LoadModularConfig
-    )
-	
-:: Verificar cada arquivo individualmente
-    echo   📋 Profile Files Status:
-    set "PROFILES_FOUND=0"
-    
-    if exist "%PROFILES_DIR%\reels_9_16.prof" (
-        echo     ✅ reels_9_16.prof
-        set /a "PROFILES_FOUND+=1"
-    ) else (
-        echo     ❌ reels_9_16.prof - NOT FOUND
-    )
-    
-    if exist "%PROFILES_DIR%\feed_16_9.prof" (
-        echo     ✅ feed_16_9.prof
-        set /a "PROFILES_FOUND+=1"
-    ) else (
-        echo     ❌ feed_16_9.prof - NOT FOUND
-    )
-    
-    if exist "%PROFILES_DIR%\cinema_21_9.prof" (
-        echo     ✅ cinema_21_9.prof
-        set /a "PROFILES_FOUND+=1"
-    ) else (
-        echo     ❌ cinema_21_9.prof - NOT FOUND
-    )
-    
-    if exist "%PROFILES_DIR%\speedramp_viral.prof" (
-        echo     ✅ speedramp_viral.prof
-        set /a "PROFILES_FOUND+=1"
-    ) else (
-        echo     ❌ speedramp_viral.prof - NOT FOUND
-    )
-    
-    echo   📊 Total profiles found: !PROFILES_FOUND!/4
-    
-    if !PROFILES_FOUND! EQU 0 (
-        echo.
-        echo   ❌ CRITICAL ERROR: No profile files found!
-        echo   💡 Expected location: %PROFILES_DIR%
-        echo.
-        echo   🔧 MANUAL PATH VERIFICATION:
-        echo     1. Open Windows Explorer
-        echo     2. Navigate to: C:\Users\Gabriel\encoder\src\profiles\presets
-        echo     3. Verify these files exist:
-        echo        • reels_9_16.prof
-        echo        • feed_16_9.prof  
-        echo        • cinema_21_9.prof
-        echo        • speedramp_viral.prof
-        echo.
-        echo   💡 If files exist but not detected, try option [R] Reload Modular Profiles
-        pause
-        exit /b 1
-    )
-    
+    echo  🏗️ MODULAR SYSTEM ACTIVE
 ) else (
-    echo   ❌ MODULAR SYSTEM NOT AVAILABLE
-    echo   💡 Modular profiles directory not accessible
-    echo.
-    echo   🔧 TROUBLESHOOTING STEPS:
-    echo     1. Check if directory exists: %PROFILES_DIR%
-    echo     2. Verify .prof files are present
-    echo     3. Run [R] Reload Modular Profiles option
-    echo     4. Check file permissions
-    echo.
+    echo  ⚠️ MODULAR SYSTEM NOT AVAILABLE
+    echo  💡 Check profile files in: %PROFILES_DIR%
     pause
     exit /b 1
 )
 
-echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo.
-
 echo  📋 AVAILABLE PROFILES:
 echo.
-echo  [1] 📱 REELS/STORIES (Vertical 9:16) - Zero-Recompression Optimized
+echo  [1] 📱 REELS/STORIES (Vertical 9:16) - Zero-Recompression
 if exist "%PROFILES_DIR%\reels_9_16.prof" (
     echo      ✅ Profile ready: reels_9_16.prof
 ) else (
@@ -883,7 +803,7 @@ if exist "%PROFILES_DIR%\cinema_21_9.prof" (
     echo      ❌ Profile missing: cinema_21_9.prof
 )
 
-echo  [4] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion Optimized
+echo  [4] 🚗 SPEEDRAMP VIRAL CAR (9:16) - High-Motion
 if exist "%PROFILES_DIR%\speedramp_viral.prof" (
     echo      ✅ Profile ready: speedramp_viral.prof
 ) else (
@@ -892,30 +812,12 @@ if exist "%PROFILES_DIR%\speedramp_viral.prof" (
 
 echo.
 echo  [C] 📊 Compare All Profiles
-echo  [P] 🔍 Show Full Profile Paths (Debug)
 echo  [B] 🔙 Back to Main Menu
 echo.
-set /p "profile_choice=Select your profile [1-4, C, P, B]: "
+set /p "profile_choice=Select your profile [1-4, C, B]: "
 
 if not defined profile_choice (
     echo ❌ Please select an option
-    pause
-    goto :SelectProfileForWorkflow
-)
-
-:: NOVA OPÇÃO DE DEBUG
-if /i "%profile_choice%"=="P" (
-    echo.
-    echo 🔍 FULL PROFILE PATHS DEBUG:
-    echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    echo Profile 1: %PROFILES_DIR%\reels_9_16.prof
-    echo Profile 2: %PROFILES_DIR%\feed_16_9.prof
-    echo Profile 3: %PROFILES_DIR%\cinema_21_9.prof
-    echo Profile 4: %PROFILES_DIR%\speedramp_viral.prof
-    echo.
-    echo Current working directory: %CD%
-    echo Script directory: %~dp0
-    echo.
     pause
     goto :SelectProfileForWorkflow
 )
@@ -1028,7 +930,7 @@ if /i "%profile_choice%"=="C" (
 
 if /i "%profile_choice%"=="B" exit /b 0
 
-echo ❌ Invalid choice. Please select 1-4, C, P, or B.
+echo ❌ Invalid choice
 pause
 goto :SelectProfileForWorkflow
 
@@ -1414,12 +1316,11 @@ set "PASS1_END=!total_seconds!"
 call :CalculateElapsedTime !PASS1_START! !PASS1_END!
 set "PASS1_TIME=!ELAPSED_TIME!"
 
-echo.
-echo ⏱️ Tempo de execução Pass 1: !PASS1_TIME!
-echo 📋 Código de retorno: !PASS1_RESULT!
+echo ⏱️ Pass 1 completed: !PASS1_TIME!
 
 echo.
-echo 🔄 PASS 2/2 - Encoding
+echo 🔄 PASS 2/2 - Final Encoding
+echo ═════════════════════════════════════════════
 call :BuildFFmpegCommand "PASS2"
 set "PASS2_RESULT_BUILD=!ERRORLEVEL!"
 
