@@ -178,11 +178,10 @@ exit /b 0
 set "profile_file=%~1"
 set "profile_type=%~2"
 
-echo   📥 Loading modular profile: %profile_file%
-echo   🎬 Profile Type: %profile_type%
+echo   📥 Loading profile: %profile_type%
 
 if not exist "%profile_file%" (
-    echo   ❌ Profile file not found: %profile_file%
+    echo   ❌ Profile file not found
     call :LogEntry "[ERROR] Profile file not found: %profile_file%"
     exit /b 1
 )
@@ -244,38 +243,27 @@ for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
 
 echo   ✅ Profile parsing completed
 
-
 )
 
+:: Validate critical parameters
+if not defined PROFILE_NAME (
+    echo   ❌ Invalid profile: PROFILE_NAME missing
+    exit /b 1
+)
 if not defined VIDEO_WIDTH (
-    echo   ❌ CRITICAL ERROR: VIDEO_WIDTH missing from profile file
-    call :LogEntry "[ERROR] VIDEO_WIDTH missing from: %profile_file%"
+    echo   ❌ Invalid profile: VIDEO_WIDTH missing
     exit /b 1
 )
-
 if not defined VIDEO_HEIGHT (
-    echo   ❌ CRITICAL ERROR: VIDEO_HEIGHT missing from profile file
-    call :LogEntry "[ERROR] VIDEO_HEIGHT missing from: %profile_file%"
+    echo   ❌ Invalid profile: VIDEO_HEIGHT missing
     exit /b 1
 )
-
 if not defined TARGET_BITRATE (
-    echo   ❌ CRITICAL ERROR: TARGET_BITRATE missing from profile file
-    call :LogEntry "[ERROR] TARGET_BITRATE missing from: %profile_file%"
+    echo   ❌ Invalid profile: TARGET_BITRATE missing
     exit /b 1
 )
 
-if not defined MAX_BITRATE (
-    echo   ❌ CRITICAL ERROR: MAX_BITRATE missing from profile file
-    call :LogEntry "[ERROR] MAX_BITRATE missing from: %profile_file%"
-    exit /b 1
-)
-
-if not defined X264_PRESET (
-    echo   ❌ CRITICAL ERROR: X264_PRESET missing from profile file
-    call :LogEntry "[ERROR] X264_PRESET missing from: %profile_file%"
-    exit /b 1
-)
+echo   ✅ Profile loaded: !PROFILE_NAME!
 
 if not defined X264_PARAMS (
     echo   ⚠️ WARNING: X264_PARAMS missing - will use preset defaults
@@ -283,22 +271,6 @@ if not defined X264_PARAMS (
 ) else (
     echo   ✅ x264 complex parameters loaded successfully
 )
-
-:: DISPLAY LOADED PROFILE SUMMARY
-echo.
-echo   ✅ PROFILE SUCCESSFULLY LOADED:
-echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo   🎬 Name: !PROFILE_NAME!
-echo   📊 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (!VIDEO_ASPECT!)
-echo   🎯 Bitrate: !TARGET_BITRATE! target / !MAX_BITRATE! max
-echo   ⚙️ Preset: !X264_PRESET! / Tune: !X264_TUNE!
-if defined X264_PARAMS (
-    echo   🧠 x264: !X264_PARAMS:~0,70!...
-)
-if defined COLOR_PARAMS (
-    echo   🌈 Color: !COLOR_PARAMS!
-)
-echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 :: SET WORKFLOW STATUS
 set "PROFILE_SELECTED=Y"
@@ -308,7 +280,6 @@ set "CURRENT_PROFILE_FILE=%profile_file%"
 
 call :LogEntry "[MODULAR] Profile loaded successfully: !PROFILE_NAME! from %profile_file%"
 call :LogEntry "[PARAMS] x264: !X264_PARAMS:~0,100!"
-
 exit /b 0
 
 :: ========================================
@@ -412,8 +383,7 @@ if defined PROFILE_NAME (
         if defined VIDEO_HEIGHT (
             if defined TARGET_BITRATE (
                 if defined MAX_BITRATE (
-                    echo   🎬 Profile: "%PROFILE_NAME%"
-                    echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
+                    echo   ✅ Profile: "%PROFILE_NAME%" (%VIDEO_WIDTH%x%VIDEO_HEIGHT%)
                     echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
                     if "%ADVANCED_MODE%"=="Y" (
                         echo   🎛️ Mode: Advanced customizations ACTIVE
@@ -428,7 +398,7 @@ if defined PROFILE_NAME (
             )
         )
     )
-    echo   🎬 Profile: Selected but configuration incomplete
+    echo   ⚠️ Profile: Incomplete configuration
     set "PROFILE_CONFIGURED=N"
     goto :profile_status_done
 ) else (
@@ -442,10 +412,10 @@ if defined PROFILE_NAME (
 if "%FILES_CONFIGURED%"=="Y" (
     if "%PROFILE_CONFIGURED%"=="Y" (
         set "READY_TO_ENCODE=Y"
-        echo   ✅ Status: READY TO ENCODE
+        echo   🚀 Status: READY TO ENCODE
     ) else (
         set "READY_TO_ENCODE=N"
-        echo   ⏳ Status: Configuration needed - Select profile
+        echo   ⏳ Status: Select profile to continue
     )
 ) else (
     set "READY_TO_ENCODE=N"
@@ -472,22 +442,22 @@ if "%FILES_CONFIGURED%"=="Y" (
 if "%PROFILE_CONFIGURED%"=="Y" (
     echo   [2] ✅ Profile Selected - %PROFILE_NAME%
 ) else (
-    echo   [2] 🎬 Select Professional Profile ⭐ REQUIRED
+    echo   [2] 🎬 Select Profile ⭐ REQUIRED
 )
 
 echo.
-echo  🎛️ ADVANCED OPTIONS:
-echo   [3] ⚙️ Advanced Customization - Presets/Psychovisual
-echo   [4] 📊 Profile Management - Export/Import/Library
-echo   [5] 🔍 Analyze Input File - MediaInfo/Properties
-echo.
-
 echo  🎬 ENCODING:
 if "%READY_TO_ENCODE%"=="Y" (
-    echo   [6] 🚀 START ENCODING - 2-Pass Hollywood ⭐ READY!
+    echo   [3] 🚀 START ENCODING 2-Pass Hollywood ⭐ READY!
 ) else (
-    echo   [6] ⏳ Start Encoding - Configure files and profile first
+    echo   [3] ⏳ Start Encoding - Complete configuration first
 )
+
+echo.
+echo  🎛  ADVANCED:
+echo   [4] ⚙️ Advanced Customization
+echo   [5] 🔍 Analyze Input File
+echo   [6] 📊 Profile Management - Export/Import/Library
 echo.
 
 echo  🏗️ MODULAR SYSTEM:
@@ -515,10 +485,10 @@ if not defined main_choice (
 
 if "%main_choice%"=="1" goto :ConfigureFiles
 if "%main_choice%"=="2" goto :ConfigureProfile
-if "%main_choice%"=="3" goto :AdvancedCustomization
-if "%main_choice%"=="4" goto :ProfileManagement
+if "%main_choice%"=="3" goto :StartEncoding
+if "%main_choice%"=="4" goto :AdvancedCustomization
 if "%main_choice%"=="5" goto :AnalyzeInputFile
-if "%main_choice%"=="6" goto :StartEncoding
+if "%main_choice%"=="6" goto :ProfileManagement
 if /i "%main_choice%"=="V" goto :ValidateModularProfiles
 if /i "%main_choice%"=="R" goto :ReloadModularProfiles
 if /i "%main_choice%"=="M" goto :ShowModularSystemInfo
@@ -1223,7 +1193,7 @@ echo.
 
 echo  🏆 QUALITY GUARANTEE:
 echo   ✅ Hollywood-level encoding parameters (Netflix/Disney+ standard)
-echo   ✅ Instagram zero-recompression certification
+echo   ✅ Instagram zero-recompression certified
 echo   ✅ VMAF score 95-98 (broadcast quality)
 echo   ✅ BT.709 color science compliance
 echo.
@@ -1300,7 +1270,6 @@ if !PASS1_RESULT_BUILD! NEQ 0 (
 
 call :GetTimeInSeconds
 set "PASS1_START=!total_seconds!"
-echo ⏱️ Iniciado em %time%
 
 echo 🎬 Analyzing video (Pass 1)...
 !FFMPEG_COMMAND! 2>&1
@@ -1327,12 +1296,10 @@ if !PASS2_RESULT_BUILD! NEQ 0 (
     exit /b 1
 )
 
-echo 🎬 Iniciando encoding final (Pass 2)...
 call :GetTimeInSeconds
 set "PASS2_START=!total_seconds!"
-echo ⏱️ Iniciado em %time%
 
-echo 🎬 Creating final file...
+echo 🎬 Creating final file (Pass 2)...
 !FFMPEG_COMMAND! 2>&1
 set "PASS2_RESULT=!ERRORLEVEL!"
 
@@ -1357,7 +1324,6 @@ if !PASS2_RESULT! EQU 0 (
 ) else (
     echo ❌ Pass 2 falhou (código: !PASS2_RESULT!)
     call :LogEntry "[ERROR] Pass 2 failed"
-    pause
     exit /b 1
 )
 
@@ -1368,156 +1334,89 @@ set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
-:: VALIDAÇÃO CRÍTICA DOS PROFILES
 if not defined PROFILE_NAME (
-    echo ❌ ERROR: PROFILE_NAME not defined! Please select a profile first.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: PROFILE_NAME missing"
+    echo ❌ ERROR: Profile not loaded
     exit /b 1
 )
 
 if not defined VIDEO_WIDTH (
-    echo ❌ ERROR: VIDEO_WIDTH not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_WIDTH missing"
+    echo ❌ ERROR: Video parameters missing
     exit /b 1
 )
 
-if not defined VIDEO_HEIGHT (
-    echo ❌ ERROR: VIDEO_HEIGHT not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: VIDEO_HEIGHT missing"
-    exit /b 1
-)
-
-if not defined TARGET_BITRATE (
-    echo ❌ ERROR: TARGET_BITRATE not defined! Profile not loaded correctly.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: TARGET_BITRATE missing"
-    exit /b 1
-)
-
-if not defined X264_PARAMS (
-    echo ❌ ERROR: X264_PARAMS not defined! Profile parameters missing.
-    call :LogEntry "[ERROR] BuildFFmpegCommand: X264_PARAMS missing"
-    exit /b 1
-)
-
-echo   ✅ Profile validation passed: %PROFILE_NAME%
-echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
-echo   🎯 Bitrate: %TARGET_BITRATE%/%MAX_BITRATE%
+echo   🎬 Building command for %PASS_TYPE%...
 echo   🧠 x264 params loaded: %X264_PARAMS:~0,50%...
 
-:: ========================================
-:: BASE COMMAND - COMUM PARA AMBOS PASSES
-:: ========================================
-set "FFMPEG_BASE="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
+:: Base command
+set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
 
-:: VIDEO CODEC E PROFILE/LEVEL
-set "FFMPEG_BASE=!FFMPEG_BASE! -c:v libx264"
-set "FFMPEG_BASE=!FFMPEG_BASE! -profile:v high -level:v 4.1"
+:: VIDEO CODEC
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
 :: PRESET E TUNE
 if defined CUSTOM_PRESET (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -preset !CUSTOM_PRESET!"
-    echo   🎭 Custom preset: !CUSTOM_PRESET!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
 ) else (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -preset !X264_PRESET!"
-    echo   🎭 Profile preset: !X264_PRESET!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
 )
 
 if defined X264_TUNE (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -tune !X264_TUNE!"
-    echo   🎵 Tune: !X264_TUNE!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
 )
 
-:: APLICAR PARÂMETROS x264 COMPLEXOS
-echo   🧠 Applying Hollywood-level x264 parameters...
+:: PARÂMETROS x264 HOLLYWOOD
 if defined X264_PARAMS (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -x264-params "!X264_PARAMS!""
-    echo   ✅ x264 complex parameters applied: !X264_PARAMS:~0,60!...
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
+    echo   ✅ Hollywood parameters applied
 ) else (
-    echo   ⚠️ WARNING: No x264 parameters found, using preset defaults
+    echo   ⚠️ Using preset defaults only
 )
 
-:: THREADING
-set "FFMPEG_BASE=!FFMPEG_BASE! -threads !THREAD_COUNT!"
+:: THREADING E FILTERS
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
 
-:: VIDEO FILTERS
-set "FFMPEG_BASE=!FFMPEG_BASE! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
-echo   📏 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT! (Lanczos scaling)
-
-:: FRAME RATE E GOP STRUCTURE
-set "FFMPEG_BASE=!FFMPEG_BASE! -r 30"
+:: FRAME RATE E GOP
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
 if defined GOP_SIZE (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -g !GOP_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
 )
 if defined KEYINT_MIN (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -keyint_min !KEYINT_MIN!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
 )
-echo   🎬 Frame rate: 30fps CFR, GOP: !GOP_SIZE!/!KEYINT_MIN!
 
-:: COLOR SCIENCE - BT.709 COMPLIANCE (APLICAR APENAS UMA VEZ)
+:: COLOR SCIENCE
 if defined COLOR_PARAMS (
-    set "FFMPEG_BASE=!FFMPEG_BASE! !COLOR_PARAMS!"
-    echo   🌈 Color: Profile-specific (!COLOR_PARAMS!)
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
 ) else (
-    set "FFMPEG_BASE=!FFMPEG_BASE! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
-    echo   🌈 Color: BT.709 TV range (default)
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 )
 
-:: PIXEL FORMAT E QUEUE MUXING
-set "FFMPEG_BASE=!FFMPEG_BASE! -pix_fmt yuv420p"
-set "FFMPEG_BASE=!FFMPEG_BASE! -max_muxing_queue_size 9999"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: BITRATE SETTINGS (COMUM PARA AMBOS PASSES)
-set "FFMPEG_BASE=!FFMPEG_BASE! -b:v !TARGET_BITRATE!"
-set "FFMPEG_BASE=!FFMPEG_BASE! -maxrate !MAX_BITRATE!"
-set "FFMPEG_BASE=!FFMPEG_BASE! -bufsize !BUFFER_SIZE!"
-
-:: ========================================
-:: CONSTRUÇÃO ESPECÍFICA POR PASSADA - VERSÃO CORRIGIDA
-:: ========================================
-
-:: Normalizar PASS_TYPE (remover aspas e espaços)
-set "PASS_TYPE=%PASS_TYPE:"=%"
-set "PASS_TYPE=%PASS_TYPE: =%"
-
-echo   🔍 Processing PASS_TYPE: [%PASS_TYPE%]
-
-:: PASS 1 - ANÁLISE
-if /i "%PASS_TYPE%"=="PASS1" (
-    echo   🔄 Configuring PASS 1 ^(Analysis^)
-    set "FFMPEG_COMMAND=!FFMPEG_BASE!"
+:: CONFIGURAÇÕES POR PASSADA
+if "!PASS_TYPE!"=="PASS1" (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
-    echo   💎 Pass 1: Analysis only, no audio, null output
-    goto :pass_configured
-)
-
-:: PASS 2 - ENCODING FINAL
-if /i "%PASS_TYPE%"=="PASS2" (
-    echo   🎬 Configuring PASS 2 ^(Final Encoding^)
-    set "FFMPEG_COMMAND=!FFMPEG_BASE!"
+) else if "!PASS_TYPE!"=="PASS2" (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
-    echo   💎 Pass 2: Final encoding with audio and output file
-    echo   🎵 Audio: AAC 320k 48kHz Stereo
-    echo   📦 Container: MP4 with faststart
-    goto :pass_configured
 )
 
-:: ERRO - PASS_TYPE INVÁLIDO
-echo ❌ ERROR: Invalid PASS_TYPE: [%PASS_TYPE%]
-echo   💡 Expected: PASS1 or PASS2
-call :LogEntry "[ERROR] Invalid PASS_TYPE: [%PASS_TYPE%]"
-exit /b 1
-
-:pass_configured
-echo   ✅ FFmpeg command built successfully for %PASS_TYPE%
-echo   📝 Command preview: !FFMPEG_COMMAND:~0,100!...
-
-call :LogEntry "[COMMAND] %PASS_TYPE% Built: !FFMPEG_COMMAND:~0,200!..."
+echo   ✅ Command built successfully
+call :LogEntry "[COMMAND] Built for %PASS_TYPE%"
 exit /b 0
 
 :PostProcessing
@@ -1740,22 +1639,47 @@ echo ║                         🏆 ENCODING COMPLETED SUCCESSFULLY!          
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-echo  📊 ENCODING SUMMARY:
+echo  📊 RESULTS:
 echo   📁 Output File: %ARQUIVO_SAIDA%
 echo   📊 File Size: %OUTPUT_SIZE_MB% MB
 echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
-echo   🎬 Profile Used: %PROFILE_NAME%
+echo   🎬 Profile: %PROFILE_NAME%
 echo.
 
 echo  🎯 INSTAGRAM UPLOAD INSTRUCTIONS:
 echo   ✅ File is certified for Instagram zero-recompression
 echo   📱 Upload directly to Instagram
 echo   🚫 Do NOT re-edit or process in other apps
-echo   🏆 Quality will be preserved at 100%%
+echo   🏆 Quality preserved at 100%%
 echo.
+
+echo  🛠️ OPTIONS:
+echo   [1] 📂 Open output folder
+echo   [2] 🔄 Encode another file
+echo   [3] 🏠 Return to main menu
+echo.
+
+set /p "post_choice=Select option [1-3]: "
+
+if "%post_choice%"=="1" start "" "%~dp0"
+if "%post_choice%"=="2" call :ResetWorkflow && goto :ShowProfessionalMainMenu
+if "%post_choice%"=="3" goto :ShowProfessionalMainMenu
 
 pause
 goto :ShowProfessionalMainMenu
+
+:ResetWorkflow
+echo 🔄 Resetting for new encoding...
+set "ARQUIVO_ENTRADA="
+set "ARQUIVO_SAIDA="
+set "FILES_CONFIGURED=N"
+set "TOTAL_ENCODE_TIME=00h 00m 00s"
+set "WORKFLOW_STEP=1"
+set "SYSTEM_STATUS=READY"
+set "READY_TO_ENCODE=N"
+call :LogEntry "[WORKFLOW] Reset for new session"
+echo ✅ Ready for new files
+exit /b 0
 
 :RecoverFromError
 echo 🛠️ Recovery system activated...
