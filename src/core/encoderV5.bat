@@ -244,7 +244,6 @@ for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
 echo   ✅ Profile parsing completed
 
 )
-
 :: Validate critical parameters
 if not defined PROFILE_NAME (
     echo   ❌ Invalid profile: PROFILE_NAME missing
@@ -2470,23 +2469,22 @@ exit /b 0
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                        🏗️ MODULAR SYSTEM INFORMATION                        ║
+echo ║                        🏗️ MODULAR SYSTEM INFORMATION                         ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
 echo  🏗️ MODULAR ARCHITECTURE:
-echo   📦 Framework Version: %SCRIPT_VERSION%
-echo   🏗️ Architecture: Modular Edition
+echo   📦 Framework:V%SCRIPT_VERSION% Modular Edition
+echo   📂 Profiles Directory: %PROFILES_DIR%
 echo.
 
-echo  📁 DIRECTORY STRUCTURE:
-echo   📂 Profiles Directory: %PROFILES_DIR%
 if exist "%PROFILES_DIR%" (
     echo   📋 Directory Status: EXISTS
     echo   📄 Available Profiles:
     for %%F in ("%PROFILES_DIR%\*.prof") do echo     • %%~nF
 ) else (
     echo   📋 Directory Status: NOT FOUND
+    echo  💡 Expected location: %PROFILES_DIR%
 )
 echo.
 
@@ -2495,7 +2493,6 @@ echo   🏗️ Modular Available: %MODULAR_PROFILES_AVAILABLE%
 echo   🔍 Last Validation: %MODULAR_VALIDATION_STATUS%
 if "%PROFILE_SELECTED%"=="Y" (
     echo   🎬 Current Profile: %PROFILE_NAME%
-    echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT%
 )
 echo.
 
@@ -2564,6 +2561,7 @@ echo.
 echo  🎬 SOFTWARE:
 echo   📦 Framework: Instagram Encoder V%SCRIPT_VERSION%
 echo   🔧 FFmpeg: %FFMPEG_CMD%
+echo   🏗️ Profile System: Modular (%MODULAR_PROFILES_AVAILABLE%)
 echo.
 
 echo  📊 SESSION:
@@ -2643,17 +2641,16 @@ echo ╔════════════════════════
 echo ║                               👋 GOODBYE!                                    ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  🎬 Instagram Encoder Framework V%SCRIPT_VERSION% - Modular Edition
+echo  🎬 Instagram Encoder Framework V%SCRIPT_VERSION%
 echo.
 call :GetTimeInSeconds
 call :CalculateElapsedTime %SESSION_START_TIME% %total_seconds%
 echo  ⏱️ Session Duration: %ELAPSED_TIME%
-if defined EXEC_LOG echo  📝 Session Log: %EXEC_LOG%
 echo.
 echo  🏆 Thank you for using Hollywood-level encoding!
-echo  🎯 Your videos are now ready for Instagram zero-recompression
+echo  🎯 Your videos are ready for Instagram zero-recompression
 echo.
-call :LogEntry "[SESSION] Professional session ended - Duration: %ELAPSED_TIME%"
+call :LogEntry "[SESSION] Session ended - Duration: %ELAPSED_TIME%"
 pause
 exit
 
@@ -2661,8 +2658,10 @@ exit
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
 echo ║                                  FATAL ERROR                                 ║
-echo ║  The process was interrupted due to a critical error.                        ║
-echo ║  Check the log for details: !EXEC_LOG!                                       ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
-pause >nul
+echo.
+echo  The process was interrupted due to a critical error.
+if defined EXEC_LOG echo  Check log: !EXEC_LOG!
+echo.
+pause
 exit /b 1
