@@ -330,11 +330,11 @@ echo    ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝ 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
 echo ║                                                                              ║
-echo ║            🎬 INSTAGRAM ENCODER FRAMEWORK V5.2 MODULAR                      ║
-echo ║                          🏗️ PROFESSIONAL EDITION 🏗️                        ║
+echo ║            🎬 INSTAGRAM ENCODER FRAMEWORK V5.2 MODULAR                       ║
+echo ║                          🏗️ PROFESSIONAL EDITION 🏗️                          ║
 echo ║                                                                              ║
 echo ║    ⚡ Zero-Recompression Guaranteed  🎭 Netflix/Disney+ Quality Level        ║
-echo ║    🎛️ Advanced Customization         📊 Modular Profile System              ║
+echo ║    🎛️ Advanced Customization         📊 Modular Profile System               ║
 echo ║    🔬 Scientific Parameters          🎪 Hollywood-Level Encoding             ║
 echo ║                                                                              ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -1333,6 +1333,7 @@ set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
+:: VALIDAÇÃO CRÍTICA
 if not defined PROFILE_NAME (
     echo ❌ ERROR: Profile not loaded
     exit /b 1
@@ -1349,20 +1350,15 @@ echo   🧠 x264 params loaded: %X264_PARAMS:~0,50%...
 :: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
 
-:: VIDEO CODEC
+:: CRITICAL FIX: Single stream mapping to prevent duplication
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:v:0"
+if "!PASS_TYPE!"=="PASS2" (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:a:0"
+)
+
+:: VIDEO CODEC E PROFILE/LEVEL
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
-
-:: PRESET E TUNE
-if defined CUSTOM_PRESET (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
-) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
-)
-
-if defined X264_TUNE (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-)
 
 :: PARÂMETROS x264 HOLLYWOOD
 if defined X264_PARAMS (
@@ -1372,9 +1368,26 @@ if defined X264_PARAMS (
     echo   ⚠️ Using preset defaults only
 )
 
-:: THREADING E FILTERS
+:: PRESET E TUNE
+if defined CUSTOM_PRESET (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+    echo   🎭 Custom preset: !CUSTOM_PRESET!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+    echo   🎭 Profile preset: !X264_PRESET!
+)
+
+if defined X264_TUNE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+    echo   🎵 Tune: !X264_TUNE!
+)
+
+:: THREADING - Fixed for stability
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf "scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p""
+
+:: VIDEO FILTERS - Simplified for stability
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
+echo   📏 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT!
 
 :: FRAME RATE E GOP
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
@@ -1395,23 +1408,25 @@ if defined COLOR_PARAMS (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: CONFIGURAÇÕES POR PASSADA
+:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA - FIXED LOGIC
 if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 ) else if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile "!ARQUIVO_LOG_PASSAGEM!""
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! "!ARQUIVO_SAIDA!""
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+    echo   🎵 Audio: AAC 320k 48kHz Stereo
+    echo   🔍 Full command preview: !FFMPEG_COMMAND!
 )
 
 echo   ✅ Command built successfully
@@ -1421,13 +1436,50 @@ exit /b 0
 :PostProcessing
 echo 🔍 Advanced post-processing and validation...
 
-:: VERIFICAÇÃO CRÍTICA DE ARQUIVO
-if not exist "!ARQUIVO_SAIDA!" (
-    echo ❌ CRITICAL ERROR: Output file not created!
-    echo 💡 Check FFmpeg logs for encoding errors
-    call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
-    exit /b 1
+:: VERIFICAÇÃO CRÍTICA DE ARQUIVO - FIXED
+echo   🔍 Checking output file: !ARQUIVO_SAIDA!
+echo   📂 Current directory: %CD%
+echo   📂 Full path check: "%CD%\!ARQUIVO_SAIDA!"
+
+:: Method 1: Check in current directory
+if exist "!ARQUIVO_SAIDA!" (
+    echo   ✅ Method 1: File found in current directory
+    goto :file_found
 )
+
+:: Method 2: Check with full path
+if exist "%CD%\!ARQUIVO_SAIDA!" (
+    echo   ✅ Method 2: File found with full path
+    set "ARQUIVO_SAIDA=%CD%\!ARQUIVO_SAIDA!"
+    goto :file_found
+)
+
+:: Method 3: Search in common locations
+for %%L in ("." ".\" "%~dp0" "%CD%") do (
+    if exist "%%L\!ARQUIVO_SAIDA!" (
+        echo   ✅ Method 3: File found at %%L\!ARQUIVO_SAIDA!
+        set "ARQUIVO_SAIDA=%%L\!ARQUIVO_SAIDA!"
+        goto :file_found
+    )
+)
+
+:: File not found - detailed diagnosis
+echo   ❌ CRITICAL ERROR: Output file not found!
+echo   🔍 DETAILED SEARCH:
+echo     • Current dir: %CD%
+echo     • Target file: !ARQUIVO_SAIDA!
+echo     • Full target: %CD%\!ARQUIVO_SAIDA!
+echo.
+echo   📋 DIRECTORY LISTING:
+dir "*.mp4" /B 2>nul
+echo.
+echo   💡 Check if FFmpeg created file with different name
+echo   💡 Check Windows file permissions
+call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
+exit /b 1
+
+:file_found
+echo   ✅ File creation confirmed: !ARQUIVO_SAIDA!
 
 :: CÁLCULO DE TAMANHO DO ARQUIVO
 for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
@@ -1435,8 +1487,14 @@ if not defined OUTPUT_SIZE set "OUTPUT_SIZE=0"
 set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
 set /a "OUTPUT_SIZE_KB=!OUTPUT_SIZE!/1024"
 
-echo   ✅ File creation confirmed: !ARQUIVO_SAIDA!
 echo   📊 File size: !OUTPUT_SIZE_MB! MB (!OUTPUT_SIZE_KB! KB)
+
+if !OUTPUT_SIZE_MB! LSS 1 (
+    echo   ⚠️ WARNING: File size very small (!OUTPUT_SIZE_MB! MB)
+    echo   💡 Encoding may have failed partially
+)
+
+call :LogEntry "[POST] File confirmed: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
 
 :: VALIDAÇÃO BÁSICA DE INSTAGRAM COMPLIANCE  
 echo   🎯 Running basic Instagram compliance check...
@@ -1574,10 +1632,8 @@ if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1920" (
     echo     ✅ Aspect ratio: 16:9 (Feed/IGTV optimized)
 ) else if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1080" (
     echo     ✅ Aspect ratio: 1:1 (Square format)
-) else if "%VIDEO_WIDTH%"=="2560" if "%VIDEO_HEIGHT%"=="1080" (
+) else ( "%VIDEO_WIDTH%"=="2560" if "%VIDEO_HEIGHT%"=="1080" (
     echo     ✅ Aspect ratio: 21:9 (Cinema ultra-wide)
-) else (
-    echo     ℹ️ Aspect ratio: Custom (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
 )
 
 exit /b 0
