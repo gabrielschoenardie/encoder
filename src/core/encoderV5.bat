@@ -1333,24 +1333,8 @@ set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
-:: VALIDAÇÃO CRÍTICA
-if not defined PROFILE_NAME (
-    echo ❌ ERROR: Profile not loaded
-    exit /b 1
-)
-
-if not defined VIDEO_WIDTH (
-    echo ❌ ERROR: Video parameters missing
-    exit /b 1
-)
-
-echo   🎬 Building command for %PASS_TYPE%...
-echo   🧠 x264 params loaded: %X264_PARAMS:~0,50%...
-
 :: Base command
 set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
-
-:: CRITICAL FIX: Single stream mapping to prevent duplication
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:v:0"
 if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:a:0"
@@ -1360,26 +1344,35 @@ if "!PASS_TYPE!"=="PASS2" (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: PARÂMETROS x264 HOLLYWOOD
+:: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
 if defined X264_PARAMS (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params "!X264_PARAMS!""
-    echo   ✅ Hollywood parameters applied
-) else (
-    echo   ⚠️ Using preset defaults only
-)
-
-:: PRESET E TUNE
-if defined CUSTOM_PRESET (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
-    echo   🎭 Custom preset: !CUSTOM_PRESET!
-) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
-    echo   🎭 Profile preset: !X264_PRESET!
-)
-
-if defined X264_TUNE (
+    echo   🎭 Applying Hollywood parameters via FFmpeg flags...
+    
+    :: Use professional preset
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-    echo   🎵 Tune: !X264_TUNE!
+    
+    :: Apply Hollywood parameters via FFmpeg flags
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -flags +loop"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock 1:-1:-1"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+
+    echo   ✅ Hollywood parameters applied via FFmpeg flags
+) else (
+    :: Standard preset method
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+    if defined X264_TUNE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+    )
 )
 
 :: THREADING - Fixed for stability
