@@ -1339,49 +1339,54 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:v:0"
 if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:a:0"
 )
-
 :: VIDEO CODEC E PROFILE/LEVEL
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
 :: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
 if defined X264_PARAMS (
-    echo   🎭 Applying Hollywood parameters via FFmpeg flags...
+echo   🎭 Applying Hollywood parameters via FFmpeg flags...
     
-    :: Use professional preset
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+:: Use professional preset
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
     
-    :: Apply Hollywood parameters via FFmpeg flags
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -flags +loop"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock 1:-1:-1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
-
-    echo   ✅ Hollywood parameters applied via FFmpeg flags
-) else (
-    :: Standard preset method
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
-    if defined X264_TUNE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+:: Apply Hollywood parameters via FFmpeg flags
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock 1:-1:-1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -partitions parti4x4+parti8x8+partp4x4+partp8x8+partb8x8"
+:: PSYCHOVISUAL OPTIMIZATION
+if defined CUSTOM_PSY_RD (
+    :: Parse custom psy_rd (format: X.X,X.XX)
+    for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd %%A:%%B"
     )
+    echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
 )
+:: ADVANCED QUANTIZATION
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -coder 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
 
-:: THREADING - Fixed for stability
+:: THREADING E OTIMIZAÇÃO
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
-
-:: VIDEO FILTERS - Simplified for stability
+:: VIDEO PROCESSING
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
 echo   📏 Resolution: !VIDEO_WIDTH!x!VIDEO_HEIGHT!
-
 :: FRAME RATE E GOP
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
 if defined GOP_SIZE (
@@ -1391,7 +1396,7 @@ if defined KEYINT_MIN (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
 )
 
-:: COLOR SCIENCE
+:: COLOR SCIENCE (BT.709 TV Range)
 if defined COLOR_PARAMS (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
 ) else (
