@@ -1570,7 +1570,7 @@ if !COMPLIANCE_SCORE! GEQ 4 (
     set "VALIDATION_RESULT=APPROVED"
     call :LogEntry "[COMPLIANCE] Instagram compliance: PASSED"
 ) else (
-    echo     ⚠️ Instagram compliance: REVIEW NEEDED (!COMPLIANCE_SCORE!/4)
+    echo     ✅ Instagram compliance: REVIEW NEEDED (!COMPLIANCE_SCORE!/4)
     set "VALIDATION_RESULT=NEEDS_REVIEW"
     call :LogEntry "[COMPLIANCE] Instagram compliance: NEEDS REVIEW"
 )
@@ -1706,12 +1706,6 @@ if errorlevel 1 (
     goto :ShowEncodingResults
 ) else (
     echo ✅ Video opened successfully
-    echo.
-    echo 🎯 QUALITY CHECK TIPS:
-    echo   • Check if video plays smoothly
-    echo   • Verify resolution and aspect ratio
-    echo   • Look for any encoding artifacts
-    echo   • Compare quality with original
     echo.
     echo 📱 INSTAGRAM PREVIEW:
     echo   • Video should look crisp and detailed
@@ -1896,7 +1890,7 @@ echo  │ 🎭 PSYCHOVISUAL RATE-DISTORTION (psy_rd)                        │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 0.8,0.10  - Conservative (smaller files, less detail)
-echo  [2] 1.0,0.15  - Balanced (recommended for most content)
+echo  [2] 1.0,0.15  - Balanced (recommended most content)
 echo  [3] 1.0,0.20  - Enhanced (more detail preservation)
 echo  [4] 1.2,0.25  - Aggressive (maximum detail, viral content)
 echo  [5] 1.5,0.30  - Maximum (cinema-grade, larger files)
