@@ -1358,8 +1358,7 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock 1:-1:-1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -partitions parti4x4+parti8x8+partp4x4+partp8x8+partb8x8"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
 :: PSYCHOVISUAL OPTIMIZATION
 if defined CUSTOM_PSY_RD (
     :: Parse custom psy_rd (format: X.X,X.XX)
@@ -1371,7 +1370,7 @@ if defined CUSTOM_PSY_RD (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
 )
 :: ADVANCED QUANTIZATION
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 3"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
@@ -1420,10 +1419,10 @@ if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 320k -ar 48000 -ac 2"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
-    echo   🎵 Audio: AAC 320k 48kHz Stereo
+    echo   🎵 Audio: AAC 256k 48kHz Stereo
     echo   🔍 Full command preview: !FFMPEG_COMMAND!
 )
 
