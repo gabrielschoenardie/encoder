@@ -11,16 +11,16 @@ PROFILE_AUTHOR=Gabriel Schoenardie
 VIDEO_WIDTH=2560
 VIDEO_HEIGHT=1080
 VIDEO_ASPECT=21:9
-TARGET_BITRATE=25M
-MAX_BITRATE=40M
-BUFFER_SIZE=50M
+TARGET_BITRATE=20M
+MAX_BITRATE=30M
+BUFFER_SIZE=45M
 GOP_SIZE=48
 KEYINT_MIN=24
 
 [X264_SETTINGS]
 X264_PRESET=placebo
 X264_TUNE=film
-X264_PARAMS=cabac=1:ref=16:deblock=1,-2,-2:analyse=0x3,0x133:me=tesa:subme=11:psy=1:psy_rd=1.0,0.30:mixed_ref=1:me_range=64:chroma_me=1:trellis=2:8x8dct=1:bf=8:b_pyramid=2:b_adapt=2:weightb=1:weightp=2:rc_lookahead=250:mbtree=1:qcomp=0.70:aq=3,1.5
+X264_PARAMS=cabac=1:ref=12:deblock=-1,-1:analyse=0x3,0x133:me=umh:subme=10:psy=1:psy_rd=1.2,0.25:mixed_ref=1:me_range=48:chroma_me=1:trellis=2:8x8dct=1:bframes=8:b_pyramid=2:b_adapt=2:weightb=1:weightp=2:rc_lookahead=120:mbtree=1:qcomp=0.70:aq_mode=1:aq_strength=1.3
 
 [COLOR_SETTINGS]
 COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
