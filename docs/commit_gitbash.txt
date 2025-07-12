@@ -1,0 +1,21 @@
+# Navegar para o diretório
+cd /c/Users/Gabriel/encoder/
+
+# Verificar status
+git status
+
+# Adicionar tudo
+git add .
+
+# Commit
+git commit -m "feat: implement pure modular profile system
+
+- ✅ Modular profile loading from .prof files working
+- ✅ Hardware detection optimized for Intel Celeron 1007U  
+- ✅ Successfully encoded 12.5s video in 6min 54s
+- ✅ Instagram compliance validation passed
+- 🗂️ Profile system now fully file-based
+- 📊 System architecture upgraded to V5.2-modular"
+
+# Push
+git push origin main
