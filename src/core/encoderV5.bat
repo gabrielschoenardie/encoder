@@ -1312,11 +1312,11 @@ if !PASS2_RESULT! EQU 0 (
     echo ✅ Pass 2 concluído: !PASS2_TIME!
     echo.
     echo 📊 RESUMO:
-    echo   • Pass 1: !PASS1_TIME!
-    echo   • Pass 2: !PASS2_TIME!
+    echo    Pass 1: !PASS1_TIME!
+    echo    Pass 2: !PASS2_TIME!
     call :GetTimeInSeconds
     call :CalculateElapsedTime !PASS1_START! !total_seconds!
-    echo   • Total: !ELAPSED_TIME!
+    echo    Total: !ELAPSED_TIME!
     echo.
     call :LogEntry "[SUCCESS] 2-Pass encoding completed"
     exit /b 0
@@ -1423,7 +1423,6 @@ if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
     echo   🎵 Audio: AAC 256k 48kHz Stereo
-    echo   🔍 Full command preview: !FFMPEG_COMMAND!
 )
 
 echo   ✅ Command built successfully
@@ -1496,14 +1495,6 @@ call :LogEntry "[POST] File confirmed: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB
 :: VALIDAÇÃO BÁSICA DE INSTAGRAM COMPLIANCE  
 echo   🎯 Running basic Instagram compliance check...
 call :ValidateInstagramCompliance
-
-:: VALIDAÇÃO AVANÇADA COM FFPROBE
-echo   🔬 Running advanced FFprobe validation...
-set "VALIDATION_SCORE=0"
-call :ValidateOutputWithFFprobe
-
-:: VALIDAÇÃO DE ASPECT RATIO
-call :ValidateAspectRatio
 
 :: VERIFICAÇÃO DE DURAÇÃO PARA DIFERENTES TIPOS
 echo   ⏱️ Duration compliance check...
@@ -1587,55 +1578,6 @@ if !COMPLIANCE_SCORE! GEQ 4 (
 exit /b 0
 
 ::========================================
-:: VALIDAÇÃO AVANÇADA COM FFPROBE
-::========================================
-:ValidateOutputWithFFprobe
-set "TEMP_PROBE=ffprobe_!RANDOM!.txt"
-ffprobe -v quiet -show_format -show_streams "!ARQUIVO_SAIDA!" > "!TEMP_PROBE!" 2>nul
-
-if exist "!TEMP_PROBE!" (
-    :: Check video codec
-    findstr /i "codec_name=h264" "!TEMP_PROBE!" >nul && (
-        echo     ✅ Video codec: H.264
-    )
-    
-    :: Check audio codec  
-    findstr /i "codec_name=aac" "!TEMP_PROBE!" >nul && (
-        echo     ✅ Audio codec: AAC
-    )
-    
-    :: Check sample rate
-    findstr /i "sample_rate=48000" "!TEMP_PROBE!" >nul && (
-        echo     ✅ Audio sample rate: 48kHz
-    )
-    
-    del "!TEMP_PROBE!" 2>nul
-) else (
-    echo     ℹ️ FFprobe validation skipped (not available)
-)
-
-exit /b 0
-
-::========================================
-:: VALIDAÇÃO DE ASPECT RATIO
-::========================================
-:ValidateAspectRatio
-echo     🔍 Aspect ratio validation...
-
-:: Calculate expected aspect ratio based on profile
-if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1920" (
-    echo     ✅ Aspect ratio: 9:16 (Reels/Stories optimized)
-) else if "%VIDEO_WIDTH%"=="1920" if "%VIDEO_HEIGHT%"=="1080" (
-    echo     ✅ Aspect ratio: 16:9 (Feed/IGTV optimized)
-) else if "%VIDEO_WIDTH%"=="1080" if "%VIDEO_HEIGHT%"=="1080" (
-    echo     ✅ Aspect ratio: 1:1 (Square format)
-) else ( "%VIDEO_WIDTH%"=="2560" if "%VIDEO_HEIGHT%"=="1080" (
-    echo     ✅ Aspect ratio: 21:9 (Cinema ultra-wide)
-)
-
-exit /b 0
-
-::========================================
 :: VALIDAÇÃO DE DURAÇÃO
 ::========================================
 :ValidateDuration
@@ -1691,33 +1633,122 @@ echo ║                         🏆 ENCODING COMPLETED SUCCESSFULLY!          
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-echo  📊 RESULTS:
+echo  📊 ENCODING SUMMARY:
+echo  ═══════════════════════════════════════════════════════════════════════════
 echo   📁 Output File: %ARQUIVO_SAIDA%
 echo   📊 File Size: %OUTPUT_SIZE_MB% MB
 echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
-echo   🎬 Profile: %PROFILE_NAME%
+echo   🎬 Profile Used: %PROFILE_NAME%
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🎛️ Advanced Mode: ACTIVE
+    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+) else (
+    echo   🎬 Mode: Standard Hollywood parameters
+)
+echo   📝 Log File: %EXEC_LOG%
 echo.
 
 echo  🎯 INSTAGRAM UPLOAD INSTRUCTIONS:
+echo  ═══════════════════════════════════════════════════════════════════════════
 echo   ✅ File is certified for Instagram zero-recompression
-echo   📱 Upload directly to Instagram
+echo   📱 Upload directly to Instagram (Stories/Reels/Feed)
 echo   🚫 Do NOT re-edit or process in other apps
-echo   🏆 Quality preserved at 100%%
+echo   🏆 Quality will be preserved at 100%%
 echo.
 
-echo  🛠️ OPTIONS:
-echo   [1] 📂 Open output folder
-echo   [2] 🔄 Encode another file
-echo   [3] 🏠 Return to main menu
+echo  🛠️ POST-ENCODING OPTIONS:
+echo  ═══════════════════════════════════════════════════════════════════════════
+echo   [1] ▶️  Play Encoded Video (Preview Result)
+echo   [2] 🔄 Encode Another File
+echo   [3] 🏠 Return to Main Menu
 echo.
 
-set /p "post_choice=Select option [1-3]: "
+set /p "post_choice=🎯 Select option [1-3]: "
 
-if "%post_choice%"=="1" start "" "%~dp0"
-if "%post_choice%"=="2" call :ResetWorkflow && goto :ShowProfessionalMainMenu
+if "%post_choice%"=="1" goto :PlayEncodedVideo
+if "%post_choice%"=="2" goto :EncodeAnotherFile
 if "%post_choice%"=="3" goto :ShowProfessionalMainMenu
 
+echo ❌ Invalid choice. Please select 1-3.
 pause
+goto :ShowEncodingResults
+
+:: ▶️ PLAY ENCODED VIDEO - NEW FUNCTION
+:PlayEncodedVideo
+echo.
+echo ▶️ Playing encoded video...
+echo 📁 File: %ARQUIVO_SAIDA%
+
+if not exist "%ARQUIVO_SAIDA%" (
+    echo ❌ ERROR: Output file not found!
+    echo 📂 File: %ARQUIVO_SAIDA%
+    echo 💡 Check if encoding completed successfully
+    pause
+    goto :ShowEncodingResults
+)
+
+:: Get file size for display
+for %%A in ("%ARQUIVO_SAIDA%") do set "VIDEO_SIZE_BYTES=%%~zA"
+set /a "VIDEO_SIZE_MB=%VIDEO_SIZE_BYTES%/1024/1024"
+
+echo ✅ File found: %VIDEO_SIZE_MB% MB
+echo 🎬 Opening with default media player...
+
+:: Open video with default player
+start "" "%ARQUIVO_SAIDA%"
+
+if errorlevel 1 (
+    echo ❌ Could not open video file
+    echo 💡 Make sure you have a media player installed
+    echo 💡 Try VLC, Windows Media Player, or Movies & TV app
+    pause
+    goto :ShowEncodingResults
+) else (
+    echo ✅ Video opened successfully
+    echo.
+    echo 🎯 QUALITY CHECK TIPS:
+    echo   • Check if video plays smoothly
+    echo   • Verify resolution and aspect ratio
+    echo   • Look for any encoding artifacts
+    echo   • Compare quality with original
+    echo.
+    echo 📱 INSTAGRAM PREVIEW:
+    echo   • Video should look crisp and detailed
+    echo   • No pixelation or compression artifacts
+    echo   • Color accuracy maintained
+    echo   • Audio sync perfect
+    echo.
+    
+    set /p "quality_check=🎯 Quality looks good? (Y/N): "
+    if /i "%quality_check:~0,1%"=="Y" (
+        echo ✅ Great! Ready for Instagram upload
+        echo 🏆 Hollywood-level quality achieved
+    ) else (
+        echo 🔍 Consider these options:
+        echo   • Try different profile for content type
+        echo   • Use Advanced Customization for fine-tuning
+        echo   • Check source video quality
+        echo   • Verify encoding log for any warnings
+    )
+)
+
+echo.
+echo [B] 🔙 Back to Results Menu
+echo [M] 🏠 Return to Main Menu
+echo.
+set /p "video_choice=Select option [B/M]: "
+
+if /i "%video_choice:~0,1%"=="B" goto :ShowEncodingResults
+if /i "%video_choice:~0,1%"=="M" goto :ShowProfessionalMainMenu
+goto :ShowEncodingResults
+
+:: 🔄 ENCODE ANOTHER FILE
+:EncodeAnotherFile
+echo.
+echo 🔄 Preparing for new encoding session...
+call :ResetWorkflow
+echo ✅ Workflow reset. Ready for new files and encoding.
 goto :ShowProfessionalMainMenu
 
 :ResetWorkflow
