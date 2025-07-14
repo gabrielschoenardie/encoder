@@ -76,84 +76,41 @@ call :PostProcessing
 :LoadModularConfig
 echo 🔧 Loading modular configuration...
 
-:: DETECÇÃO AUTOMÁTICA DO PATH - SIMPLIFIED
+:: SIMPLIFIED PATH DETECTION
 set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
 set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
 
-echo   📂 Project root: %PROJECT_ROOT%
-echo   📂 Profiles dir: %PROFILES_DIR%
-echo   🔧 Config file: %CONFIG_FILE%
-
-:: VERIFICAÇÃO STREAMLINED
+:: SINGLE VALIDATION CHECK
 if exist "%PROFILES_DIR%" (
-    echo   ✅ Profiles directory: %PROFILES_DIR%
-    
-    :: Listar arquivos .prof encontrados
-    echo   📋 Scanning for .prof files...
     set "MODULAR_PROFILE_COUNT=0"
-    
-    for %%F in ("%PROFILES_DIR%\*.prof") do (
-        set /a "MODULAR_PROFILE_COUNT+=1"
-        echo   📄 Found: %%~nxF
-    )
+    for %%F in ("%PROFILES_DIR%\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
     
     if !MODULAR_PROFILE_COUNT! GTR 0 (
-        echo   ✅ Found !MODULAR_PROFILE_COUNT! modular profiles
+        echo ✅ Modular system: !MODULAR_PROFILE_COUNT! profiles active
         set "MODULAR_PROFILES_AVAILABLE=Y"
-        echo   🎬 Modular profiles system: ACTIVE
     ) else (
-        echo   ⚠️ Directory exists but no .prof files found
-        echo   💡 Expected files: reels_9_16.prof, feed_16_9.prof, cinema_21_9.prof, speedramp_viral.prof
+        echo ⚠️ No profiles found - using embedded fallback
         set "MODULAR_PROFILES_AVAILABLE=N"
     )
-    
 ) else (
-    echo   ❌ Profiles directory NOT FOUND: %PROFILES_DIR%
-    echo   💡 Expected location: C:\Users\Gabriel\encoder\src\profiles\presets
-    set "MODULAR_PROFILES_AVAILABLE=N"
-    
-    :: Tentar caminhos alternativos
-    echo   🔍 Trying alternative paths...
-    
-    :: Método 2: Path direto baseado no usuário
+    :: FALLBACK PATH CHECK
     set "ALT_PROFILES_DIR=C:\Users\Gabriel\encoder\src\profiles\presets"
     if exist "!ALT_PROFILES_DIR!" (
-        echo   ✅ FOUND at alternative path: !ALT_PROFILES_DIR!
+        echo ✅ Found at alternative location
         set "PROFILES_DIR=!ALT_PROFILES_DIR!"
         set "CONFIG_FILE=C:\Users\Gabriel\encoder\src\config\encoder_config.json"
         set "MODULAR_PROFILES_AVAILABLE=Y"
-        
-        :: Contar profiles no path alternativo
         set "MODULAR_PROFILE_COUNT=0"
-        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do (
-            set /a "MODULAR_PROFILE_COUNT+=1"
-            echo   📄 Found: %%~nxF
-        )
-        echo   ✅ Found !MODULAR_PROFILE_COUNT! profiles in alternative location
+        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+    ) else (
+        echo ❌ Profiles directory not found
+        set "MODULAR_PROFILES_AVAILABLE=N"
     )
 )
 
-:: VERIFICAÇÃO DO ARQUIVO DE CONFIG
-if exist "%CONFIG_FILE%" (
-    echo   ✅ Config file found: %CONFIG_FILE%
-) else (
-    echo   ⚠️ Config file not found: %CONFIG_FILE%
-    echo   💡 Will use default configuration
-)
-
-:: RESUMO FINAL
-echo.
-echo   📊 MODULAR SYSTEM SUMMARY:
-echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo   🏗️ Status: %MODULAR_PROFILES_AVAILABLE%
-echo   📂 Profiles Directory: %PROFILES_DIR%
-echo   📄 Profile Count: !MODULAR_PROFILE_COUNT!
-echo   🔧 Config File: %CONFIG_FILE%
-echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-call :LogEntry "[MODULAR] System loaded - Available: %MODULAR_PROFILES_AVAILABLE%, Profiles: !MODULAR_PROFILE_COUNT!"
+call :LogEntry "[MODULAR] System: %MODULAR_PROFILES_AVAILABLE%, Profiles: !MODULAR_PROFILE_COUNT!"
 exit /b 0
 
 ::========================================
@@ -178,16 +135,13 @@ exit /b 0
 set "profile_file=%~1"
 set "profile_type=%~2"
 
-echo   📥 Loading profile: %profile_type%
-
 if not exist "%profile_file%" (
-    echo   ❌ Profile file not found
+    echo   ❌ Profile file not found: %profile_file%
     call :LogEntry "[ERROR] Profile file not found: %profile_file%"
     exit /b 1
 )
 
-echo   🔍 Resetting profile variables...
-:: Reset ALL profile variables to prevent contamination
+:: RESET VARIABLES (essential - preserve exactly)
 set "PROFILE_NAME="
 set "VIDEO_WIDTH="
 set "VIDEO_HEIGHT="
@@ -202,18 +156,14 @@ set "X264_TUNE="
 set "X264_PARAMS="
 set "COLOR_PARAMS="
 
-:: MÉTODO SEGURO DE PARSING - Preserva sintaxe complexa
-:: Usar tokens=1* para capturar o valor completo após o =
+:: OPTIMIZED PARSING (preserve logic, reduce debug)
 for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
     set "param_name=%%A"
     set "param_value=%%B"
 
-:: Skip empty lines and process only valid parameters
     if defined param_value (
-        :: Remove leading/trailing spaces from parameter name
         for /f "tokens=* delims= " %%C in ("!param_name!") do set "param_name=%%C"
 
-        :: Assign to variables
         if "!param_name!"=="PROFILE_NAME" set "PROFILE_NAME=!param_value!"
         if "!param_name!"=="VIDEO_WIDTH" set "VIDEO_WIDTH=!param_value!"
         if "!param_name!"=="VIDEO_HEIGHT" set "VIDEO_HEIGHT=!param_value!"
@@ -227,58 +177,24 @@ for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
         if "!param_name!"=="X264_TUNE" set "X264_TUNE=!param_value!"
         if "!param_name!"=="X264_PARAMS" set "X264_PARAMS=!param_value!"
         if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
-		
-		:: CRITICAL: Preserve complex x264 parameters exactly
-        if /i "!param_name!"=="X264_PARAMS" (
-            set "X264_PARAMS=!param_value!"
-            echo   🧠 Complex x264 params preserved: !param_value:~0,60!...
-        )
-        :: CRITICAL: Preserve color parameters exactly  
-        if /i "!param_name!"=="COLOR_PARAMS" (
-            set "COLOR_PARAMS=!param_value!"
-            echo   🌈 Color params preserved: !param_value:~0,40!...
-        )
     )
 )
 
-echo   ✅ Profile parsing completed
+:: ESSENTIAL VALIDATION ONLY
+if not defined PROFILE_NAME exit /b 1
+if not defined VIDEO_WIDTH exit /b 1
+if not defined VIDEO_HEIGHT exit /b 1
+if not defined TARGET_BITRATE exit /b 1
 
-)
-:: Validate critical parameters
-if not defined PROFILE_NAME (
-    echo   ❌ Invalid profile: PROFILE_NAME missing
-    exit /b 1
-)
-if not defined VIDEO_WIDTH (
-    echo   ❌ Invalid profile: VIDEO_WIDTH missing
-    exit /b 1
-)
-if not defined VIDEO_HEIGHT (
-    echo   ❌ Invalid profile: VIDEO_HEIGHT missing
-    exit /b 1
-)
-if not defined TARGET_BITRATE (
-    echo   ❌ Invalid profile: TARGET_BITRATE missing
-    exit /b 1
-)
+echo ✅ Profile loaded: !PROFILE_NAME! (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
 
-echo   ✅ Profile loaded: !PROFILE_NAME!
-
-if not defined X264_PARAMS (
-    echo   ⚠️ WARNING: X264_PARAMS missing - will use preset defaults
-    call :LogEntry "[WARNING] X264_PARAMS missing from: %profile_file%"
-) else (
-    echo   ✅ x264 complex parameters loaded successfully
-)
-
-:: SET WORKFLOW STATUS
+:: SET STATUS (preserve exactly)
 set "PROFILE_SELECTED=Y"
 set "PROFILE_CONFIGURED=Y"
 set "CURRENT_PROFILE_ID=modular_%profile_type%"
 set "CURRENT_PROFILE_FILE=%profile_file%"
 
-call :LogEntry "[MODULAR] Profile loaded successfully: !PROFILE_NAME! from %profile_file%"
-call :LogEntry "[PARAMS] x264: !X264_PARAMS:~0,100!"
+call :LogEntry "[MODULAR] Loaded: !PROFILE_NAME!"
 exit /b 0
 
 :: ========================================
