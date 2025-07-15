@@ -9,9 +9,7 @@ color 0A
 :: Zero-Recompression Video Encoder | Gabriel Schoenardie | 2025
 :: ================================================================================
 
-:: ========================================
 :: GLOBAL VARIABLES
-:: ========================================
 set "SCRIPT_VERSION=5.2-modular"
 set "CONFIG_FILE=src\config\encoder_config.json"
 set "PROFILES_DIR=src\profiles\presets"
@@ -252,9 +250,9 @@ if "%IS_LAPTOP%"=="Y" (
 )
 
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
-    echo   🏗️ Architecture: V%SCRIPT_VERSION% Modular Edition - ACTIVE
+    echo   🏗️ Architecture: V%SCRIPT_VERSION% Edition - ACTIVE
 ) else (
-    echo   🏗️ Architecture: V%SCRIPT_VERSION% Modular Edition - UNAVAILABLE
+    echo   🏗️ Architecture: V%SCRIPT_VERSION% Edition - UNAVAILABLE
 )
 echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
 
@@ -284,8 +282,9 @@ if defined PROFILE_NAME (
                     echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
                     if "%ADVANCED_MODE%"=="Y" (
                         echo   🎛️ Mode: Advanced customizations ACTIVE
-                        if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
-                        if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+                        if defined CUSTOM_PRESET   echo     • Custom Preset: %CUSTOM_PRESET%
+                        if defined CUSTOM_PSY_RD   echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+						if defined CUSTOM_GOP_SIZE echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
                     ) else (
                         echo   🎬 Mode: Standard Hollywood parameters
                     )
@@ -435,8 +434,9 @@ echo   Ready to Encode: %READY_TO_ENCODE% ^| Status: %SYSTEM_STATUS%
 :: ADVANCED MODE
 if "%ADVANCED_MODE%"=="Y" (
     echo   🎛️ Advanced: ACTIVE
-    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
-    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    if defined CUSTOM_PRESET   echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD   echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+	if defined CUSTOM_GOP_SIZE echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
 )
 
 :: PROFILE FILE DIAGNOSTIC
@@ -594,9 +594,10 @@ echo   🎬 Profile Name: %PROFILE_NAME%
 echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
 echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
 echo   ⚙️ x264 Preset: %X264_PRESET%
-if defined X264_TUNE echo   🎵 x264 Tune: %X264_TUNE%
-if defined X264_PARAMS echo   🧠 Complex Params: %X264_PARAMS:~0,60%...
-if defined COLOR_PARAMS echo   🌈 Color Science: %COLOR_PARAMS%
+if defined X264_TUNE       echo   🎵 x264 Tune: %X264_TUNE%
+if defined X264_PARAMS     echo   🧠 Complex Params: %X264_PARAMS:~0,60%...
+if defined COLOR_PARAMS    echo   🌈 Color Science: %COLOR_PARAMS%
+if defined CUSTOM_GOP_SIZE echo      GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
 echo   📂 Source: %CURRENT_PROFILE_FILE%
 echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -1067,15 +1068,37 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 :: VIDEO PROCESSING
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
-:: FRAME RATE E GOP
+:: FRAME RATE E GOP STRUCTURE
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
-if defined GOP_SIZE (
+
+:: Apply custom GOP settings if available, otherwise use profile defaults
+if defined CUSTOM_GOP_SIZE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !CUSTOM_GOP_SIZE!"
+    echo   🎬 Using custom GOP: !CUSTOM_GOP_SIZE! frames (!GOP_PRESET_NAME!)
+) else if defined GOP_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
-)
-if defined KEYINT_MIN (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+    echo   📊 Using profile GOP: !GOP_SIZE! frames
 )
 
+if defined CUSTOM_KEYINT_MIN (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !CUSTOM_KEYINT_MIN!"
+    echo   ⚡ Using custom Min Keyint: !CUSTOM_KEYINT_MIN! frames
+) else if defined KEYINT_MIN (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+    echo   📊 Using profile Min Keyint: !KEYINT_MIN! frames
+)
+
+:: Advanced GOP structure parameters for Hollywood-level control
+if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
+    :: Calculate optimal b-frame pyramid for custom GOP
+    set /a "gop_bframes=!CUSTOM_GOP_SIZE!/8"
+    if !gop_bframes! GTR 8 set "gop_bframes=8"
+    if !gop_bframes! LSS 2 set "gop_bframes=2"
+    
+    :: Apply GOP-optimized b-frame structure
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf !gop_bframes!"
+    echo   🎭 GOP-optimized B-frames: !gop_bframes!
+)
 :: COLOR SCIENCE (BT.709 TV Range)
 if defined COLOR_PARAMS (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
@@ -1167,7 +1190,6 @@ echo   📊 File size: !OUTPUT_SIZE_MB! MB
 
 if !OUTPUT_SIZE_MB! LSS 1 (
     echo   ⚠️ WARNING: File size very small (!OUTPUT_SIZE_MB! MB)
-    echo   💡 Encoding may have failed partially
 )
 
 call :LogEntry "[POST] File confirmed: !OUTPUT_FILE!, Size: !OUTPUT_SIZE_MB!MB"
@@ -1596,7 +1618,7 @@ echo  📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
 echo  🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
-echo  │ ⚙️ CURRENT SETTINGS                                              │
+echo  │ ⚙️ CURRENT SETTINGS                                             │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  🎭 x264 Preset:
@@ -1612,6 +1634,20 @@ if defined CUSTOM_PSY_RD (
     echo     • Custom psy_rd: %CUSTOM_PSY_RD% ← Will be applied
 ) else (
     echo     • Using profile default (unchanged)
+)
+echo.
+echo  🎬 GOP Structure:
+if defined CUSTOM_GOP_SIZE (
+    if defined CUSTOM_KEYINT_MIN (
+        echo     • Original: GOP=%GOP_SIZE%, Min=%KEYINT_MIN%
+        echo     • Preset: %GOP_PRESET_NAME% GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN% ← Will be applied
+        set /a "custom_keyframe_sec=%CUSTOM_GOP_SIZE%*100/30"
+        set /a "sec_part=%custom_keyframe_sec%/100"
+        set /a "dec_part=%custom_keyframe_sec%%%100"
+        echo     • Impact: Keyframe every ~%sec_part%.%dec_part%s at 30fps
+    )
+) else (
+    echo     • Current: GOP=%GOP_SIZE%, Min=%KEYINT_MIN% (unchanged)
 )
 echo.
 echo  📊 Status:
@@ -1635,6 +1671,9 @@ echo.
 echo 🔄 Restoring original profile settings...
 set "CUSTOM_PRESET="
 set "CUSTOM_PSY_RD="
+set "CUSTOM_GOP_SIZE="
+set "CUSTOM_KEYINT_MIN="
+set "GOP_PRESET_NAME="
 set "CUSTOMIZATION_ACTIVE=N"
 set "ADVANCED_MODE=N"
 echo ✅ Profile restored to standard Hollywood settings
@@ -1670,11 +1709,111 @@ goto :ShowProfessionalMainMenu
 :: STUB FUNCTIONS FOR FUTURE DEVELOPMENT
 :: ========================================
 :CustomizeGOP
+cls
 echo.
-echo ⏳ GOP Structure customization will be implemented in next phase
-echo 💡 For now, using optimized GOP from selected profile
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎬 GOP STRUCTURE CUSTOMIZATION                         ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current GOP Settings:
+echo   GOP Size: %GOP_SIZE% frames (keyframe every %GOP_SIZE% frames)
+echo   Min Keyint: %KEYINT_MIN% frames (minimum distance between keyframes)
+if defined CUSTOM_GOP_SIZE echo   🎛️ Custom GOP: %CUSTOM_GOP_SIZE% (will be applied)
+if defined CUSTOM_KEYINT_MIN echo   🎛️ Custom Keyint: %CUSTOM_KEYINT_MIN% (will be applied)
+echo.
+echo  🎬 GOP STRUCTURE EXPLANATION:
+echo   • GOP Size = Distance between keyframes (I-frames)
+echo   • Lower values = More keyframes = Better seeking + Larger files
+echo   • Higher values = Fewer keyframes = Smaller files + Less seeking precision
+echo   • Instagram optimized: 48-72 frames for 30fps content
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 📊 PROFESSIONAL GOP PRESETS                                     │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 🏃 High Motion (GOP: 24, Min: 12) - Sports, action, fast movement
+echo  [2] 📱 Social Media (GOP: 48, Min: 24) - General Instagram content
+echo  [3] 🎬 Cinematic (GOP: 72, Min: 24) - Film-like, slow movement
+echo  [4] 📺 Streaming (GOP: 60, Min: 30) - Optimized for web playback
+echo  [5] 🎮 Gaming (GOP: 30, Min: 15) - Screen recording, fast changes
+echo  [6] 🎵 Music Video (GOP: 96, Min: 24) - Less motion, artistic content
+echo  [7] 📋 Current Profile Default - Keep existing settings
+echo  [B] 🔙 Back to Advanced Menu
+echo.
+set /p "gop_choice=Select GOP preset [1-7, B]: "
+
+if "%gop_choice%"=="1" call :SetGOPValues 24 12 "High Motion"
+if "%gop_choice%"=="2" call :SetGOPValues 48 24 "Social Media"
+if "%gop_choice%"=="3" call :SetGOPValues 72 24 "Cinematic"
+if "%gop_choice%"=="4" call :SetGOPValues 60 30 "Streaming"
+if "%gop_choice%"=="5" call :SetGOPValues 30 15 "Gaming"
+if "%gop_choice%"=="6" call :SetGOPValues 96 24 "Music Video"
+if "%gop_choice%"=="7" goto :ResetGOPToProfile
+if /i "%gop_choice%"=="B" goto :AdvancedCustomization
+
+echo ❌ Invalid choice. Please select 1-7 or B.
 pause
-goto :AdvancedCustomization
+goto :CustomizeGOP
+
+:SetGOPValues
+set "CUSTOM_GOP_SIZE=%~1"
+set "CUSTOM_KEYINT_MIN=%~2"
+set "GOP_PRESET_NAME=%~3"
+echo.
+echo ✅ GOP Structure set to: %GOP_PRESET_NAME%
+echo   📊 GOP Size: %CUSTOM_GOP_SIZE% frames
+echo   ⚡ Min Keyint: %CUSTOM_KEYINT_MIN% frames
+set /a "keyframe_seconds=%CUSTOM_GOP_SIZE%*100/30"
+set /a "seconds_part=%keyframe_seconds%/100"
+set /a "decimal_part=%keyframe_seconds%%%100"
+echo   🎯 Keyframe every ~%seconds_part%.%decimal_part% seconds at 30fps
+echo.
+echo  💡 PRESET DETAILS - %GOP_PRESET_NAME%:
+if "%GOP_PRESET_NAME%"=="High Motion" (
+    echo   🏃 Optimized for: Sports, action scenes, fast camera movement
+    echo   📊 Best for: Content with rapid scene changes
+    echo   🎯 File impact: Slightly larger due to frequent keyframes
+)
+if "%GOP_PRESET_NAME%"=="Social Media" (
+    echo   📱 Optimized for: General Instagram content, balanced approach
+    echo   📊 Best for: Most Instagram posts, stories, reels
+    echo   🎯 File impact: Balanced size and seek performance
+)
+if "%GOP_PRESET_NAME%"=="Cinematic" (
+    echo   🎬 Optimized for: Film-like content, artistic videos
+    echo   📊 Best for: Slow-paced content, cinematic shots
+    echo   🎯 File impact: Smaller files, less seeking precision
+)
+if "%GOP_PRESET_NAME%"=="Streaming" (
+    echo   📺 Optimized for: Web playback, adaptive streaming
+    echo   📊 Best for: Long-form content, IGTV
+    echo   🎯 File impact: Optimized for smooth playback
+)
+if "%GOP_PRESET_NAME%"=="Gaming" (
+    echo   🎮 Optimized for: Screen recordings, gameplay footage
+    echo   📊 Best for: Fast-changing screen content
+    echo   🎯 File impact: Frequent keyframes for sharp transitions
+)
+if "%GOP_PRESET_NAME%"=="Music Video" (
+    echo   🎵 Optimized for: Music videos, artistic content
+    echo   📊 Best for: Visual-focused content with rhythm cuts
+    echo   🎯 File impact: Larger GOP for smoother encoding
+)
+set "CUSTOMIZATION_ACTIVE=Y"
+call :LogEntry "[GOP] Preset applied: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)"
+pause
+goto :CustomizeGOP
+
+:ResetGOPToProfile
+echo.
+echo 🔄 Resetting GOP to profile defaults...
+set "CUSTOM_GOP_SIZE="
+set "CUSTOM_KEYINT_MIN="
+set "GOP_PRESET_NAME="
+echo ✅ GOP reset to profile default: %GOP_SIZE%/%KEYINT_MIN%
+call :LogEntry "[GOP] Reset to profile defaults"
+pause
+goto :CustomizeGOP
 
 :CustomizeVBV
 echo.
