@@ -246,9 +246,9 @@ echo  └───────────────────────�
 
 :: HARDWARE & ARCHITECTURE (Fixed syntax)
 if "%IS_LAPTOP%"=="Y" (
-    echo   🖥️  System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% ^(Laptop^)
+    echo   🖥️ System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% ^(Laptop^)
 ) else (
-    echo   🖥️  System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% ^(Desktop^)
+    echo   🖥️ System: %CPU_CORES% cores, %TOTAL_RAM_GB%GB RAM, %CPU_ARCH% ^(Desktop^)
 )
 
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
