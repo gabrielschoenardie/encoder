@@ -259,13 +259,14 @@ if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
 echo   🔄 Workflow: Step %WORKFLOW_STEP%/6 - %SYSTEM_STATUS%
 
 :: File Status Check
-if defined ARQUIVO_ENTRADA (
-    if defined ARQUIVO_SAIDA (
-        echo   📥 Input: %ARQUIVO_ENTRADA%
-        echo   📤 Output: %ARQUIVO_SAIDA%
+if defined INPUT_FILE (
+    if defined OUTPUT_FILE (
+        echo   📥 Input: %INPUT_FILE%
+        echo   📤 Output: %OUTPUT_FILE%
         set "FILES_CONFIGURED=Y"
     ) else (
-        echo   📁 Files: ⚠️ Input only - need output path
+        echo   📥 Input: %INPUT_FILE%
+        echo   📤 Output: Not configured
         set "FILES_CONFIGURED=N"
     )
 ) else (
@@ -273,35 +274,34 @@ if defined ARQUIVO_ENTRADA (
     set "FILES_CONFIGURED=N"
 )
 
-:: PROFILE STATUS (Optimized logic)
-if defined PROFILE_NAME if defined VIDEO_WIDTH if defined VIDEO_HEIGHT if defined TARGET_BITRATE if defined MAX_BITRATE (
-    echo   🎬 Profile: ✅ "%PROFILE_NAME%" ^(%VIDEO_WIDTH%x%VIDEO_HEIGHT%^)
-    echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
-    if "%ADVANCED_MODE%"=="Y" (
-        echo   🎛️ Mode: Advanced customizations ACTIVE
-        if defined CUSTOM_PRESET echo     • Preset: %CUSTOM_PRESET%
-        if defined CUSTOM_PSY_RD echo     • Psy RD: %CUSTOM_PSY_RD%
-    ) else (
-        echo   🎬 Mode: Standard Hollywood parameters
+:: Profile Status Check - FIXED VERSION
+if defined PROFILE_NAME (
+    if defined VIDEO_WIDTH (
+        if defined VIDEO_HEIGHT (
+            if defined TARGET_BITRATE (
+                if defined MAX_BITRATE (
+                    echo   ✅ Profile: "%PROFILE_NAME%" (%VIDEO_WIDTH%x%VIDEO_HEIGHT%)
+                    echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
+                    if "%ADVANCED_MODE%"=="Y" (
+                        echo   🎛️ Mode: Advanced customizations ACTIVE
+                        if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
+                        if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+                    ) else (
+                        echo   🎬 Mode: Standard Hollywood parameters
+                    )
+                    set "PROFILE_CONFIGURED=Y"
+                    goto :profile_status_done
+                )
+            )
+        )
     )
-    set "PROFILE_CONFIGURED=Y"
+    echo   ⚠️ Profile: Incomplete configuration
+    set "PROFILE_CONFIGURED=N"
+    goto :profile_status_done
 ) else (
-    echo   🎬 Profile: ❌ Not selected or incomplete
+    echo   🎬 Profile: Not selected
     set "PROFILE_CONFIGURED=N"
 )
-
-:: READY STATUS (Consolidated)
-if "%FILES_CONFIGURED%"=="Y" if "%PROFILE_CONFIGURED%"=="Y" (
-    set "READY_TO_ENCODE=Y"
-    echo   🚀 Status: ✅ READY TO ENCODE
-) else (
-    set "READY_TO_ENCODE=N"
-    echo   ⏳ Status: ❌ Configuration needed
-    if "%FILES_CONFIGURED%"=="N" echo     → Configure files [1]
-    if "%PROFILE_CONFIGURED%"=="N" echo     → Select profile [2]
-)
-echo.
-exit /b 0
 
 :profile_status_done
 
@@ -710,8 +710,8 @@ if errorlevel 1 goto :ShowProfessionalMainMenu
 
 echo.
 echo ✅ Files configured successfully!
-echo   📥 Input: %ARQUIVO_ENTRADA%
-echo   📤 Output: %ARQUIVO_SAIDA%
+echo   📥 Input: %INPUT_FILE%
+echo   📤 Output: %OUTPUT_FILE%
 
 set "FILES_CONFIGURED=Y"
 set "WORKFLOW_STEP=1"
@@ -723,30 +723,30 @@ goto :ShowProfessionalMainMenu
 :GetInputFile
 echo 📁 Input file selection:
 :loop_input_file
-set "ARQUIVO_ENTRADA="
-set /p "ARQUIVO_ENTRADA=Enter input file path: "
+set "INPUT_FILE="
+set /p "INPUT_FILE=Enter input file path: "
 
-if "!ARQUIVO_ENTRADA!"=="" (
+if "!INPUT_FILE!"=="" (
     echo ❌ Path cannot be empty!
     goto loop_input_file
 )
 
-set "ARQUIVO_ENTRADA=!ARQUIVO_ENTRADA:"=!"
+set "INPUT_FILE=!INPUT_FILE:"=!"
 
-if not exist "!ARQUIVO_ENTRADA!" (
-    echo ❌ File not found: !ARQUIVO_ENTRADA!
+if not exist "!INPUT_FILE!" (
+    echo ❌ File not found: !INPUT_FILE!
     goto loop_input_file
 )
 
-echo   ✅ File selected: !ARQUIVO_ENTRADA!
-call :LogEntry "[INPUT] File selected: !ARQUIVO_ENTRADA!"
+echo   ✅ File selected: !INPUT_FILE!
+call :LogEntry "[INPUT] File selected: !INPUT_FILE!"
 exit /b 0
 
 :ValidateInputFile
 echo 🔍 Validating input file...
 
 set "FILE_EXT="
-for %%A in ("!ARQUIVO_ENTRADA!") do set "FILE_EXT=%%~xA"
+for %%A in ("!INPUT_FILE!") do set "FILE_EXT=%%~xA"
 
 for %%E in (.mp4 .mov .avi .mkv .m4v .wmv .flv .webm) do (
     if /i "!FILE_EXT!"=="%%E" goto :ext_ok
@@ -763,7 +763,7 @@ call :LogEntry "[VALIDATION] Input file validated"
 :: OPTIMIZED: Single FFmpeg call for all metadata
 echo   📊 Analisando propriedades do vídeo...
 set "TEMP_INFO=video_analysis_!RANDOM!.txt"
-"%FFMPEG_CMD%" -i "!ARQUIVO_ENTRADA!" -hide_banner 2>"!TEMP_INFO!"
+"%FFMPEG_CMD%" -i "!INPUT_FILE!" -hide_banner 2>"!TEMP_INFO!"
 
 if not exist "!TEMP_INFO!" (
     echo ❌ ERRO: Falha ao analisar arquivo!
@@ -824,21 +824,21 @@ exit /b 0
 
 :GetOutputFile
 echo 📁 Output file configuration:
-set /p "ARQUIVO_SAIDA=Enter output filename (without extension): "
+set /p "OUTPUT_FILE=Enter output filename (without extension): "
 
-for %%A in ("!ARQUIVO_SAIDA!") do set "NOME_BASE_SAIDA=%%~nA"
-set "ARQUIVO_LOG_PASSAGEM=!NOME_BASE_SAIDA!_ffmpeg_passlog"
-for %%A in ("!ARQUIVO_SAIDA!") do set "ARQUIVO_SAIDA=%%~nA"
-set "ARQUIVO_SAIDA=!ARQUIVO_SAIDA!.mp4"
+for %%A in ("!OUTPUT_FILE!") do set "OUTPUT_BASE_NAME=%%~nA"
+set "LOG_FILE_PASS=!OUTPUT_BASE_NAME!_ffmpeg_passlog"
+for %%A in ("!OUTPUT_FILE!") do set "OUTPUT_FILE=%%~nA"
+set "OUTPUT_FILE=!OUTPUT_FILE!.mp4"
 
-if exist "!ARQUIVO_SAIDA!" (
-    echo ⚠️ File exists: !ARQUIVO_SAIDA!
+if exist "!OUTPUT_FILE!" (
+    echo ⚠️ File exists: !OUTPUT_FILE!
     set /p "OVERWRITE=Overwrite? (Y/N): "
     if /i not "!OVERWRITE:~0,1!"=="Y" goto :GetOutputFile
 )
 
-echo   ✅ Output file: !ARQUIVO_SAIDA!
-call :LogEntry "[OUTPUT] File: !ARQUIVO_SAIDA!"
+echo   ✅ Output file: !OUTPUT_FILE!
+call :LogEntry "[OUTPUT] File: !OUTPUT_FILE!"
 exit /b 0
 
 :: ========================================
@@ -859,8 +859,8 @@ echo.
 echo  📋 ENCODING SUMMARY:
 echo  ═══════════════════════════════════════════════════════════════════════════
 echo   🎬 Profile: %PROFILE_NAME%
-echo   📥 Input: %ARQUIVO_ENTRADA%
-echo   📤 Output: %ARQUIVO_SAIDA%
+echo   📥 Input: %INPUT_FILE%
+echo   📤 Output: %OUTPUT_FILE%
 echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
 echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
 echo   ⚙️ Preset: %X264_PRESET%
@@ -914,10 +914,10 @@ call :LogEntry "[CONFIG] Threading: !THREAD_COUNT!"
 exit /b 0
 
 :CreateBackup
-if exist "!ARQUIVO_SAIDA!" (
+if exist "!OUTPUT_FILE!" (
     echo 💾 Creating backup...
-    set "BACKUP_NAME=!ARQUIVO_SAIDA!.backup.!RANDOM!"
-    copy "!ARQUIVO_SAIDA!" "!BACKUP_NAME!" >nul
+    set "BACKUP_NAME=!OUTPUT_FILE!.backup.!RANDOM!"
+    copy "!OUTPUT_FILE!" "!BACKUP_NAME!" >nul
     if not errorlevel 1 (
         set "BACKUP_CREATED=Y"
         echo   ✅ Backup created: !BACKUP_NAME!
@@ -1016,7 +1016,7 @@ set "PASS_TYPE=%~1"
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
 :: Base command
-set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!ARQUIVO_ENTRADA!""
+set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!INPUT_FILE!""
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:v:0"
 if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:a:0"
@@ -1092,17 +1092,17 @@ if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 ) else if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !ARQUIVO_LOG_PASSAGEM!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !ARQUIVO_SAIDA!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
 )
 
 echo   ✅ Command built successfully
@@ -1114,28 +1114,28 @@ echo.
 echo 🔍 Final validation and optimization...
 
 :: VERIFICAÇÃO CRÍTICA DE ARQUIVO - FIXED
-echo   🔍 Checking output file: !ARQUIVO_SAIDA!
+echo   🔍 Checking output file: !OUTPUT_FILE!
 echo   📂 Current directory: %CD%
-echo   📂 Full path check: "%CD%\!ARQUIVO_SAIDA!"
+echo   📂 Full path check: "%CD%\!OUTPUT_FILE!"
 
 :: Method 1: Check in current directory
-if exist "!ARQUIVO_SAIDA!" (
+if exist "!OUTPUT_FILE!" (
     echo   ✅ Method 1: File found in current directory
     goto :file_found
 )
 
 :: Method 2: Check with full path
-if exist "%CD%\!ARQUIVO_SAIDA!" (
+if exist "%CD%\!OUTPUT_FILE!" (
     echo   ✅ Method 2: File found with full path
-    set "ARQUIVO_SAIDA=%CD%\!ARQUIVO_SAIDA!"
+    set "OUTPUT_FILE=%CD%\!OUTPUT_FILE!"
     goto :file_found
 )
 
 :: Method 3: Search in common locations
 for %%L in ("." ".\" "%~dp0" "%CD%") do (
-    if exist "%%L\!ARQUIVO_SAIDA!" (
-        echo   ✅ Method 3: File found at %%L\!ARQUIVO_SAIDA!
-        set "ARQUIVO_SAIDA=%%L\!ARQUIVO_SAIDA!"
+    if exist "%%L\!OUTPUT_FILE!" (
+        echo   ✅ Method 3: File found at %%L\!OUTPUT_FILE!
+        set "OUTPUT_FILE=%%L\!OUTPUT_FILE!"
         goto :file_found
     )
 )
@@ -1144,22 +1144,22 @@ for %%L in ("." ".\" "%~dp0" "%CD%") do (
 echo   ❌ CRITICAL ERROR: Output file not found!
 echo   🔍 DETAILED SEARCH:
 echo     • Current dir: %CD%
-echo     • Target file: !ARQUIVO_SAIDA!
-echo     • Full target: %CD%\!ARQUIVO_SAIDA!
+echo     • Target file: !OUTPUT_FILE!
+echo     • Full target: %CD%\!OUTPUT_FILE!
 echo.
 echo   📋 DIRECTORY LISTING:
 dir "*.mp4" /B 2>nul
 echo.
 echo   💡 Check if FFmpeg created file with different name
 echo   💡 Check Windows file permissions
-call :LogEntry "[ERROR] Output file not created: !ARQUIVO_SAIDA!"
+call :LogEntry "[ERROR] Output file not created: !OUTPUT_FILE!"
 exit /b 1
 
 :file_found
-echo   ✅ File creation confirmed: !ARQUIVO_SAIDA!
+echo   ✅ File creation confirmed: !OUTPUT_FILE!
 
 :: CÁLCULO DE TAMANHO DO ARQUIVO
-for %%A in ("!ARQUIVO_SAIDA!") do set "OUTPUT_SIZE=%%~zA"
+for %%A in ("!OUTPUT_FILE!") do set "OUTPUT_SIZE=%%~zA"
 if not defined OUTPUT_SIZE set "OUTPUT_SIZE=0"
 set /a "OUTPUT_SIZE_MB=!OUTPUT_SIZE!/1024/1024"
 
@@ -1170,7 +1170,7 @@ if !OUTPUT_SIZE_MB! LSS 1 (
     echo   💡 Encoding may have failed partially
 )
 
-call :LogEntry "[POST] File confirmed: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB"
+call :LogEntry "[POST] File confirmed: !OUTPUT_FILE!, Size: !OUTPUT_SIZE_MB!MB"
 
 :: VALIDAÇÃO BÁSICA DE INSTAGRAM COMPLIANCE  
 echo   🎯 Running basic Instagram compliance check...
@@ -1185,7 +1185,7 @@ echo.
 echo   📊 FINAL QUALITY REPORT:
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo   🎬 Profile Used: %PROFILE_NAME%
-echo   📁 Output File: !ARQUIVO_SAIDA!
+echo   📁 Output File: !OUTPUT_FILE!
 echo   📊 File Size: !OUTPUT_SIZE_MB! MB
 echo   🎯 Instagram Ready: !VALIDATION_RESULT!
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1194,15 +1194,15 @@ echo   ━━━━━━━━━━━━━━━━━━━━━━━━�
 echo   🧹 Cleaning temporary files...
 set /p "CLEAN_LOGS=Delete encoding logs? (Y/N): "
 if /i "!CLEAN_LOGS:~0,1!"=="Y" (
-    del "!ARQUIVO_LOG_PASSAGEM!-0.log" 2>nul
-    del "!ARQUIVO_LOG_PASSAGEM!-0.log.mbtree" 2>nul
+    del "!LOG_FILE_PASS!-0.log" 2>nul
+    del "!LOG_FILE_PASS!-0.log.mbtree" 2>nul
     echo   ✅ Temporary encoding files cleaned
 ) else (
     echo   💾 Encoding logs preserved for analysis
 )
 
 :: LOG FINAL
-call :LogEntry "[POST] File: !ARQUIVO_SAIDA!, Size: !OUTPUT_SIZE_MB!MB
+call :LogEntry "[POST] File: !OUTPUT_FILE!, Size: !OUTPUT_SIZE_MB!MB
 call :LogEntry "[POST] Validation result: !VALIDATION_RESULT!"
 
 echo   ✅ Post-processing completed successfully
@@ -1214,7 +1214,7 @@ exit /b 0
 :ValidateInstagramCompliance
 echo   🎯 Instagram compliance check...
 set "TEMP_CHECK=compliance_!RANDOM!.txt"
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>"!TEMP_CHECK!" 1>nul
+"%FFMPEG_CMD%" -i "!OUTPUT_FILE!" -hide_banner 2>"!TEMP_CHECK!" 1>nul
 
 :: Compliance checks
 set "COMPLIANCE_SCORE=0"
@@ -1246,7 +1246,7 @@ exit /b 0
 ::========================================
 :ValidateDuration
 set "TEMP_DURATION=duration_!RANDOM!.txt"
-"%FFMPEG_CMD%" -i "!ARQUIVO_SAIDA!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
+"%FFMPEG_CMD%" -i "!OUTPUT_FILE!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
 
 for /f "tokens=2 delims= " %%D in ('type "!TEMP_DURATION!" 2^>nul') do set "DURATION_RAW=%%D"
 del "!TEMP_DURATION!" 2>nul
@@ -1299,7 +1299,7 @@ echo.
 
 echo  📊 ENCODING SUMMARY:
 echo  ═══════════════════════════════════════════════════════════════════════════
-echo   📁 Output File: %ARQUIVO_SAIDA%
+echo   📁 Output File: %OUTPUT_FILE%
 echo   📊 File Size: %OUTPUT_SIZE_MB% MB
 echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
 echo   🎬 Profile Used: %PROFILE_NAME%
@@ -1341,25 +1341,25 @@ goto :ShowEncodingResults
 :PlayEncodedVideo
 echo.
 echo ▶️ Playing encoded video...
-echo 📁 File: %ARQUIVO_SAIDA%
+echo 📁 File: %OUTPUT_FILE%
 
-if not exist "%ARQUIVO_SAIDA%" (
+if not exist "%OUTPUT_FILE%" (
     echo ❌ ERROR: Output file not found!
-    echo 📂 File: %ARQUIVO_SAIDA%
+    echo 📂 File: %OUTPUT_FILE%
     echo 💡 Check if encoding completed successfully
     pause
     goto :ShowEncodingResults
 )
 
 :: Get file size for display
-for %%A in ("%ARQUIVO_SAIDA%") do set "VIDEO_SIZE_BYTES=%%~zA"
+for %%A in ("%OUTPUT_FILE%") do set "VIDEO_SIZE_BYTES=%%~zA"
 set /a "VIDEO_SIZE_MB=%VIDEO_SIZE_BYTES%/1024/1024"
 
 echo ✅ File found: %VIDEO_SIZE_MB% MB
 echo 🎬 Opening with default media player...
 
 :: Open video with default player
-start "" "%ARQUIVO_SAIDA%"
+start "" "%OUTPUT_FILE%"
 
 if errorlevel 1 (
     echo ❌ Could not open video file
@@ -1402,8 +1402,8 @@ goto :ShowEncodingResults
 
 :ResetWorkflow
 echo 🔄 Resetting for new encoding...
-set "ARQUIVO_ENTRADA="
-set "ARQUIVO_SAIDA="
+set "INPUT_FILE="
+set "OUTPUT_FILE="
 set "FILES_CONFIGURED=N"
 set "TOTAL_ENCODE_TIME=00h 00m 00s"
 set "WORKFLOW_STEP=1"
@@ -1417,7 +1417,7 @@ exit /b 0
 echo 🛠️ Recovery system activated...
 if "!BACKUP_CREATED!"=="Y" (
     echo 💾 Restoring backup...
-    copy "!BACKUP_NAME!" "!ARQUIVO_SAIDA!" >nul
+    copy "!BACKUP_NAME!" "!OUTPUT_FILE!" >nul
     if not errorlevel 1 del "!BACKUP_NAME!" 2>nul
 )
 call :LogEntry "[RECOVERY] Error recovery attempted"
@@ -2174,23 +2174,23 @@ echo ║                           🔍 INPUT FILE ANALYSIS                     
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-if not defined ARQUIVO_ENTRADA (
+if not defined INPUT_FILE (
     echo ⚠️ INPUT FILE NOT CONFIGURED
     pause
     goto :ShowProfessionalMainMenu
 )
 
-if not exist "%ARQUIVO_ENTRADA%" (
-    echo ❌ INPUT FILE NOT FOUND: %ARQUIVO_ENTRADA%
+if not exist "%INPUT_FILE%" (
+    echo ❌ INPUT FILE NOT FOUND: %INPUT_FILE%
     pause
     goto :ShowProfessionalMainMenu
 )
 
-echo 🎬 Analyzing: %ARQUIVO_ENTRADA%
+echo 🎬 Analyzing: %INPUT_FILE%
 echo.
 
 set "TEMP_ANALYSIS=analysis_%RANDOM%.txt"
-"%FFMPEG_CMD%" -i "%ARQUIVO_ENTRADA%" -hide_banner 2>"%TEMP_ANALYSIS%"
+"%FFMPEG_CMD%" -i "%INPUT_FILE%" -hide_banner 2>"%TEMP_ANALYSIS%"
 
 if not exist "%TEMP_ANALYSIS%" (
     echo ❌ Failed to analyze file
@@ -2257,7 +2257,7 @@ if "%minutes:~0,1%"=="0" if not "%minutes%"=="0" set /a "minutes=%minutes:~1%"
 if "%seconds:~0,1%"=="0" if not "%seconds%"=="0" set /a "seconds=%seconds:~1%"
 
 set /a "total_seconds=(hours*3600)+(minutes*60)+seconds"
-exit /b %total_seconds%
+exit /b 0
 
 :CalculateElapsedTime
 set /a "start_time=%~1"
