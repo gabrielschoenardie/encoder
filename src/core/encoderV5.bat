@@ -282,9 +282,10 @@ if defined PROFILE_NAME (
                     echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
                     if "%ADVANCED_MODE%"=="Y" (
                         echo   🎛️ Mode: Advanced customizations ACTIVE
-                        if defined CUSTOM_PRESET   echo     • Custom Preset: %CUSTOM_PRESET%
-                        if defined CUSTOM_PSY_RD   echo     • Custom Psy RD: %CUSTOM_PSY_RD%
-						if defined CUSTOM_GOP_SIZE echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+                        if defined CUSTOM_PRESET      echo  • Custom Preset: %CUSTOM_PRESET%
+                        if defined CUSTOM_PSY_RD      echo  • Custom Psy RD: %CUSTOM_PSY_RD%
+						if defined CUSTOM_GOP_SIZE    echo  • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+						if defined CUSTOM_MAX_BITRATE echo  • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
                     ) else (
                         echo   🎬 Mode: Standard Hollywood parameters
                     )
@@ -1112,15 +1113,31 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 :: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA - FIXED LOGIC
 if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+	if defined CUSTOM_MAX_BITRATE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
+	) else (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+	)
+	if defined CUSTOM_BUFFER_SIZE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
+	) else (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+	)
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 ) else if "!PASS_TYPE!"=="PASS2" (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"]
+	if defined CUSTOM_MAX_BITRATE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
+    ) else (
+		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    )
+	if defined CUSTOM_BUFFER_SIZE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
+    ) else (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    )
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2"
@@ -1650,6 +1667,23 @@ if defined CUSTOM_GOP_SIZE (
     echo     • Current: GOP=%GOP_SIZE%, Min=%KEYINT_MIN% (unchanged)
 )
 echo.
+echo  🔧 VBV Buffer Settings:
+if defined CUSTOM_MAX_BITRATE (
+    if defined CUSTOM_BUFFER_SIZE (
+        echo     • Original: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE%
+        echo     • Preset: %VBV_PRESET_NAME% Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE% ← Will be applied
+        
+        :: Calculate and display buffer ratio
+        set "orig_target=%TARGET_BITRATE:M=%"
+        set "custom_buffer_num=%CUSTOM_BUFFER_SIZE:M=%"
+        set /a "buffer_ratio=%custom_buffer_num%*10/!orig_target!"
+        set /a "ratio_whole=%buffer_ratio%/10"
+        set /a "ratio_decimal=%buffer_ratio%%%10"
+        echo     • Buffer Ratio: %ratio_whole%.%ratio_decimal%x target bitrate
+    )
+) else (
+    echo     • Current: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE% (unchanged)
+)
 echo  📊 Status:
 if "%CUSTOMIZATION_ACTIVE%"=="Y" (
     echo     • ✅ Advanced customizations are ACTIVE
@@ -1674,6 +1708,9 @@ set "CUSTOM_PSY_RD="
 set "CUSTOM_GOP_SIZE="
 set "CUSTOM_KEYINT_MIN="
 set "GOP_PRESET_NAME="
+set "CUSTOM_MAX_BITRATE="
+set "CUSTOM_BUFFER_SIZE="
+set "VBV_PRESET_NAME="
 set "CUSTOMIZATION_ACTIVE=N"
 set "ADVANCED_MODE=N"
 echo ✅ Profile restored to standard Hollywood settings
@@ -1802,7 +1839,7 @@ if "%GOP_PRESET_NAME%"=="Music Video" (
 set "CUSTOMIZATION_ACTIVE=Y"
 call :LogEntry "[GOP] Preset applied: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)"
 pause
-goto :CustomizeGOP
+goto :AdvancedCustomization
 
 :ResetGOPToProfile
 echo.
@@ -1816,11 +1853,139 @@ pause
 goto :CustomizeGOP
 
 :CustomizeVBV
+cls
 echo.
-echo ⏳ VBV Buffer customization will be implemented in next phase
-echo 💡 For now, using VBV optimized for Instagram zero-recompression
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🔧 VBV BUFFER SETTINGS CUSTOMIZATION                   ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current VBV Settings:
+echo   Target Bitrate: %TARGET_BITRATE%
+echo   Max Bitrate: %MAX_BITRATE%  
+echo   Buffer Size: %BUFFER_SIZE%
+if defined CUSTOM_MAX_BITRATE echo   🎛️ Custom MaxRate: %CUSTOM_MAX_BITRATE% (will be applied)
+if defined CUSTOM_BUFFER_SIZE echo   🎛️ Custom Buffer: %CUSTOM_BUFFER_SIZE% (will be applied)
+echo.
+echo  🔧 VBV BUFFER EXPLANATION:
+echo   • VBV = Video Buffering Verifier (bitrate control mechanism)
+echo   • MaxRate = Peak bitrate ceiling (prevents spikes)
+echo   • Buffer = Data reservoir (smooths bitrate variations)
+echo   • Larger buffer = Smoother quality, higher latency
+echo   • Smaller buffer = Lower latency, more bitrate variation
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 📊 PROFESSIONAL VBV PRESETS                                     │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 🏃 Low Latency (1.2x buffer) - Gaming, live streaming, minimal delay
+echo  [2] 📱 Social Media (1.5x buffer) - Instagram optimized, balanced
+echo  [3] 📺 Streaming (1.8x buffer) - Adaptive bitrate, web delivery
+echo  [4] 🎬 Cinematic (2.2x buffer) - Film quality, smooth encoding
+echo  [5] 🌐 Universal (1.3x buffer) - Maximum compatibility, conservative
+echo  [6] ⚡ Fast Network (2.5x buffer) - High bandwidth, premium quality
+echo  [7] 📋 Current Profile Default - Keep existing settings
+echo  [B] 🔙 Back to Advanced Menu
+echo.
+set /p "vbv_choice=Select VBV preset [1-7, B]: "
+
+if "%vbv_choice%"=="1" call :SetVBVValues 1.2 "Low Latency"
+if "%vbv_choice%"=="2" call :SetVBVValues 1.5 "Social Media"
+if "%vbv_choice%"=="3" call :SetVBVValues 1.8 "Streaming"
+if "%vbv_choice%"=="4" call :SetVBVValues 2.2 "Cinematic"
+if "%vbv_choice%"=="5" call :SetVBVValues 1.3 "Universal"
+if "%vbv_choice%"=="6" call :SetVBVValues 2.5 "Fast Network"
+if "%vbv_choice%"=="7" goto :ResetVBVToProfile
+if /i "%vbv_choice%"=="B" goto :AdvancedCustomization
+
+echo ❌ Invalid choice. Please select 1-7 or B.
+pause
+goto :CustomizeVBV
+
+:SetVBVValues
+set "vbv_multiplier=%~1"
+set "VBV_PRESET_NAME=%~2"
+
+:: Extract numeric value from TARGET_BITRATE (remove 'M' suffix)
+set "target_numeric=%TARGET_BITRATE:M=%"
+
+:: Calculate custom maxrate and buffer based on multiplier
+if "%vbv_multiplier%"=="1.2" (
+    set /a "custom_maxrate=%target_numeric%*18/10"
+    set /a "custom_buffer=%target_numeric%*12/10"
+) else if "%vbv_multiplier%"=="1.5" (
+    set /a "custom_maxrate=%target_numeric%*20/10" 
+    set /a "custom_buffer=%target_numeric%*15/10"
+) else if "%vbv_multiplier%"=="1.8" (
+    set /a "custom_maxrate=%target_numeric%*22/10"
+    set /a "custom_buffer=%target_numeric%*18/10"
+) else if "%vbv_multiplier%"=="2.2" (
+    set /a "custom_maxrate=%target_numeric%*25/10"
+    set /a "custom_buffer=%target_numeric%*22/10"
+) else if "%vbv_multiplier%"=="1.3" (
+    set /a "custom_maxrate=%target_numeric%*18/10"
+    set /a "custom_buffer=%target_numeric%*13/10"
+) else if "%vbv_multiplier%"=="2.5" (
+    set /a "custom_maxrate=%target_numeric%*28/10"
+    set /a "custom_buffer=%target_numeric%*25/10"
+)
+
+set "CUSTOM_MAX_BITRATE=%custom_maxrate%M"
+set "CUSTOM_BUFFER_SIZE=%custom_buffer%M"
+
+echo.
+echo ✅ VBV Buffer set to: %VBV_PRESET_NAME%
+echo   🎯 Target Bitrate: %TARGET_BITRATE% (unchanged)
+echo   📊 Max Bitrate: %CUSTOM_MAX_BITRATE% 
+echo   🔧 Buffer Size: %CUSTOM_BUFFER_SIZE%
+echo   📈 Buffer Ratio: %vbv_multiplier%x target bitrate
+echo.
+echo  💡 PRESET DETAILS - %VBV_PRESET_NAME%:
+if "%VBV_PRESET_NAME%"=="Low Latency" (
+    echo   🏃 Optimized for: Gaming streams, live content, real-time
+    echo   📊 Benefits: Minimal delay, responsive encoding
+    echo   ⚠️ Trade-off: More bitrate variation, less smooth quality
+)
+if "%VBV_PRESET_NAME%"=="Social Media" (
+    echo   📱 Optimized for: Instagram, TikTok, social platforms
+    echo   📊 Benefits: Balanced latency and quality smoothness
+    echo   🎯 Best for: Most Instagram content, proven compatibility
+)
+if "%VBV_PRESET_NAME%"=="Streaming" (
+    echo   📺 Optimized for: Web streaming, adaptive bitrate
+    echo   📊 Benefits: Smooth quality, network adaptive
+    echo   🎯 Best for: IGTV, longer content, variable bandwidth
+)
+if "%VBV_PRESET_NAME%"=="Cinematic" (
+    echo   🎬 Optimized for: Film-quality content, artistic videos
+    echo   📊 Benefits: Very smooth quality, minimal artifacts
+    echo   🎯 Best for: High-end content, cinematic productions
+)
+if "%VBV_PRESET_NAME%"=="Universal" (
+    echo   🌐 Optimized for: Maximum device compatibility
+    echo   📊 Benefits: Works on all devices, conservative approach
+    echo   🎯 Best for: Wide distribution, legacy device support
+)
+if "%VBV_PRESET_NAME%"=="Fast Network" (
+    echo   ⚡ Optimized for: High bandwidth, premium quality
+    echo   📊 Benefits: Maximum quality smoothness, large buffer
+    echo   🎯 Best for: High-end content, fast internet connections
+)
+
+set "CUSTOMIZATION_ACTIVE=Y"
+call :LogEntry "[VBV] Preset applied: %VBV_PRESET_NAME% (Max:%CUSTOM_MAX_BITRATE%, Buf:%CUSTOM_BUFFER_SIZE%)"
 pause
 goto :AdvancedCustomization
+
+:ResetVBVToProfile
+echo.
+echo 🔄 Resetting VBV to profile defaults...
+set "CUSTOM_MAX_BITRATE="
+set "CUSTOM_BUFFER_SIZE="
+set "VBV_PRESET_NAME="
+echo ✅ VBV reset to profile default: Max=%MAX_BITRATE%, Buffer=%BUFFER_SIZE%
+call :LogEntry "[VBV] Reset to profile defaults"
+pause
+goto :CustomizeVBV
 
 :CustomizeAudio
 echo.
