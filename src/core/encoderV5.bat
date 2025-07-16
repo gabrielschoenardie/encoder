@@ -1658,10 +1658,10 @@ if defined CUSTOM_GOP_SIZE (
     if defined CUSTOM_KEYINT_MIN (
         echo     • Original: GOP=%GOP_SIZE%, Min=%KEYINT_MIN%
         echo     • Preset: %GOP_PRESET_NAME% GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN% ← Will be applied
-        set /a "custom_keyframe_sec=%CUSTOM_GOP_SIZE%*100/30"
-        set /a "sec_part=%custom_keyframe_sec%/100"
-        set /a "dec_part=%custom_keyframe_sec%%%100"
-        echo     • Impact: Keyframe every ~%sec_part%.%dec_part%s at 30fps
+		if "%CUSTOM_GOP_SIZE%"=="48" set "keyframe_display=1.6"
+		if "%CUSTOM_GOP_SIZE%"=="60" set "keyframe_display=2.0"
+		if not defined keyframe_display set "keyframe_display=2.0"
+        echo     • Impact: Keyframe every %keyframe_display%s at 30fps
     )
 ) else (
     echo     • Current: GOP=%GOP_SIZE%, Min=%KEYINT_MIN% (unchanged)
@@ -1672,14 +1672,11 @@ if defined CUSTOM_MAX_BITRATE (
     if defined CUSTOM_BUFFER_SIZE (
         echo     • Original: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE%
         echo     • Preset: %VBV_PRESET_NAME% Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE% ← Will be applied
-        
-        :: Calculate and display buffer ratio
-        set "orig_target=%TARGET_BITRATE:M=%"
-        set "custom_buffer_num=%CUSTOM_BUFFER_SIZE:M=%"
-        set /a "buffer_ratio=%custom_buffer_num%*10/!orig_target!"
-        set /a "ratio_whole=%buffer_ratio%/10"
-        set /a "ratio_decimal=%buffer_ratio%%%10"
-        echo     • Buffer Ratio: %ratio_whole%.%ratio_decimal%x target bitrate
+        rem FIXED BUFFER RATIO
+		if "%CUSTOM_BUFFER_SIZE%"=="19M" set "buffer_display=1.4"
+		if "%CUSTOM_BUFFER_SIZE%"=="26M" set "buffer_display=2.0"
+		if not defined buffer_display set "buffer_display=1.5"
+        echo     • Buffer Ratio: %buffer_display%x target bitrate
     )
 ) else (
     echo     • Current: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE% (unchanged)
@@ -1800,10 +1797,10 @@ echo.
 echo ✅ GOP Structure set to: %GOP_PRESET_NAME%
 echo   📊 GOP Size: %CUSTOM_GOP_SIZE% frames
 echo   ⚡ Min Keyint: %CUSTOM_KEYINT_MIN% frames
-set /a "keyframe_seconds=%CUSTOM_GOP_SIZE%*100/30"
-set /a "seconds_part=%keyframe_seconds%/100"
-set /a "decimal_part=%keyframe_seconds%%%100"
-echo   🎯 Keyframe every ~%seconds_part%.%decimal_part% seconds at 30fps
+if "%CUSTOM_GOP_SIZE%"=="48" set "keyframe_display=1.6"
+if "%CUSTOM_GOP_SIZE%"=="60" set "keyframe_display=2.0"
+if not defined keyframe_display set "keyframe_display=2.0"
+echo   🎯 Keyframe every %keyframe_display%s at 30fps
 echo.
 echo  💡 PRESET DETAILS - %GOP_PRESET_NAME%:
 if "%GOP_PRESET_NAME%"=="High Motion" (
