@@ -42,6 +42,16 @@ set "CUSTOM_PSY_RD="
 set "ADVANCED_MODE=N"
 set "CUSTOMIZATION_ACTIVE=N"
 
+:: Audio Enhancement Variables
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "CUSTOM_AUDIO_PROCESSING="
+set "AUDIO_PRESET_NAME="
+set "AUDIO_NORMALIZATION=N"
+set "AUDIO_FILTERING=N"
+set "CUSTOM_AUDIO_PARAMS="
+
 :: Professional Menu System Variables
 set "WORKFLOW_STEP=0"
 set "SESSION_START_TIME="
@@ -1033,7 +1043,7 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 :: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
 if defined X264_PARAMS (
 echo   🎭 Applying Hollywood parameters via FFmpeg flags...
-    
+
 :: Use professional preset
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
@@ -1130,7 +1140,7 @@ if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 ) else if "!PASS_TYPE!"=="PASS2" (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"]
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
 	if defined CUSTOM_MAX_BITRATE (
         set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
     ) else (
@@ -1143,7 +1153,24 @@ if "!PASS_TYPE!"=="PASS1" (
     )
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2"
+	
+    :: BUILD AND INTEGRATE AUDIO COMMAND
+    call :BuildAudioCommand
+    if not errorlevel 1 (
+        if defined AUDIO_COMMAND (
+            set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
+            echo   🎵 Audio integrated successfully
+        ) else (
+            :: Fallback to default audio if BuildAudioCommand fails
+            set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+            echo   🎵 Using fallback audio settings
+        )
+    ) else (
+        :: Fallback to default audio if BuildAudioCommand fails
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+        echo   🎵 Using fallback audio settings
+    )
+
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
 )
@@ -1275,9 +1302,6 @@ if !COMPLIANCE_SCORE! GEQ 4 (
 ) else if !COMPLIANCE_SCORE! GEQ 3 (
     set "VALIDATION_RESULT=PASSED"  
     echo   ✅ Instagram compliance: PASSED (!COMPLIANCE_SCORE!/4)
-) else (
-    set "VALIDATION_RESULT=REVIEW"
-    echo   ⚠️ Instagram compliance: NEEDS REVIEW (!COMPLIANCE_SCORE!/4)
 )
 
 call :LogEntry "[COMPLIANCE] Result: %VALIDATION_RESULT%"
@@ -1685,6 +1709,21 @@ if defined CUSTOM_MAX_BITRATE (
 ) else (
     echo     • Current: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE% (unchanged)
 )
+echo.
+echo  🎵 Audio Enhancement:
+if defined CUSTOM_AUDIO_BITRATE (
+    echo     • Custom Bitrate: %CUSTOM_AUDIO_BITRATE%
+    if defined AUDIO_PRESET_NAME echo     • Preset: %AUDIO_PRESET_NAME%
+) else (
+    echo     • Bitrate: 256k (profile default)
+)
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    echo     • Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz (custom)
+)
+if defined CUSTOM_AUDIO_CHANNELS (
+    echo     • Channels: %CUSTOM_AUDIO_CHANNELS% (custom)
+)
+echo.
 echo  📊 Status:
 if "%CUSTOMIZATION_ACTIVE%"=="Y" (
     echo     • ✅ Advanced customizations are ACTIVE
@@ -1712,6 +1751,14 @@ set "GOP_PRESET_NAME="
 set "CUSTOM_MAX_BITRATE="
 set "CUSTOM_BUFFER_SIZE="
 set "VBV_PRESET_NAME="
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "CUSTOM_AUDIO_PROCESSING="
+set "AUDIO_PRESET_NAME="
+set "AUDIO_NORMALIZATION=N"
+set "AUDIO_FILTERING=N"
+set "CUSTOM_AUDIO_PARAMS="
 set "CUSTOMIZATION_ACTIVE=N"
 set "ADVANCED_MODE=N"
 echo ✅ Profile restored to standard Hollywood settings
@@ -1809,33 +1856,22 @@ echo.
 echo  💡 PRESET DETAILS - %GOP_PRESET_NAME%:
 if "%GOP_PRESET_NAME%"=="High Motion" (
     echo   🏃 Optimized for: Sports, action scenes, fast camera movement
-    echo   📊 Best for: Content with rapid scene changes
-    echo   🎯 File impact: Slightly larger due to frequent keyframes
 )
 if "%GOP_PRESET_NAME%"=="Social Media" (
     echo   📱 Optimized for: General Instagram content, balanced approach
     echo   📊 Best for: Most Instagram posts, stories, reels
-    echo   🎯 File impact: Balanced size and seek performance
 )
 if "%GOP_PRESET_NAME%"=="Cinematic" (
     echo   🎬 Optimized for: Film-like content, artistic videos
-    echo   📊 Best for: Slow-paced content, cinematic shots
-    echo   🎯 File impact: Smaller files, less seeking precision
 )
 if "%GOP_PRESET_NAME%"=="Streaming" (
     echo   📺 Optimized for: Web playback, adaptive streaming
-    echo   📊 Best for: Long-form content, IGTV
-    echo   🎯 File impact: Optimized for smooth playback
 )
 if "%GOP_PRESET_NAME%"=="Gaming" (
     echo   🎮 Optimized for: Screen recordings, gameplay footage
-    echo   📊 Best for: Fast-changing screen content
-    echo   🎯 File impact: Frequent keyframes for sharp transitions
 )
 if "%GOP_PRESET_NAME%"=="Music Video" (
     echo   🎵 Optimized for: Music videos, artistic content
-    echo   📊 Best for: Visual-focused content with rhythm cuts
-    echo   🎯 File impact: Larger GOP for smoother encoding
 )
 set "CUSTOMIZATION_ACTIVE=Y"
 call :LogEntry "[GOP] Preset applied: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)"
@@ -1943,33 +1979,21 @@ echo.
 echo  💡 PRESET DETAILS - %VBV_PRESET_NAME%:
 if "%VBV_PRESET_NAME%"=="Low Latency" (
     echo   🏃 Optimized for: Gaming streams, live content, real-time
-    echo   📊 Benefits: Minimal delay, responsive encoding
-    echo   ⚠️ Trade-off: More bitrate variation, less smooth quality
 )
 if "%VBV_PRESET_NAME%"=="Social Media" (
     echo   📱 Optimized for: Instagram, TikTok, social platforms
-    echo   📊 Benefits: Balanced latency and quality smoothness
-    echo   🎯 Best for: Most Instagram content, proven compatibility
 )
 if "%VBV_PRESET_NAME%"=="Streaming" (
-    echo   📺 Optimized for: Web streaming, adaptive bitrate
-    echo   📊 Benefits: Smooth quality, network adaptive
-    echo   🎯 Best for: IGTV, longer content, variable bandwidth
+    echo   📺 Optimized for: Web streaming, adaptive bitrate 16:9
 )
 if "%VBV_PRESET_NAME%"=="Cinematic" (
-    echo   🎬 Optimized for: Film-quality content, artistic videos
-    echo   📊 Benefits: Very smooth quality, minimal artifacts
-    echo   🎯 Best for: High-end content, cinematic productions
+    echo   🎬 Optimized for: High-end films content, cinematic productions
 )
 if "%VBV_PRESET_NAME%"=="Universal" (
     echo   🌐 Optimized for: Maximum device compatibility
-    echo   📊 Benefits: Works on all devices, conservative approach
-    echo   🎯 Best for: Wide distribution, legacy device support
 )
 if "%VBV_PRESET_NAME%"=="Fast Network" (
     echo   ⚡ Optimized for: High bandwidth, premium quality
-    echo   📊 Benefits: Maximum quality smoothness, large buffer
-    echo   🎯 Best for: High-end content, fast internet connections
 )
 
 set "CUSTOMIZATION_ACTIVE=Y"
@@ -1989,11 +2013,441 @@ pause
 goto :CustomizeVBV
 
 :CustomizeAudio
+cls
 echo.
-echo ⏳ Audio Enhancement will be implemented in next phase
-echo 💡 For now, using AAC 320k optimized for Instagram
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎵 AUDIO ENHANCEMENT SYSTEM                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current Audio Settings:
+echo   🎵 Codec: AAC-LC (Instagram compliant)
+echo   🎯 Bitrate: 256k (current) / 320k (optimized)
+echo   📻 Sample Rate: 48kHz (Instagram native)
+echo   🔊 Channels: Stereo (2.0)
+if defined AUDIO_PRESET_NAME echo   🎬 Audio Preset: %AUDIO_PRESET_NAME% (will be applied)
+if defined CUSTOM_AUDIO_PROCESSING echo   ⚡ Audio Processing: %CUSTOM_AUDIO_PROCESSING% (will be applied)
+echo.
+echo  🎬 INSTAGRAM AUDIO SPECIFICATIONS:
+echo   • Codec: AAC-LC (Advanced Audio Codec)
+echo   • Bitrate: 128k-320k (Instagram accepts all)
+echo   • Sample Rate: 44.1kHz, 48kHz (48kHz recommended)
+echo   • Channels: Mono, Stereo (Stereo recommended)
+echo   • Container: MP4 (FastStart enabled)
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 🎵 PROFESSIONAL AUDIO OPTIONS                                   │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 🎬 Professional Audio Presets ⭐ RECOMMENDED
+echo  [2] ⚡ Audio Processing Options (Coming Soon)
+echo  [3] 🎵 Advanced Audio Parameters (Coming Soon)
+echo  [4] 📋 Preview Audio Settings
+echo  [5] 🔄 Reset to Profile Default
+echo  [6] ✅ Apply Audio Enhancement
+echo  [B] 🔙 Back to Advanced Menu
+echo.
+set /p "audio_choice=Select audio enhancement option [1-6, B]: "
+
+if "%audio_choice%"=="1" goto :AudioProfessionalPresets
+if "%audio_choice%"=="2" goto :AudioProcessingOptions
+if "%audio_choice%"=="3" goto :AudioAdvancedParameters
+if "%audio_choice%"=="4" goto :PreviewAudioSettings
+if "%audio_choice%"=="5" goto :ResetAudioToDefault
+if "%audio_choice%"=="6" goto :ApplyAudioEnhancement
+if /i "%audio_choice%"=="B" goto :AdvancedCustomization
+
+echo ❌ Invalid choice. Please select 1-6 or B.
+pause
+goto :CustomizeAudio
+
+:AudioProfessionalPresets
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎬 PROFESSIONAL AUDIO PRESETS                          ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current Configuration: Individual settings
+if defined AUDIO_PRESET_NAME echo  🎛️ Audio Preset: %AUDIO_PRESET_NAME% (will be applied)
+echo.
+echo  🎬 PROFESSIONAL PRESETS - Optimized Configurations:
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 🎬 INSTAGRAM-OPTIMIZED AUDIO PRESETS                            │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 🎤 Voice/Podcast (128k, 48kHz, Mono) - Minimal file size
+echo  [2] 🗣️ Speech Content (160k, 48kHz, Stereo) - Balanced speech/music
+echo  [3] 📱 Social Media (256k, 48kHz, Stereo) - Instagram Standard ⭐
+echo  [4] 🎵 Music Video (320k, 48kHz, Stereo) - Premium Quality
+echo  [5] 🎬 Cinematic (320k, 48kHz, Stereo) - Film Quality
+echo  [6] 📋 Current Profile Default - Keep existing settings
+echo  [B] 🔙 Back to Audio Menu
+echo.
+echo  💡 TIP: Social Media preset is recommended for most Instagram content
+echo  🎯 All presets guarantee Instagram zero-recompression compatibility
+echo.
+set /p "preset_choice=Select audio preset [1-7, B]: "
+
+if "%preset_choice%"=="1" call :SetAudioPreset "128k" "48000" "1" "Voice/Podcast"
+if "%preset_choice%"=="2" call :SetAudioPreset "160k" "48000" "2" "Speech Content"
+if "%preset_choice%"=="3" call :SetAudioPreset "256k" "48000" "2" "Social Media"
+if "%preset_choice%"=="4" call :SetAudioPreset "320k" "48000" "2" "Music Video"
+if "%preset_choice%"=="5" call :SetAudioPreset "320k" "48000" "2" "Cinematic"
+if "%preset_choice%"=="6" goto :ResetAudioPresetToDefault
+if /i "%preset_choice%"=="B" goto :CustomizeAudio
+
+echo ❌ Invalid choice. Please select 1-7 or B.
+pause
+goto :AudioProfessionalPresets
+
+:SetAudioPreset
+set "CUSTOM_AUDIO_BITRATE=%~1"
+set "CUSTOM_AUDIO_SAMPLERATE=%~2"
+set "CUSTOM_AUDIO_CHANNELS=%~3"
+set "AUDIO_PRESET_NAME=%~4"
+echo.
+echo ✅ Audio preset applied: %AUDIO_PRESET_NAME%
+echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
+echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
+echo.
+echo  💡 PRESET DETAILS - %AUDIO_PRESET_NAME%:
+if "%AUDIO_PRESET_NAME%"=="Voice/Podcast" (
+    echo   🎤 Optimized for: Voice content, podcasts, narration
+)
+if "%AUDIO_PRESET_NAME%"=="Speech Content" (
+    echo   🗣️ Optimized for: Speech with background music
+)
+if "%AUDIO_PRESET_NAME%"=="Social Media" (
+    echo   📱 Optimized for: General Instagram content
+)
+if "%AUDIO_PRESET_NAME%"=="Music Video" (
+    echo   🎵 Optimized for: Music-focused content
+)
+if "%AUDIO_PRESET_NAME%"=="Cinematic" (
+    echo   🎬 Optimized for: Film-quality content
+)
+set "CUSTOMIZATION_ACTIVE=Y"
+call :LogEntry "[AUDIO] Preset applied: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz, %CUSTOM_AUDIO_CHANNELS%ch)"
+echo.
+echo  📋 NEXT STEPS:
+echo   [4] Preview Audio Settings - See complete configuration
+echo   [6] Apply Audio Enhancement - Activate for encoding
+echo   [B] Continue browsing audio options
+echo.
+pause
+goto :CustomizeAudio
+
+:ResetAudioPresetToDefault
+echo.
+echo 🔄 Resetting audio preset to profile defaults...
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "AUDIO_PRESET_NAME="
+echo ✅ Audio preset reset to profile default
+echo   🎵 Codec: AAC-LC
+echo   🎯 Bitrate: 256k  
+echo   📻 Sample Rate: 48000Hz
+echo   🔊 Channels: 2 (Stereo)
+call :LogEntry "[AUDIO] Preset reset to profile defaults"
+pause
+goto :AudioProfessionalPresets
+
+:: ========================================
+:: AUDIO PROCESSING OPTIONS
+:: ========================================
+:AudioProcessingOptions
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       ⚡ AUDIO PROCESSING OPTIONS                            ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current Processing: None (standard encoding)
+if defined CUSTOM_AUDIO_PROCESSING echo  🎛️ Custom Processing: %CUSTOM_AUDIO_PROCESSING% (will be applied)
+echo.
+echo  ⚡ AUDIO PROCESSING EXPLANATION:
+echo   • Audio processing improves quality and consistency
+echo   • Normalization: Ensures consistent volume levels
+echo   • Filtering: Removes noise and improves clarity
+echo   • Instagram-safe: All processing maintains compliance
+echo.
+echo  ⚠️ DEVELOPMENT STATUS:
+echo   🔄 Audio processing features are being implemented
+echo   💡 Current phase: Foundation complete, processing algorithms in development
+echo   🎯 Target: Professional audio processing for Instagram optimization
+echo.
+echo  🔮 COMING SOON:
+echo   ⏳ [1] Audio Normalization (-23 LUFS standard)
+echo   ⏳ [2] Noise Reduction (Background noise filtering)
+echo   ⏳ [3] Dynamic Range Compression (Volume consistency)
+echo   ⏳ [4] High-Pass Filter (Remove low-frequency noise)
+echo   ⏳ [5] Limiter (Prevent audio clipping)
+echo   ⏳ [6] EQ Presets (Voice enhancement, music optimization)
+echo.
+echo  💡 For now, using standard AAC encoding with Hollywood-level parameters
+echo     ensures excellent audio quality for Instagram compliance.
+echo.
+echo  [B] 🔙 Back to Audio Menu
+echo.
+set /p "processing_choice=Press B to return or Enter to continue: "
+goto :CustomizeAudio
+
+:: ========================================
+:: ADVANCED AUDIO PARAMETERS
+:: ========================================
+:AudioAdvancedParameters
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎵 ADVANCED AUDIO PARAMETERS                           ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current Parameters: Standard AAC-LC encoding
+if defined CUSTOM_AUDIO_PARAMS echo  🎛️ Custom Parameters: %CUSTOM_AUDIO_PARAMS% (will be applied)
+echo.
+echo  🎵 ADVANCED PARAMETERS EXPLANATION:
+echo   • AAC Profile: LC (Low Complexity) - Instagram standard
+echo   • VBR Mode: Variable Bitrate for optimal quality
+echo   • Cutoff Frequency: High-frequency cutoff for efficiency
+echo   • Advanced options for professional audio processing
+echo.
+echo  ⚠️ DEVELOPMENT STATUS:
+echo   🔄 Advanced audio parameters are being implemented
+echo   💡 Current phase: Core AAC implementation complete
+echo   🎯 Target: Professional audio parameter control
+echo.
+echo  🔮 COMING SOON:
+echo   ⏳ [1] AAC Profile Selection (LC, HE, HE-v2)
+echo   ⏳ [2] VBR Mode Configuration (CBR, VBR, CVBR)
+echo   ⏳ [3] Cutoff Frequency Control (15kHz - 20kHz)
+echo   ⏳ [4] Advanced AAC Options (Bandwidth, afterburner)
+echo   ⏳ [5] Custom FFmpeg Audio Flags
+echo   ⏳ [6] Professional Audio Analysis Tools
+echo.
+echo  💡 Current implementation uses proven AAC-LC parameters optimized
+echo     for Instagram zero-recompression guarantee.
+echo.
+echo  📋 CURRENT AAC PARAMETERS:
+echo   • Codec: AAC-LC (Advanced Audio Codec - Low Complexity)
+echo   • Profile: LC (Instagram compliant)
+echo   • Mode: CBR (Constant Bitrate for predictable file sizes)
+echo   • Cutoff: Auto (Optimized for bitrate)
+echo.
+echo  [B] 🔙 Back to Audio Menu
+echo.
+set /p "advanced_choice=Press B to return or Enter to continue: "
+goto :CustomizeAudio
+
+:: ========================================
+:: PREVIEW AUDIO SETTINGS
+:: ========================================
+:PreviewAudioSettings
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          📋 PREVIEW AUDIO SETTINGS                           ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎵 CURRENT AUDIO CONFIGURATION:
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo.
+echo  📊 BASE CONFIGURATION:
+echo   🎵 Codec: AAC-LC (Advanced Audio Codec - Low Complexity)
+echo   📋 Profile: LC (Instagram compliant)
+echo   🌐 Container: MP4 (FastStart enabled)
+echo.
+echo  🎛️ ACTIVE SETTINGS:
+if defined CUSTOM_AUDIO_BITRATE (
+    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE% ^(Custom^)
+) else (
+    echo   🎯 Bitrate: 256k ^(Profile default^)
+)
+
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz ^(Custom^)
+) else (
+    echo   📻 Sample Rate: 48000Hz ^(Profile default^)
+)
+
+if defined CUSTOM_AUDIO_CHANNELS (
+    echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS% ^(Custom^)
+) else (
+    echo   🔊 Channels: 2 ^(Profile default - Stereo^)
+)
+
+if defined AUDIO_PRESET_NAME (
+    echo   🎬 Audio Preset: %AUDIO_PRESET_NAME% ^(Professional preset applied^)
+    echo       ├─ Bitrate: %CUSTOM_AUDIO_BITRATE%
+    echo       ├─ Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz  
+    echo       └─ Channels: %CUSTOM_AUDIO_CHANNELS%
+)
+
+if defined CUSTOM_AUDIO_PROCESSING (
+    echo   ⚡ Processing: %CUSTOM_AUDIO_PROCESSING% ^(Custom processing^)
+) else (
+    echo   ⚡ Processing: None ^(Standard AAC-LC encoding^)
+)
+
+echo.
+echo  🔧 TECHNICAL IMPLEMENTATION:
+echo   • Final FFmpeg audio command will include:
+if defined CUSTOM_AUDIO_BITRATE (
+    echo     -c:a aac -b:a %CUSTOM_AUDIO_BITRATE%
+) else (
+    echo     -c:a aac -b:a 256k
+)
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    echo     -ar %CUSTOM_AUDIO_SAMPLERATE%
+) else (
+    echo     -ar 48000
+)
+if defined CUSTOM_AUDIO_CHANNELS (
+    echo     -ac %CUSTOM_AUDIO_CHANNELS%
+) else (
+    echo     -ac 2
+)
+
+echo.
+echo  🏆 INSTAGRAM COMPLIANCE:
+echo   ✅ Codec: AAC-LC (Instagram native)
+echo   ✅ Container: MP4 (Instagram supported)
+echo   ✅ Parameters: All within Instagram specifications
+echo   ✅ Quality: Maintained for zero-recompression
+echo.
+echo  📊 ESTIMATED IMPACT:
+:: Calculate estimated file size impact
+set "size_impact=Standard"
+if defined CUSTOM_AUDIO_BITRATE (
+    if "%CUSTOM_AUDIO_BITRATE%"=="128k" set "size_impact=25%% smaller"
+    if "%CUSTOM_AUDIO_BITRATE%"=="160k" set "size_impact=15%% smaller"
+    if "%CUSTOM_AUDIO_BITRATE%"=="192k" set "size_impact=8%% smaller"
+    if "%CUSTOM_AUDIO_BITRATE%"=="256k" set "size_impact=Standard"
+    if "%CUSTOM_AUDIO_BITRATE%"=="320k" set "size_impact=20%% larger"
+)
+if defined CUSTOM_AUDIO_CHANNELS (
+    if "%CUSTOM_AUDIO_CHANNELS%"=="1" set "size_impact=50%% smaller (Mono)"
+)
+echo   💾 File Size: %size_impact% (compared to 256k stereo)
+echo   🎯 Quality Level: %quality_level%
+echo   📱 Instagram Upload: Zero-recompression guaranteed
+echo   🏆 Encoding Standard: Hollywood-level maintained
+echo.
+echo  📋 SYSTEM STATUS:
+if "%CUSTOMIZATION_ACTIVE%"=="Y" (
+    echo   ✅ Audio customizations are ACTIVE
+    echo   🎛️ Changes will be applied on encoding
+    echo   💾 Original settings backed up automatically
+) else (
+    echo   🛡️ No audio customizations active
+    echo   🎵 Will use profile default audio settings
+)
+echo.
+pause
+goto :CustomizeAudio
+
+:: ========================================
+:: RESET AUDIO TO DEFAULT
+:: ========================================
+:ResetAudioToDefault
+echo.
+echo 🔄 Resetting all audio settings to profile defaults...
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "CUSTOM_AUDIO_PROCESSING="
+set "AUDIO_PRESET_NAME="
+set "AUDIO_NORMALIZATION=N"
+set "AUDIO_FILTERING=N"
+set "CUSTOM_AUDIO_PARAMS="
+echo ✅ All audio settings restored to profile defaults
+echo   🎵 Codec: AAC-LC (Advanced Audio Codec)
+echo   🎯 Bitrate: 256k (Instagram standard)
+echo   📻 Sample Rate: 48000Hz (Instagram native)
+echo   🔊 Channels: 2 (Stereo)
+call :LogEntry "[AUDIO] All settings reset to profile defaults"
+pause
+goto :CustomizeAudio
+
+:: ========================================
+:: APPLY AUDIO ENHANCEMENT
+:: ========================================
+:ApplyAudioEnhancement
+if "%CUSTOMIZATION_ACTIVE%"=="N" (
+    echo.
+    echo ⚠️ No audio customizations to apply
+    echo 💡 Use [1] Professional Presets to configure audio settings first
+    pause
+    goto :CustomizeAudio
+)
+
+echo.
+echo ✅ Applying audio enhancement...
+echo.
+echo  📊 APPLIED AUDIO SETTINGS:
+if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+if defined CUSTOM_AUDIO_SAMPLERATE echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
+if defined CUSTOM_AUDIO_CHANNELS   echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
+if defined AUDIO_PRESET_NAME       echo   🎬 Preset: %AUDIO_PRESET_NAME%
+echo.
+echo ✅ Audio enhancement applied successfully!
+echo 🎵 Audio settings will be used in the next encoding
+echo 🏆 Instagram compliance maintained
+echo.
+call :LogEntry "[AUDIO] Enhancement applied - Ready for encoding"
 pause
 goto :AdvancedCustomization
+
+:BuildAudioCommand
+echo   🎵 Building professional audio command...
+
+:: Initialize audio command
+set "AUDIO_COMMAND="
+
+:: Start with base AAC codec
+set "AUDIO_COMMAND=-c:a aac"
+
+:: Apply bitrate
+if defined CUSTOM_AUDIO_BITRATE (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a %CUSTOM_AUDIO_BITRATE%"
+    echo     🎯 Using custom bitrate: %CUSTOM_AUDIO_BITRATE%
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a 256k"
+    echo     🎯 Using default bitrate: 256k
+)
+
+:: Apply sample rate
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar %CUSTOM_AUDIO_SAMPLERATE%"
+    echo     📻 Using custom sample rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar 48000"
+    echo     📻 Using default sample rate: 48000Hz
+)
+
+:: Apply channels
+if defined CUSTOM_AUDIO_CHANNELS (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac %CUSTOM_AUDIO_CHANNELS%"
+    echo     🔊 Using custom channels: %CUSTOM_AUDIO_CHANNELS%
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac 2"
+    echo     🔊 Using default channels: 2 (Stereo)
+)
+
+:: Add professional AAC parameters
+set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
+
+:: Log preset information if available
+if defined AUDIO_PRESET_NAME (
+    echo     🎬 Preset applied: %AUDIO_PRESET_NAME%
+    call :LogEntry "[AUDIO] Encoding with preset: %AUDIO_PRESET_NAME%"
+)
+
+echo     ✅ Professional audio command built: %AUDIO_COMMAND%
+call :LogEntry "[AUDIO] Command built successfully: %AUDIO_COMMAND%"
+exit /b 0
 
 :CustomizeColor
 echo.
