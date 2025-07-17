@@ -594,11 +594,12 @@ echo  ━━━━━━━━━━━━━━━━━━━━━━━━�
 echo   🎬 Profile Name: %PROFILE_NAME%
 echo   📊 Resolution: %VIDEO_WIDTH%x%VIDEO_HEIGHT% (%VIDEO_ASPECT%)
 echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
-echo   ⚙️ x264 Preset: %X264_PRESET%
+echo   ️⚙ x264 Preset: %X264_PRESET%
 if defined X264_TUNE       echo   🎵 x264 Tune: %X264_TUNE%
-if defined X264_PARAMS     echo   🧠 Complex Params: %X264_PARAMS:~0,60%...
+if defined X264_PARAMS     echo   ⚙ Complex Params: %X264_PARAMS:~0,60%...
 if defined COLOR_PARAMS    echo   🌈 Color Science: %COLOR_PARAMS%
-if defined CUSTOM_GOP_SIZE echo      GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+if defined CUSTOM_PSY_RD   echo   🧠 Psy RD: %CUSTOM_PSY_RD%
+if defined CUSTOM_GOP_SIZE echo   🎬 GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
 echo   📂 Source: %CURRENT_PROFILE_FILE%
 echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -870,6 +871,8 @@ if "%ADVANCED_MODE%"=="Y" (
     echo   🎛️ Advanced: ACTIVE
     if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
     if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+	if defined CUSTOM_GOP_SIZE echo   • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+
 )
 echo   💻 Threading: %THREAD_COUNT% cores
 echo.
@@ -1331,9 +1334,9 @@ exit /b 0
 :ShowEncodingResults
 cls
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                       🏆 ENCODING COMPLETED SUCCESSFULLY!                     ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo ╔════════════════════════════════════════════════════════════════════════════╗
+echo ║                    🏆 ENCODING COMPLETED SUCCESSFULLY!                      ║
+echo ╚════════════════════════════════════════════════════════════════════════════╝
 echo.
 
 echo  📊 ENCODING SUMMARY:
@@ -1344,8 +1347,9 @@ echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
 echo   🎬 Profile Used: %PROFILE_NAME%
 if "%ADVANCED_MODE%"=="Y" (
     echo   🎛️ Advanced Mode: ACTIVE
-    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
-    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    if defined CUSTOM_PRESET   echo   • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD   echo   • Custom Psy RD: %CUSTOM_PSY_RD%
+	if defined CUSTOM_GOP_SIZE echo   • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
 ) else (
     echo   🎬 Mode: Standard Hollywood parameters
 )
@@ -1362,7 +1366,7 @@ echo.
 
 echo  🛠️ POST-ENCODING OPTIONS:
 echo  ═══════════════════════════════════════════════════════════════════════════
-echo   [1] ▶️ Play Encoded Video (Preview Result)
+echo   [1]  ▶️Play Encoded Video
 echo   [2] 🔄 Encode Another File
 echo   [3] 🏠 Return to Main Menu
 echo.
@@ -1580,7 +1584,7 @@ echo  📊 Current Setting: Extracted from current profile
 if defined CUSTOM_PSY_RD echo  🎛️ Custom Setting: %CUSTOM_PSY_RD% (will be applied)
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
-echo  │ 🎭 PSYCHOVISUAL RATE-DISTORTION (psy_rd)                        │
+echo  │ 🧠 PSYCHOVISUAL RATE-DISTORTION (psy_rd)                        │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 0.8,0.10  - Conservative (smaller files, less detail)
@@ -2465,7 +2469,7 @@ pause
 goto :ShowProfessionalMainMenu
 
 :: ========================================
-## SYSTEM INFORMATION & UTILITIES
+:: SYSTEM INFORMATION & UTILITIES
 :: ========================================
 :AnalyzeInputFile
 cls
