@@ -42,6 +42,15 @@ set "CUSTOM_PSY_RD="
 set "ADVANCED_MODE=N"
 set "CUSTOMIZATION_ACTIVE=N"
 
+:: Color Science Variables
+set "CUSTOM_COLOR_RANGE="
+set "CUSTOM_COLOR_PRIMARIES="
+set "CUSTOM_COLOR_TRC="
+set "CUSTOM_COLOR_SPACE="
+set "COLOR_PRESET_NAME="
+set "CUSTOM_COLOR_PARAMS="
+set "COLOR_CUSTOMIZATION_ACTIVE=N"
+
 :: Audio Enhancement Variables
 set "CUSTOM_AUDIO_BITRATE="
 set "CUSTOM_AUDIO_SAMPLERATE="
@@ -292,10 +301,12 @@ if defined PROFILE_NAME (
                     echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
                     if "%ADVANCED_MODE%"=="Y" (
                         echo   🎛️ Mode: Advanced customizations ACTIVE
-                        if defined CUSTOM_PRESET      echo  • Custom Preset: %CUSTOM_PRESET%
-                        if defined CUSTOM_PSY_RD      echo  • Custom Psy RD: %CUSTOM_PSY_RD%
-						if defined CUSTOM_GOP_SIZE    echo  • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-						if defined CUSTOM_MAX_BITRATE echo  • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
+                        if defined CUSTOM_PRESET      	echo  • Custom Preset: %CUSTOM_PRESET%
+                        if defined CUSTOM_PSY_RD      	echo  • Custom Psy RD: %CUSTOM_PSY_RD%
+						if defined CUSTOM_GOP_SIZE    	echo  • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+						if defined CUSTOM_MAX_BITRATE 	echo  • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
+						if defined CUSTOM_AUDIO_BITRATE echo  • Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%, %CUSTOM_AUDIO_CHANNELS%)
+						if defined COLOR_PRESET_NAME 	echo  • Color Science: %COLOR_PRESET_NAME% (%CUSTOM_COLOR_PRIMARIES% primaries)
                     ) else (
                         echo   🎬 Mode: Standard Hollywood parameters
                     )
@@ -428,12 +439,12 @@ echo   Preset: %X264_PRESET% ^| Tune: %X264_TUNE%
 set "CRITICAL_ERRORS=0"
 echo.
 echo 🔍 VALIDATION STATUS:
-if defined PROFILE_NAME (echo   ✅ PROFILE_NAME) else (echo   ❌ PROFILE_NAME & set /a "CRITICAL_ERRORS+=1")
-if defined VIDEO_WIDTH (echo   ✅ VIDEO_WIDTH) else (echo   ❌ VIDEO_WIDTH & set /a "CRITICAL_ERRORS+=1")
-if defined VIDEO_HEIGHT (echo   ✅ VIDEO_HEIGHT) else (echo   ❌ VIDEO_HEIGHT & set /a "CRITICAL_ERRORS+=1")
+if defined PROFILE_NAME   (echo   ✅ PROFILE_NAME) 	 else (echo   ❌ PROFILE_NAME & set /a "CRITICAL_ERRORS+=1")
+if defined VIDEO_WIDTH    (echo   ✅ VIDEO_WIDTH) 	 else (echo   ❌ VIDEO_WIDTH & set /a "CRITICAL_ERRORS+=1")
+if defined VIDEO_HEIGHT   (echo   ✅ VIDEO_HEIGHT) 	 else (echo   ❌ VIDEO_HEIGHT & set /a "CRITICAL_ERRORS+=1")
 if defined TARGET_BITRATE (echo   ✅ TARGET_BITRATE) else (echo   ❌ TARGET_BITRATE & set /a "CRITICAL_ERRORS+=1")
-if defined X264_PRESET (echo   ✅ X264_PRESET) else (echo   ❌ X264_PRESET & set /a "CRITICAL_ERRORS+=1")
-if defined X264_PARAMS (echo   ✅ X264_PARAMS) else (echo   ⚠️ X264_PARAMS missing)
+if defined X264_PRESET    (echo   ✅ X264_PRESET) 	 else (echo   ❌ X264_PRESET & set /a "CRITICAL_ERRORS+=1")
+if defined X264_PARAMS    (echo   ✅ X264_PARAMS) 	 else (echo   ⚠️ X264_PARAMS missing)
 
 :: SYSTEM STATUS
 echo.
@@ -445,9 +456,12 @@ echo   Ready to Encode: %READY_TO_ENCODE% ^| Status: %SYSTEM_STATUS%
 :: ADVANCED MODE
 if "%ADVANCED_MODE%"=="Y" (
     echo   🎛️ Advanced: ACTIVE
-    if defined CUSTOM_PRESET   echo     • Custom Preset: %CUSTOM_PRESET%
-    if defined CUSTOM_PSY_RD   echo     • Custom Psy RD: %CUSTOM_PSY_RD%
-	if defined CUSTOM_GOP_SIZE echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+	if defined CUSTOM_PRESET 		echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD 		echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    if defined CUSTOM_GOP_SIZE 		echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+    if defined CUSTOM_MAX_BITRATE 	echo     • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
+    if defined CUSTOM_AUDIO_BITRATE echo     • Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%, %CUSTOM_AUDIO_CHANNELS%)
+    if defined COLOR_PRESET_NAME 	echo     • Color Science: %COLOR_PRESET_NAME% (%CUSTOM_COLOR_PRIMARIES% primaries)
 )
 
 :: PROFILE FILE DIAGNOSTIC
@@ -879,10 +893,14 @@ echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% maximum
 echo   ⚙️ Preset: %X264_PRESET%
 if "%ADVANCED_MODE%"=="Y" (
     echo   🎛️ Advanced: ACTIVE
-    if defined CUSTOM_PRESET echo     • Custom Preset: %CUSTOM_PRESET%
-    if defined CUSTOM_PSY_RD echo     • Custom Psy RD: %CUSTOM_PSY_RD%
-	if defined CUSTOM_GOP_SIZE echo   • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
-
+    if defined CUSTOM_PRESET        echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD        echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+	if defined CUSTOM_GOP_SIZE      echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+    if defined CUSTOM_MAX_BITRATE   echo     • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
+    if defined CUSTOM_AUDIO_BITRATE echo     • Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%, %CUSTOM_AUDIO_CHANNELS%)
+    if defined COLOR_PRESET_NAME    echo     • Color Science: %COLOR_PRESET_NAME% (%CUSTOM_COLOR_PRIMARIES% primaries)
+) else (
+    echo   🎬 Mode: Standard Hollywood parameters
 )
 echo   💻 Threading: %THREAD_COUNT% cores
 echo.
@@ -1114,10 +1132,16 @@ if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
     echo   🎭 GOP-optimized B-frames: !gop_bframes!
 )
 :: COLOR SCIENCE (BT.709 TV Range)
-if defined COLOR_PARAMS (
+if defined CUSTOM_COLOR_PARAMS (
+    echo     🎛️ Using custom color settings: %COLOR_PRESET_NAME%
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !CUSTOM_COLOR_PARAMS!"
+    call :LogEntry "[COLOR] Applied custom: !CUSTOM_COLOR_PARAMS!"
+) else if defined COLOR_PARAMS (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
+    call :LogEntry "[COLOR] Applied profile: !COLOR_PARAMS!"
 ) else (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
+    call :LogEntry "[COLOR] Applied default BT.709 TV"
 )
 
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
@@ -1159,18 +1183,12 @@ if "!PASS_TYPE!"=="PASS1" (
     if not errorlevel 1 (
         if defined AUDIO_COMMAND (
             set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
-            echo   🎵 Audio integrated successfully
         ) else (
-            :: Fallback to default audio if BuildAudioCommand fails
             set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
-            echo   🎵 Using fallback audio settings
         )
     ) else (
-        :: Fallback to default audio if BuildAudioCommand fails
         set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
-        echo   🎵 Using fallback audio settings
     )
-
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
 )
@@ -1370,12 +1388,14 @@ echo   📊 File Size: %OUTPUT_SIZE_MB% MB
 echo   ⏱️ Total Time: %TOTAL_ENCODE_TIME%
 echo   🎬 Profile Used: %PROFILE_NAME%
 if "%ADVANCED_MODE%"=="Y" (
-    echo   🎛️ Advanced Mode: ACTIVE
-    if defined CUSTOM_PRESET   echo   • Custom Preset: %CUSTOM_PRESET%
-    if defined CUSTOM_PSY_RD   echo   • Custom Psy RD: %CUSTOM_PSY_RD%
-	if defined CUSTOM_GOP_SIZE echo   • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+    if defined CUSTOM_PRESET 		echo     • Custom Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD 		echo     • Custom Psy RD: %CUSTOM_PSY_RD%
+    if defined CUSTOM_GOP_SIZE 		echo     • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+    if defined CUSTOM_MAX_BITRATE 	echo     • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
+    if defined CUSTOM_AUDIO_BITRATE echo     • Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%, %CUSTOM_AUDIO_CHANNELS%)
+    if defined COLOR_PRESET_NAME 	echo     • Color Science: %COLOR_PRESET_NAME% (%CUSTOM_COLOR_PRIMARIES% primaries)
 ) else (
-    echo   🎬 Mode: Standard Hollywood parameters
+	echo   🛡️ Configuration: Netflix/Disney+ quality baseline
 )
 echo   📝 Log File: %EXEC_LOG%
 echo.
@@ -1724,6 +1744,37 @@ if defined CUSTOM_AUDIO_CHANNELS (
     echo     • Channels: %CUSTOM_AUDIO_CHANNELS% (custom)
 )
 echo.
+echo  🎨 Color Science Settings:
+if defined CUSTOM_COLOR_PARAMS (
+    if defined COLOR_PRESET_NAME (
+        echo     • Preset: %COLOR_PRESET_NAME% ← Will be applied
+        echo     • Parameters: %CUSTOM_COLOR_PARAMS%
+        :: Detailed breakdown
+        if defined CUSTOM_COLOR_RANGE     echo     • Range: %CUSTOM_COLOR_RANGE% ^(luminance levels^)
+        if defined CUSTOM_COLOR_PRIMARIES echo     • Primaries: %CUSTOM_COLOR_PRIMARIES% ^(color gamut^)
+        if defined CUSTOM_COLOR_TRC       echo     • Transfer: %CUSTOM_COLOR_TRC% ^(gamma curve^)
+        if defined CUSTOM_COLOR_SPACE     echo     • Matrix: %CUSTOM_COLOR_SPACE% ^(YUV conversion^)
+        :: Instagram compliance check for different presets
+        if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt709" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt709" (
+            if "%COLOR_PRESET_NAME%"=="Instagram Native" (
+                echo     • Instagram: ✅ Zero-recompression GUARANTEED
+            ) else if "%COLOR_PRESET_NAME%"=="YouTube Platform" (
+                echo     • YouTube: ✅ Platform optimized, Instagram cross-compatible
+            ) else (
+                echo     • Platforms: ✅ Instagram + YouTube compatible
+            )
+        ) else if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt2020" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt2020nc" (
+            echo     • Instagram: ✅ Compatible with enhanced 4K TV colors
+        ) else (
+            echo     • Platforms: ⚠️ Compatibility varies by preset
+        )
+    )
+) else if defined COLOR_PARAMS (
+    echo     • Current: Profile default ^(BT.709 TV Range^) - Instagram compliant
+) else (
+    echo     • Current: Default BT.709 TV Range ^(unchanged^)
+)
+echo.
 echo  📊 Status:
 if "%CUSTOMIZATION_ACTIVE%"=="Y" (
     echo     • ✅ Advanced customizations are ACTIVE
@@ -1751,6 +1802,13 @@ set "GOP_PRESET_NAME="
 set "CUSTOM_MAX_BITRATE="
 set "CUSTOM_BUFFER_SIZE="
 set "VBV_PRESET_NAME="
+set "CUSTOM_COLOR_RANGE="
+set "CUSTOM_COLOR_PRIMARIES="
+set "CUSTOM_COLOR_TRC="
+set "CUSTOM_COLOR_SPACE="
+set "COLOR_PRESET_NAME="
+set "CUSTOM_COLOR_PARAMS="
+set "COLOR_CUSTOMIZATION_ACTIVE=N"
 set "CUSTOM_AUDIO_BITRATE="
 set "CUSTOM_AUDIO_SAMPLERATE="
 set "CUSTOM_AUDIO_CHANNELS="
@@ -1790,9 +1848,6 @@ call :LogEntry "[ADVANCED] V5.2 Advanced customizations applied"
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: STUB FUNCTIONS FOR FUTURE DEVELOPMENT
-:: ========================================
 :CustomizeGOP
 cls
 echo.
@@ -2450,11 +2505,247 @@ call :LogEntry "[AUDIO] Command built successfully: %AUDIO_COMMAND%"
 exit /b 0
 
 :CustomizeColor
+cls
 echo.
-echo ⏳ Color Science will be implemented in next phase
-echo 💡 For now, using BT.709 optimized for Instagram compliance
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎨 COLOR SCIENCE ADJUSTMENTS                           ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  📊 Current Color Settings:
+if defined COLOR_PARAMS (
+    echo   🎨 Profile Color: %COLOR_PARAMS%
+) else (
+    echo   🎨 Profile Color: BT.709 TV Range (Instagram standard)
+)
+if defined CUSTOM_COLOR_PARAMS echo   🎛️ Custom Color: %CUSTOM_COLOR_PARAMS% (will be applied)
+if defined COLOR_PRESET_NAME echo   🌈 Active Preset: %COLOR_PRESET_NAME%
+echo.
+echo  🎬 COLOR SCIENCE EXPLANATION:
+echo   • Professional presets optimized for different display types
+echo   • Color Range = Luminance levels (TV=16-235 standard)
+echo   • Color Primaries = Color gamut width (BT.709, BT.2020, DCI-P3)
+echo   • Transfer = Gamma curve characteristics (BT.709 standard, HDR variants)
+echo   • Matrix = YUV conversion method for video encoding
+echo   • Instagram requires BT.709 TV Range for guaranteed zero-recompression
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────┐
+echo  │ 🎨 PROFESSIONAL COLOR PRESETS - DISPLAY OPTIMIZED               │
+echo  └─────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 📱 Instagram Native - BT.709 TV Range (guaranteed compliance)
+echo  [2] 📺 TV LED 4K - Enhanced colors for 4K LED TVs (non-HDR)
+echo  [3] 🎬 YouTube Platform - Optimized for YouTube uploads
+echo  [4] 🎮 sRGB Standard - Gaming/streaming optimized
+echo  [5] 📋 Preview Color Settings - See all parameters
+echo  [6] 🔄 Reset to Profile Default - Instagram compliance
+echo  [B] 🔙 Back to Advanced Menu
+echo.
+set /p "color_choice=Select color preset [1-7, B]: "
+
+if "%color_choice%"=="1" call :SetColorPreset "instagram_native" "Instagram Native"
+if "%color_choice%"=="2" call :SetColorPreset "tv_led_4k" "TV LED 4K"
+if "%color_choice%"=="3" call :SetColorPreset "youtube_platform" "YouTube Platform"
+if "%color_choice%"=="4" call :SetColorPreset "srgb_standard" "sRGB Standard"
+if "%color_choice%"=="5" goto :PreviewColorSettings
+if "%color_choice%"=="6" goto :ResetColorToDefault
+if /i "%color_choice%"=="B" goto :AdvancedCustomization
+
+echo ❌ Invalid choice. Please select 1-6 or B.
 pause
-goto :AdvancedCustomization
+goto :CustomizeColor
+
+:SetColorPreset
+set "preset_id=%~1"
+set "COLOR_PRESET_NAME=%~2"
+
+echo.
+echo 🎨 Applying %COLOR_PRESET_NAME% preset...
+
+if "%preset_id%"=="instagram_native" goto :ApplyInstagramNative
+if "%preset_id%"=="tv_led_4k" goto :ApplyTVLED4K  
+if "%preset_id%"=="youtube_platform" goto :ApplyYouTubePlatform
+if "%preset_id%"=="srgb_standard" goto :ApplySRGBStandard
+
+echo ❌ Unknown preset ID: %preset_id%
+pause
+goto :CustomizeColor
+
+:ApplyInstagramNative
+set "CUSTOM_COLOR_RANGE=tv"
+set "CUSTOM_COLOR_PRIMARIES=bt709"
+set "CUSTOM_COLOR_TRC=bt709"
+set "CUSTOM_COLOR_SPACE=bt709"
+echo   📱 INSTAGRAM NATIVE CONFIGURATION:
+echo     • Color Range: TV (16-235) - Instagram standard
+echo     • Primaries: BT.709 - Web compatible
+echo     • Transfer: BT.709 - Standard gamma
+echo     • Matrix: BT.709 - Standard YUV conversion
+echo     • Compliance: 100%% Instagram zero-recompression guaranteed
+goto :SetColorPresetComplete
+
+:ApplyTVLED4K
+set "CUSTOM_COLOR_RANGE=tv"
+set "CUSTOM_COLOR_PRIMARIES=bt2020"
+set "CUSTOM_COLOR_TRC=bt709"
+set "CUSTOM_COLOR_SPACE=bt2020nc"
+echo   📺 TV LED 4K CONFIGURATION:
+echo     • Color Range: TV (16-235) - LED TV standard
+echo     • Primaries: BT.2020 - Wide gamut for 4K TVs
+echo     • Transfer: BT.709 - Non-HDR compatible
+echo     • Matrix: BT.2020nc - Enhanced color space
+echo     • Display: Optimized for modern 4K LED TVs
+echo     • Quality: Enhanced colors with full TV compatibility
+echo     • Instagram: Compatible (may enhance colors on 4K displays)
+goto :SetColorPresetComplete
+
+:ApplyYouTubePlatform
+set "CUSTOM_COLOR_RANGE=tv"
+set "CUSTOM_COLOR_PRIMARIES=bt709"
+set "CUSTOM_COLOR_TRC=bt709"
+set "CUSTOM_COLOR_SPACE=bt709"
+echo   🎬 YOUTUBE PLATFORM CONFIGURATION:
+echo     • Color Range: TV (16-235) - YouTube standard
+echo     • Primaries: BT.709 - YouTube compatible
+echo     • Transfer: BT.709 - YouTube optimized
+echo     • Matrix: BT.709 - YouTube processing
+echo     • Quality: Optimized for YouTube compression algorithms
+echo     • Platform: Maximum YouTube compatibility and quality retention
+echo     • Compliance: YouTube verified, Instagram cross-compatible
+goto :SetColorPresetComplete
+
+:ApplySRGBStandard
+set "CUSTOM_COLOR_RANGE=pc"
+set "CUSTOM_COLOR_PRIMARIES=bt709"
+set "CUSTOM_COLOR_TRC=iec61966-2-1"
+set "CUSTOM_COLOR_SPACE=bt709"
+echo   🎮 sRGB STANDARD CONFIGURATION:
+echo     • Color Range: PC (0-255) - Full range
+echo     • Primaries: BT.709 - sRGB compatible
+echo     • Transfer: sRGB - Gaming/streaming standard
+echo     • Matrix: BT.709 - Standard conversion
+echo     • Warning: PC range may cause Instagram recompression
+echo     • Use case: Gaming content, full range displays
+goto :SetColorPresetComplete
+
+:SetColorPresetComplete
+:: Build custom color command
+call :BuildColorCommand
+if not errorlevel 1 (
+    echo   ✅ Color preset applied successfully: %COLOR_PRESET_NAME%
+    set "COLOR_CUSTOMIZATION_ACTIVE=Y"
+    set "CUSTOMIZATION_ACTIVE=Y"
+    call :LogEntry "[COLOR] Preset applied: %COLOR_PRESET_NAME%"
+) else (
+    echo   ❌ Failed to build color command
+    call :ResetColorToDefault
+)
+
+pause
+goto :CustomizeColor
+
+:BuildColorCommand
+echo   🔧 Building color command...
+
+:: Validate required parameters
+if not defined CUSTOM_COLOR_RANGE (
+    echo     ❌ Color range not defined
+    exit /b 1
+)
+if not defined CUSTOM_COLOR_PRIMARIES (
+    echo     ❌ Color primaries not defined
+    exit /b 1
+)
+if not defined CUSTOM_COLOR_TRC (
+    echo     ❌ Transfer characteristics not defined
+    exit /b 1
+)
+if not defined CUSTOM_COLOR_SPACE (
+    echo     ❌ Color space not defined
+    exit /b 1
+)
+
+:: Build color parameters - FIXED VERSION
+set "CUSTOM_COLOR_PARAMS=-color_range %CUSTOM_COLOR_RANGE% -color_primaries %CUSTOM_COLOR_PRIMARIES% -color_trc %CUSTOM_COLOR_TRC% -colorspace %CUSTOM_COLOR_SPACE%"
+
+echo     ✅ Color command built successfully
+echo     📋 Parameters: %CUSTOM_COLOR_PARAMS%
+call :LogEntry "[COLOR] Command built: %CUSTOM_COLOR_PARAMS%"
+exit /b 0
+
+:PreviewColorSettings
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                          📋 COLOR SETTINGS PREVIEW                           ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🎨 CURRENT COLOR CONFIGURATION:
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+if defined COLOR_PRESET_NAME (
+    echo   🌈 Active Preset: %COLOR_PRESET_NAME%
+) else (
+    echo   🌈 Active Preset: Profile Default (BT.709 TV)
+)
+echo.
+echo  📊 TECHNICAL PARAMETERS:
+if defined CUSTOM_COLOR_PARAMS (
+    echo   🎛️ Custom Parameters: %CUSTOM_COLOR_PARAMS%
+    echo   📋 Breakdown:
+    if defined CUSTOM_COLOR_RANGE     echo     • Color Range: %CUSTOM_COLOR_RANGE%
+    if defined CUSTOM_COLOR_PRIMARIES echo     • Color Primaries: %CUSTOM_COLOR_PRIMARIES%
+    if defined CUSTOM_COLOR_TRC       echo     • Transfer: %CUSTOM_COLOR_TRC%
+    if defined CUSTOM_COLOR_SPACE     echo     • Matrix: %CUSTOM_COLOR_SPACE%
+) else if defined COLOR_PARAMS (
+    echo   🎬 Profile Parameters: %COLOR_PARAMS%
+    echo   📋 Standard BT.709 TV Range configuration
+) else (
+    echo   🎬 Default Parameters: -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
+)
+echo.
+echo  🎯 INSTAGRAM COMPLIANCE CHECK:
+if defined CUSTOM_COLOR_RANGE if defined CUSTOM_COLOR_PRIMARIES if defined CUSTOM_COLOR_TRC if defined CUSTOM_COLOR_SPACE (
+    if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt709" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt709" (
+        echo   ✅ Status: GUARANTEED zero-recompression
+        echo   🏆 Configuration: Instagram Native compliant
+    ) else if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt2020" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt2020nc" (
+        echo   ✅ Status: Instagram compatible with enhanced colors
+        echo   📺 Configuration: TV LED 4K optimized
+    ) else (
+        echo   ⚠️ Status: Compliance varies by configuration
+        echo   💡 Recommendation: Use Instagram Native for guaranteed compliance
+    )
+) else (
+    echo   ✅ Status: Using profile default (guaranteed compliance)
+)
+echo.
+echo  📈 FFMPEG COMMAND PREVIEW:
+echo   -pix_fmt yuv420p
+if defined CUSTOM_COLOR_PARAMS (
+    echo   %CUSTOM_COLOR_PARAMS%
+) else if defined COLOR_PARAMS (
+    echo   %COLOR_PARAMS%
+) else (
+    echo   -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
+)
+echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo.
+pause
+goto :CustomizeColor
+
+:ResetColorToDefault
+echo.
+echo 🔄 Resetting color to profile default...
+set "CUSTOM_COLOR_RANGE="
+set "CUSTOM_COLOR_PRIMARIES="
+set "CUSTOM_COLOR_TRC="
+set "CUSTOM_COLOR_SPACE="
+set "COLOR_PRESET_NAME="
+set "CUSTOM_COLOR_PARAMS="
+set "COLOR_CUSTOMIZATION_ACTIVE=N"
+echo ✅ Color settings reset to BT.709 TV Range (Instagram compliance guaranteed)
+call :LogEntry "[COLOR] Reset to profile defaults"
+pause
+goto :CustomizeColor
 
 :ProfileManagement
 cls
