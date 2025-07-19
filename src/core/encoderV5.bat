@@ -204,9 +204,6 @@ set "CURRENT_PROFILE_FILE=%profile_file%"
 call :LogEntry "[MODULAR] Loaded: !PROFILE_NAME!"
 exit /b 0
 
-:: ========================================
-:: SYSTEM INITIALIZATION
-:: ========================================
 :SafeInitialization
 if not defined CPU_CORES set "CPU_CORES=2"
 if not defined TOTAL_RAM_GB set "TOTAL_RAM_GB=4"
@@ -231,9 +228,6 @@ set "SYSTEM_STATUS=INITIALIZED"
 call :LogEntry "[SYSTEM] Professional Menu System initialized"
 exit /b 0
 
-:: ========================================
-:: PROFESSIONAL MENU SYSTEM
-:: ========================================
 :ShowProfessionalMainMenu
 cls
 call :ShowProfessionalHeader
@@ -327,8 +321,6 @@ if defined PROFILE_NAME (
 )
 
 :profile_status_done
-
-:: Ready Status Check - FIXED VERSION
 if "%FILES_CONFIGURED%"=="Y" (
     if "%PROFILE_CONFIGURED%"=="Y" (
         set "READY_TO_ENCODE=Y"
@@ -351,20 +343,17 @@ echo  ┌───────────────────────�
 echo  │ 🎛️ PROFESSIONAL WORKFLOW                                                    │
 echo  └─────────────────────────────────────────────────────────────────────────────┘
 echo.
-
 echo  📁 CONFIGURATION:
 if "%FILES_CONFIGURED%"=="Y" (
     echo   [1] ✅ Files Configured - Input/Output
 ) else (
     echo   [1] 📁 Configure Files - Input/Output ⭐ START HERE
 )
-
 if "%PROFILE_CONFIGURED%"=="Y" (
     echo   [2] ✅ Profile Selected - %PROFILE_NAME%
 ) else (
     echo   [2] 🎬 Select Profile ⭐ REQUIRED
 )
-
 echo.
 echo  🎬 ENCODING:
 if "%READY_TO_ENCODE%"=="Y" (
@@ -372,21 +361,18 @@ if "%READY_TO_ENCODE%"=="Y" (
 ) else (
     echo   [3] ⏳ Start Encoding - Complete configuration first
 )
-
 echo.
 echo  🎛  ADVANCED:
 echo   [4] ⚙️ Advanced Customization
 echo   [5] 🔍 Analyze Input File
 echo   [6] 📊 Profile Management - Export/Import/Library
 echo.
-
 echo  🏗️ MODULAR SYSTEM:
 if "%MODULAR_PROFILES_AVAILABLE%"=="Y" (
     echo   [V] 🔍 Validate Modular Profiles
     echo   [R] 🔄 Reload Modular Profiles
     echo   [M] 🔧 Modular System Info
 )
-
 echo   [7] 📋 System Information
 echo   [D] 🔍 Debug Profile Variables
 echo   [0] 🚪 Exit
@@ -419,9 +405,6 @@ echo ❌ Invalid choice. Please select 0-7 or V, R, M, D.
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: DEBUG UTILITIES
-:: ========================================
 :DebugProfileVariables
 cls
 echo.
@@ -499,9 +482,6 @@ echo.
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: PROFILE WORKFLOW
-:: ========================================
 :ConfigureProfile
 cls
 echo.
@@ -556,7 +536,6 @@ if "%profile_choice%"=="1" call :LoadModularProfile "reels_9_16" "REELS" & goto 
 if "%profile_choice%"=="2" call :LoadModularProfile "feed_16_9" "FEED" & goto :CheckProfileResult
 if "%profile_choice%"=="3" call :LoadModularProfile "cinema_21_9" "CINEMA" & goto :CheckProfileResult
 if "%profile_choice%"=="4" call :LoadModularProfile "speedramp_viral" "SPEEDRAMP" & goto :CheckProfileResult
-
 if /i "%profile_choice%"=="C" call :CompareAllProfiles & goto :SelectProfileForWorkflow
 if /i "%profile_choice%"=="B" exit /b 0
 
@@ -614,7 +593,6 @@ echo ╔════════════════════════
 echo ║                    ✅ PROFILE CONFIGURATION SUCCESSFUL                       ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-
 echo  📊 PROFILE SUMMARY:
 echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo   🎬 Profile Name: %PROFILE_NAME%
@@ -626,9 +604,9 @@ if defined X264_PARAMS     echo   ⚙ Complex Params: %X264_PARAMS:~0,60%...
 if defined COLOR_PARAMS    echo   🌈 Color Science: %COLOR_PARAMS%
 if defined CUSTOM_PSY_RD   echo   🧠 Psy RD: %CUSTOM_PSY_RD%
 if defined CUSTOM_GOP_SIZE echo   🎬 GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)	
+echo.
 echo   📂 Source: %CURRENT_PROFILE_FILE%
 echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 :: SET WORKFLOW STATUS
 set "PROFILE_SELECTED=Y"
 set "PROFILE_CONFIGURED=Y"
@@ -649,7 +627,6 @@ echo ╔════════════════════════
 echo ║                    ❌ PROFILE CONFIGURATION FAILED                           ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-
 echo  🔧 TROUBLESHOOTING GUIDE:
 echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo   1. 📂 Check profile file exists and is readable
@@ -658,11 +635,9 @@ echo   3. ✏️ Check profile file syntax (sections, parameters)
 echo   4. 🔄 Try reloading modular system [R]
 echo   5. 🔍 Use Debug Profile Variables [D] for details
 echo.
-
 echo  📁 EXPECTED PROFILE LOCATION:
 echo   %PROFILES_DIR%
 echo.
-
 echo  📋 EXPECTED PROFILE FILES:
 echo   • reels_9_16.prof
 echo   • feed_16_9.prof
@@ -677,21 +652,15 @@ set "WORKFLOW_STEP=2"
 set "SYSTEM_STATUS=PROFILE_ERROR"
 
 call :LogEntry "[ERROR] Profile configuration failed - resetting workflow"
-
-echo  💡 Try selecting a different profile or check the files.
-echo.
 pause
 exit /b 1
 
-:: ========================================
-:: PROFILE COMPARISON & STUBS
-:: ========================================
 :CompareAllProfiles
 cls
 echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    📊 INSTAGRAM PROFILE COMPARISON MATRIX                    ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo ╔═══════════════════════════════════════════════════════════════════════╗
+echo ║               📊 INSTAGRAM PROFILE COMPARISON MATRIX                  ║
+echo ╚═══════════════════════════════════════════════════════════════════════╝
 echo.
 echo ┌─────────────────┬───────────┬───────────┬─────────────┬─────────────┐
 echo │ SPECIFICATION   │   REELS   │   FEED    │   CINEMA    │  SPEEDRAMP  │
@@ -719,9 +688,6 @@ echo.
 pause
 exit /b 0
 
-:: ========================================
-:: FILE CONFIGURATION
-:: ========================================
 :ConfigureFiles
 cls
 echo.
@@ -811,7 +777,6 @@ for /f "tokens=2 delims= " %%A in ('findstr /C:"Duration:" "!TEMP_INFO!" 2^>nul'
     goto :dur_done
 )
 :dur_done
-
 :: Resolution - optimized check
 for %%R in (3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080 720x1280) do (
     findstr "%%R" "!TEMP_INFO!" >nul 2>&1
@@ -821,7 +786,6 @@ for %%R in (3840x2160 2560x1440 1920x1080 1280x720 1080x1920 1080x1350 1080x1080
     )
 )
 :res_done
-
 :: FPS - simplified detection
 for %%F in (29.97 23.976 59.94 25.00 24.00 30.00 50.00 60.00) do (
     findstr "%%F fps" "!TEMP_INFO!" >nul 2>&1
@@ -831,7 +795,6 @@ for %%F in (29.97 23.976 59.94 25.00 24.00 30.00 50.00 60.00) do (
     )
 )
 :fps_done
-
 del "!TEMP_INFO!" 2>nul
 
 :: Normalize values
@@ -870,9 +833,6 @@ echo   ✅ Output file: !OUTPUT_FILE!
 call :LogEntry "[OUTPUT] File: !OUTPUT_FILE!"
 exit /b 0
 
-:: ========================================
-:: ENCODING EXECUTION
-:: ========================================
 :StartEncoding
 cls
 echo.
@@ -906,7 +866,6 @@ if "%ADVANCED_MODE%"=="Y" (
 )
 echo   💻 Threading: %THREAD_COUNT% cores
 echo.
-
 echo  🏆 QUALITY GUARANTEE:
 echo   ✅ Hollywood-level encoding parameters (Netflix/Disney+ standard)
 echo   ✅ Instagram zero-recompression certified
@@ -1064,11 +1023,9 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 if defined X264_PARAMS (
 echo   🎭 Applying Hollywood parameters via FFmpeg flags...
 
-:: Use professional preset
+:: Apply Hollywood parameters via FFmpeg flags
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-    
-:: Apply Hollywood parameters via FFmpeg flags
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
@@ -1097,12 +1054,8 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
-
-:: THREADING E OTIMIZAÇÃO
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
-:: VIDEO PROCESSING
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
-:: FRAME RATE E GOP STRUCTURE
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
 
 :: Apply custom GOP settings if available, otherwise use profile defaults
@@ -1149,7 +1102,7 @@ if defined CUSTOM_COLOR_PARAMS (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA - FIXED LOGIC
+:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA
 if "!PASS_TYPE!"=="PASS1" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
 	if defined CUSTOM_MAX_BITRATE (
@@ -1297,9 +1250,6 @@ call :LogEntry "[POST] Validation result: !VALIDATION_RESULT!"
 echo   ✅ Post-processing completed successfully
 exit /b 0
 
-::========================================
-:: INSTAGRAM COMPLIANCE - UNIFICADA
-::========================================
 :ValidateInstagramCompliance
 echo   🎯 Instagram compliance check...
 set "TEMP_CHECK=compliance_!RANDOM!.txt"
@@ -1327,9 +1277,6 @@ if !COMPLIANCE_SCORE! GEQ 4 (
 call :LogEntry "[COMPLIANCE] Result: %VALIDATION_RESULT%"
 exit /b 0
 
-::========================================
-:: VALIDAÇÃO DE DURAÇÃO
-::========================================
 :ValidateDuration
 set "TEMP_DURATION=duration_!RANDOM!.txt"
 "%FFMPEG_CMD%" -i "!OUTPUT_FILE!" -hide_banner 2>&1 | findstr "Duration" > "!TEMP_DURATION!"
@@ -1512,9 +1459,6 @@ if "!BACKUP_CREATED!"=="Y" (
 call :LogEntry "[RECOVERY] Error recovery attempted"
 exit /b 0
 
-:: ========================================
-:: ADVANCED CUSTOMIZATION SYSTEM
-:: ========================================
 :AdvancedCustomization
 cls
 echo.
@@ -1768,9 +1712,6 @@ if "%CUSTOMIZATION_ACTIVE%"=="Y" (
 ) else (
     echo  🛡️ Status: Standard Hollywood parameters - No customizations active
 )
-
-echo.
-echo  🏆 Quality: VMAF 95-98 maintained, Instagram zero-recompression guaranteed
 echo.
 pause
 goto :AdvancedCustomization
@@ -1840,31 +1781,30 @@ echo ║                       🎬 GOP STRUCTURE CUSTOMIZATION                 
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo  📊 Current GOP Settings:
-echo   GOP Size: %GOP_SIZE% frames (keyframe every %GOP_SIZE% frames)
-echo   Min Keyint: %KEYINT_MIN% frames (minimum distance between keyframes)
-if defined CUSTOM_GOP_SIZE echo   🎛️ Custom GOP: %CUSTOM_GOP_SIZE% (will be applied)
-if defined CUSTOM_KEYINT_MIN echo   🎛️ Custom Keyint: %CUSTOM_KEYINT_MIN% (will be applied)
+echo   GOP Size: %GOP_SIZE%, Min=%KEYINT_MIN% (keyframe every %GOP_SIZE% frames)
+if defined CUSTOM_GOP_SIZE echo  🎛️ Active: %GOP_PRESET_NAME% (GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN%)
 echo.
-echo  🎬 GOP STRUCTURE EXPLANATION:
+echo  🎬 GOP (Group of Pictures):
 echo   • GOP Size = Distance between keyframes (I-frames)
 echo   • Lower values = More keyframes = Better seeking + Larger files
 echo   • Higher values = Fewer keyframes = Smaller files + Less seeking precision
-echo   • Instagram optimized: 48-72 frames for 30fps content
+echo   • Instagram optimized: GOP 48-60 recommended for most social media content for 30fps
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
 echo  │ 📊 PROFESSIONAL GOP PRESETS                                     │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 🏃 High Motion (GOP: 24, Min: 12) - Sports, action, fast movement
-echo  [2] 📱 Social Media (GOP: 48, Min: 24) - General Instagram content
+echo  [2] 📱 Social Media (GOP: 48, Min: 24) - Instagram content ⭐
 echo  [3] 🎬 Cinematic (GOP: 72, Min: 24) - Film-like, slow movement
-echo  [4] 📺 Streaming (GOP: 60, Min: 30) - Optimized for web playback
+echo  [4] 📺 Streaming (GOP: 60, Min: 30) - Web playback optimized
 echo  [5] 🎮 Gaming (GOP: 30, Min: 15) - Screen recording, fast changes
 echo  [6] 🎵 Music Video (GOP: 96, Min: 24) - Less motion, artistic content
-echo  [7] 📋 Current Profile Default - Keep existing settings
+echo  [7] 📋 Current Profile Default - Keep existing
 echo  [B] 🔙 Back to Advanced Menu
+echo  [C] 📊 GOP Comparison
 echo.
-set /p "gop_choice=Select GOP preset [1-7, B]: "
+set /p "gop_choice=Select GOP preset [1-7, B, C]: "
 
 if "%gop_choice%"=="1" call :SetGOPValues 24 12 "High Motion"
 if "%gop_choice%"=="2" call :SetGOPValues 48 24 "Social Media"
@@ -1873,9 +1813,10 @@ if "%gop_choice%"=="4" call :SetGOPValues 60 30 "Streaming"
 if "%gop_choice%"=="5" call :SetGOPValues 30 15 "Gaming"
 if "%gop_choice%"=="6" call :SetGOPValues 96 24 "Music Video"
 if "%gop_choice%"=="7" goto :ResetGOPToProfile
+if "%gop_choice%"=="C" goto :CompareGOPPresets
 if /i "%gop_choice%"=="B" goto :AdvancedCustomization
 
-echo ❌ Invalid choice. Please select 1-7 or B.
+echo ❌ Invalid choice. Please select 1-7 or B, C.
 pause
 goto :CustomizeGOP
 
@@ -1883,37 +1824,29 @@ goto :CustomizeGOP
 set "CUSTOM_GOP_SIZE=%~1"
 set "CUSTOM_KEYINT_MIN=%~2"
 set "GOP_PRESET_NAME=%~3"
-echo.
-echo ✅ GOP Structure set to: %GOP_PRESET_NAME%
-echo   📊 GOP Size: %CUSTOM_GOP_SIZE% frames
-echo   ⚡ Min Keyint: %CUSTOM_KEYINT_MIN% frames
+
+:: CALCULATE KEYFRAME TIMING FOR DISPLAY
+set "keyframe_display=2.0"
+if "%CUSTOM_GOP_SIZE%"=="24" set "keyframe_display=0.8"
+if "%CUSTOM_GOP_SIZE%"=="30" set "keyframe_display=1.0"
 if "%CUSTOM_GOP_SIZE%"=="48" set "keyframe_display=1.6"
 if "%CUSTOM_GOP_SIZE%"=="60" set "keyframe_display=2.0"
-if not defined keyframe_display set "keyframe_display=2.0"
-echo   🎯 Keyframe every %keyframe_display%s at 30fps
+if "%CUSTOM_GOP_SIZE%"=="72" set "keyframe_display=2.4"
+if "%CUSTOM_GOP_SIZE%"=="96" set "keyframe_display=3.2"
+
 echo.
-echo  💡 PRESET DETAILS - %GOP_PRESET_NAME%:
-if "%GOP_PRESET_NAME%"=="High Motion" (
-    echo   🏃 Optimized for: Sports, action scenes, fast camera movement
-)
-if "%GOP_PRESET_NAME%"=="Social Media" (
-    echo   📱 Optimized for: General Instagram content, balanced approach
-    echo   📊 Best for: Most Instagram posts, stories, reels
-)
-if "%GOP_PRESET_NAME%"=="Cinematic" (
-    echo   🎬 Optimized for: Film-like content, artistic videos
-)
-if "%GOP_PRESET_NAME%"=="Streaming" (
-    echo   📺 Optimized for: Web playback, adaptive streaming
-)
-if "%GOP_PRESET_NAME%"=="Gaming" (
-    echo   🎮 Optimized for: Screen recordings, gameplay footage
-)
-if "%GOP_PRESET_NAME%"=="Music Video" (
-    echo   🎵 Optimized for: Music videos, artistic content
-)
+echo ✅ %GOP_PRESET_NAME% applied: GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN% (keyframe every %keyframe_display%s)
+
+if "%GOP_PRESET_NAME%"=="High Motion" echo 💡 Optimized for: Sports, action scenes, fast movement
+if "%GOP_PRESET_NAME%"=="Social Media" echo 💡 Optimized for: General Instagram content, balanced approach
+if "%GOP_PRESET_NAME%"=="Cinematic" echo 💡 Optimized for: Film-like content, artistic videos
+if "%GOP_PRESET_NAME%"=="Streaming" echo 💡 Optimized for: Web playback, adaptive streaming
+if "%GOP_PRESET_NAME%"=="Gaming" echo 💡 Optimized for: Screen recordings, gameplay footage
+if "%GOP_PRESET_NAME%"=="Music Video" echo 💡 Optimized for: Music videos, artistic content
+
 set "CUSTOMIZATION_ACTIVE=Y"
 call :LogEntry "[GOP] Preset applied: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)"
+
 pause
 goto :AdvancedCustomization
 
@@ -1926,6 +1859,32 @@ set "GOP_PRESET_NAME="
 echo ✅ GOP reset to profile default: %GOP_SIZE%/%KEYINT_MIN%
 call :LogEntry "[GOP] Reset to profile defaults"
 pause
+goto :CustomizeGOP
+
+:CompareGOPPresets
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                     📊 GOP STRUCTURE COMPARISON                              ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo ┌─────────────────┬─────────┬─────────┬─────────────┬─────────────────────────┐
+echo │     PRESET      │   GOP   │   MIN   │  KEYFRAME   │       BEST FOR          │
+echo ├─────────────────┼─────────┼─────────┼─────────────┼─────────────────────────┤
+echo │ High Motion     │   24    │   12    │   0.8s      │ Sports, action          │
+echo │ Social Media    │   48    │   24    │   1.6s      │ Instagram content       │
+echo │ Cinematic       │   72    │   24    │   2.4s      │ Film-like content       │
+echo │ Streaming       │   60    │   30    │   2.0s      │ Web playback            │
+echo │ Gaming          │   30    │   15    │   1.0s      │ Screen recording        │
+echo │ Music Video     │   96    │   24    │   3.2s      │ Artistic content        │
+echo └─────────────────┴─────────┴─────────┴─────────────┴─────────────────────────┘
+echo.
+echo  📱 All presets optimized for Instagram zero-recompression
+echo  🎬 Lower GOP = More keyframes = Better seeking + Larger files
+echo  🚀 Higher GOP = Fewer keyframes = Smaller files + Less seeking precision
+echo.
+echo Press any key to return...
+pause >nul
 goto :CustomizeGOP
 
 :CustomizeVBV
@@ -1941,13 +1900,6 @@ echo   Max Bitrate: %MAX_BITRATE%
 echo   Buffer Size: %BUFFER_SIZE%
 if defined CUSTOM_MAX_BITRATE echo   🎛️ Custom MaxRate: %CUSTOM_MAX_BITRATE% (will be applied)
 if defined CUSTOM_BUFFER_SIZE echo   🎛️ Custom Buffer: %CUSTOM_BUFFER_SIZE% (will be applied)
-echo.
-echo  🔧 VBV BUFFER EXPLANATION:
-echo   • VBV = Video Buffering Verifier (bitrate control mechanism)
-echo   • MaxRate = Peak bitrate ceiling (prevents spikes)
-echo   • Buffer = Data reservoir (smooths bitrate variations)
-echo   • Larger buffer = Smoother quality, higher latency
-echo   • Smaller buffer = Lower latency, more bitrate variation
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
 echo  │ 📊 PROFESSIONAL VBV PRESETS                                     │
@@ -2058,31 +2010,20 @@ echo ╔════════════════════════
 echo ║                       🎵 AUDIO ENHANCEMENT SYSTEM                            ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  📊 Current Audio Settings:
-echo   🎵 Codec: AAC-LC (Instagram compliant)
-echo   🎯 Bitrate: 256k (current) / 320k (optimized)
-echo   📻 Sample Rate: 48kHz (Instagram native)
-echo   🔊 Channels: Stereo (2.0)
-if defined AUDIO_PRESET_NAME echo   🎬 Audio Preset: %AUDIO_PRESET_NAME% (will be applied)
-if defined CUSTOM_AUDIO_PROCESSING echo   ⚡ Audio Processing: %CUSTOM_AUDIO_PROCESSING% (will be applied)
-echo.
-echo  🎬 INSTAGRAM AUDIO SPECIFICATIONS:
-echo   • Codec: AAC-LC (Advanced Audio Codec)
-echo   • Bitrate: 128k-320k (Instagram accepts all)
-echo   • Sample Rate: 44.1kHz, 48kHz (48kHz recommended)
-echo   • Channels: Mono, Stereo (Stereo recommended)
-echo   • Container: MP4 (FastStart enabled)
+echo  📊 Current: AAC-LC 256k, 48kHz, Stereo (Instagram compliant)
+if defined AUDIO_PRESET_NAME         echo  🎬 Active: %AUDIO_PRESET_NAME%
+if defined NORMALIZATION_PRESET_NAME echo  🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
 echo  │ 🎵 PROFESSIONAL AUDIO OPTIONS                                   │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 🎬 Professional Audio Presets ⭐ RECOMMENDED
-echo  [2] ⚡ Audio Processing Options
+echo  [2] ⚡ Audio Processing (Normalization + Noise Reduction)
 echo  [3] 🎵 Advanced Audio Parameters (Coming Soon)
 echo  [4] 📋 Preview Audio Settings
-echo  [5] 🔄 Reset to Profile Default
-echo  [6] ✅ Apply Audio Enhancement
+echo  [5] 🔄 Reset to Default
+echo  [6] ✅ Apply Enhancement
 echo  [B] 🔙 Back to Advanced Menu
 echo.
 set /p "audio_choice=Select audio enhancement option [1-6, B]: "
@@ -2115,16 +2056,13 @@ echo  ┌───────────────────────�
 echo  │ 🎬 INSTAGRAM-OPTIMIZED AUDIO PRESETS                            │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
-echo  [1] 🎤 Voice/Podcast (128k, 48kHz, Mono) - Minimal file size
-echo  [2] 🗣️ Speech Content (160k, 48kHz, Stereo) - Balanced speech/music
+echo  [1] 🎤 Voice/Podcast (128k, 48kHz, Mono) - Minimal size
+echo  [2] 🗣️ Speech Content (160k, 48kHz, Stereo) - Speech + Music
 echo  [3] 📱 Social Media (256k, 48kHz, Stereo) - Instagram Standard ⭐
-echo  [4] 🎵 Music Video (320k, 48kHz, Stereo) - Premium Quality
-echo  [5] 🎬 Cinematic (320k, 48kHz, Stereo) - Film Quality
-echo  [6] 📋 Current Profile Default - Keep existing settings
+echo  [4] 🎵 Music Video (320k, 48kHz, Stereo) - Premium quality
+echo  [5] 🎬 Cinematic (320k, 48kHz, Stereo) - Film quality
+echo  [6] 📋 Profile Default - Keep existing
 echo  [B] 🔙 Back to Audio Menu
-echo.
-echo  💡 TIP: Social Media preset is recommended for most Instagram content
-echo  🎯 All presets guarantee Instagram zero-recompression compatibility
 echo.
 set /p "preset_choice=Select audio preset [1-7, B]: "
 
@@ -2146,57 +2084,24 @@ set "CUSTOM_AUDIO_SAMPLERATE=%~2"
 set "CUSTOM_AUDIO_CHANNELS=%~3"
 set "AUDIO_PRESET_NAME=%~4"
 echo.
-echo ✅ Audio preset applied: %AUDIO_PRESET_NAME%
-echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
-echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
-echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
-echo.
-echo  💡 PRESET DETAILS - %AUDIO_PRESET_NAME%:
-if "%AUDIO_PRESET_NAME%"=="Voice/Podcast" (
-    echo   🎤 Optimized for: Voice content, podcasts, narration
-)
-if "%AUDIO_PRESET_NAME%"=="Speech Content" (
-    echo   🗣️ Optimized for: Speech with background music
-)
-if "%AUDIO_PRESET_NAME%"=="Social Media" (
-    echo   📱 Optimized for: General Instagram content
-)
-if "%AUDIO_PRESET_NAME%"=="Music Video" (
-    echo   🎵 Optimized for: Music-focused content
-)
-if "%AUDIO_PRESET_NAME%"=="Cinematic" (
-    echo   🎬 Optimized for: Film-quality content
-)
+echo ✅ %AUDIO_PRESET_NAME% applied: %CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz, %CUSTOM_AUDIO_CHANNELS%ch
 set "CUSTOMIZATION_ACTIVE=Y"
-call :LogEntry "[AUDIO] Preset applied: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz, %CUSTOM_AUDIO_CHANNELS%ch)"
-echo.
-echo  📋 NEXT STEPS:
-echo   [4] Preview Audio Settings - See complete configuration
-echo   [6] Apply Audio Enhancement - Activate for encoding
-echo   [B] Continue browsing audio options
-echo.
+call :LogEntry "[AUDIO] Preset: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)"
 pause
 goto :CustomizeAudio
 
 :ResetAudioPresetToDefault
 echo.
-echo 🔄 Resetting audio preset to profile defaults...
+echo 🔄 Resetting to profile defaults...
 set "CUSTOM_AUDIO_BITRATE="
 set "CUSTOM_AUDIO_SAMPLERATE="
 set "CUSTOM_AUDIO_CHANNELS="
 set "AUDIO_PRESET_NAME="
-echo ✅ Audio preset reset to profile default
-echo   🎵 Codec: AAC-LC
-echo   🎯 Bitrate: 256k  
-echo   📻 Sample Rate: 48000Hz
-echo   🔊 Channels: 2 (Stereo)
-call :LogEntry "[AUDIO] Preset reset to profile defaults"
+echo ✅ Reset: AAC-LC 256k, 48kHz, Stereo
+call :LogEntry "[AUDIO] Reset to defaults"
 pause
 goto :AudioProfessionalPresets
 
-:: ========================================
-:: AUDIO PROCESSING OPTIONS
-:: ========================================
 :AudioProcessingOptions
 cls
 echo.
@@ -2204,15 +2109,15 @@ echo ╔════════════════════════
 echo ║                       ⚡ AUDIO PROCESSING OPTIONS                            ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
-if defined AUDIO_PRESET_NAME       echo   🎬 Audio Preset: %AUDIO_PRESET_NAME%
+if defined CUSTOM_AUDIO_BITRATE      echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+if defined AUDIO_PRESET_NAME         echo   🎬 Audio Preset: %AUDIO_PRESET_NAME%
 if defined NORMALIZATION_PRESET_NAME echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
 echo.
-echo  [1] 🔊 Audio Normalization - LUFS Standards
-echo  [2] 🎛️ Noise Reduction Options (Coming Soon)
-echo  [3] 📋 Preview Audio Processing Settings
-echo  [4] 🔄 Reset All Audio Processing
-echo  [5] ✅ Apply Audio Processing
+echo  [1] 🔊 Audio Normalization (LUFS Standards)
+echo  [2] 🎛️ Noise Reduction (Coming Soon)
+echo  [3] 📋 Preview Processing
+echo  [4] 🔄 Reset Processing
+echo  [5] ✅ Apply Processing
 echo  [B] 🔙 Back to Audio Enhancement
 echo.
 set /p "processing_choice=Select processing option [1-5, B]: "
@@ -2228,14 +2133,12 @@ echo ❌ Invalid choice. Please select 1-5 or B.
 pause
 goto :AudioProcessingOptions
 
-::========================================
-:: AUDIO NORMALIZATION PRESETS - CORE IMPLEMENTATION
-::========================================
+
 :AudioNormalizationPresets
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    🔊 PROFESSIONAL AUDIO NORMALIZATION                      ║
+echo ║                    🔊 PROFESSIONAL AUDIO NORMALIZATION                       ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 if defined NORMALIZATION_PRESET_NAME (
@@ -2244,68 +2147,54 @@ if defined NORMALIZATION_PRESET_NAME (
     echo   🎛️ Status: No normalization active
 )
 echo.
-echo  [1] 📺 Broadcast Standard (-23 LUFS, -2 TP) - EBU R128 compliant
-echo  [2] 📱 Instagram Optimized (-18 LUFS, -1 TP) - Social media balance
+echo  [1] 📺 Broadcast Standard (-23 LUFS, -2 TP) - EBU R128
+echo  [2] 📱 Instagram Optimized (-18 LUFS, -1 TP) - Social media ⭐
 echo  [3] 🎬 YouTube Platform (-14 LUFS, -1 TP) - YouTube recommended
-echo  [4] 🎤 Podcast Standard (-19 LUFS, -2 TP) - Voice content optimized
-echo  [5] 📋 Preview Normalization Impact
-echo  [6] 🔄 Disable Normalization
-echo  [B] 🔙 Back to Audio Processing
+echo  [4] 🎤 Podcast Standard (-19 LUFS, -2 TP) - Voice content
+echo  [5] 🔄 Disable Normalization
+echo  [B] 🔙 Back to Processing
 echo.
-set /p "norm_choice=Select normalization preset [1-6, B]: "
+set /p "norm_choice=Select preset [1-6, B]: "
 
 if "%norm_choice%"=="1" call :SetNormalizationPreset "broadcast" "Broadcast Standard"
 if "%norm_choice%"=="2" call :SetNormalizationPreset "instagram" "Instagram Optimized"
 if "%norm_choice%"=="3" call :SetNormalizationPreset "youtube" "YouTube Platform"
 if "%norm_choice%"=="4" call :SetNormalizationPreset "podcast" "Podcast Standard"
-if "%norm_choice%"=="5" goto :PreviewNormalizationImpact
-if "%norm_choice%"=="6" goto :DisableNormalization
+if "%norm_choice%"=="5" goto :DisableNormalization
 if /i "%norm_choice%"=="B" goto :AudioProcessingOptions
 
-echo ❌ Invalid choice. Please select 1-6 or B.
+echo ❌ Invalid choice. Please select 1-5 or B.
 pause
 goto :AudioNormalizationPresets
 
-::========================================
-:: NORMALIZATION PRESET IMPLEMENTATION
-::========================================
 :SetNormalizationPreset
 set "preset_id=%~1"
 set "NORMALIZATION_PRESET_NAME=%~2"
-
 echo.
-echo 🔊 Applying %NORMALIZATION_PRESET_NAME% preset...
+echo 🔊 Applying %NORMALIZATION_PRESET_NAME%...
 
 if "%preset_id%"=="broadcast" (
     set "CUSTOM_LUFS_TARGET=-23"
     set "CUSTOM_PEAK_LIMIT=-2"
     set "CUSTOM_LRA_TARGET=11"
-    echo   📺 Target: -23 LUFS ^(EBU R128 broadcast standard^)
-    echo   📊 True Peak: -2 dB, Loudness Range: 11 LU
 )
 
 if "%preset_id%"=="instagram" (
     set "CUSTOM_LUFS_TARGET=-18"
     set "CUSTOM_PEAK_LIMIT=-1"
     set "CUSTOM_LRA_TARGET=9"
-    echo   📱 Target: -18 LUFS ^(Instagram optimized^)
-    echo   📊 True Peak: -1 dB, Loudness Range: 9 LU
 )
 
 if "%preset_id%"=="youtube" (
     set "CUSTOM_LUFS_TARGET=-14"
     set "CUSTOM_PEAK_LIMIT=-1"
     set "CUSTOM_LRA_TARGET=8"
-    echo   🎬 Target: -14 LUFS ^(YouTube recommended^)
-    echo   📊 True Peak: -1 dB, Loudness Range: 8 LU
 )
 
 if "%preset_id%"=="podcast" (
     set "CUSTOM_LUFS_TARGET=-19"
     set "CUSTOM_PEAK_LIMIT=-2"
     set "CUSTOM_LRA_TARGET=12"
-    echo   🎤 Target: -19 LUFS ^(Voice content optimized^)
-    echo   📊 True Peak: -2 dB, Loudness Range: 12 LU
 )
 
 call :BuildNormalizationCommand
@@ -2313,104 +2202,39 @@ if not errorlevel 1 (
     echo   ✅ %NORMALIZATION_PRESET_NAME% applied successfully
     set "AUDIO_PROCESSING_ACTIVE=Y"
     set "CUSTOMIZATION_ACTIVE=Y"
-    call :LogEntry "[NORMALIZATION] %NORMALIZATION_PRESET_NAME% applied"
+    call :LogEntry "[NORMALIZATION] %NORMALIZATION_PRESET_NAME%"
 ) else (
     echo   ❌ Failed to build normalization command
     call :ResetNormalizationToDefault
 )
 
 pause
-goto :AudioNormalizationPresets
+goto :AudioProcessingOptions
 
-::========================================
-:: BUILD NORMALIZATION COMMAND
-::========================================
 :BuildNormalizationCommand
 echo   🔧 Building FFmpeg normalization command...
 
-:: Validate required parameters
-if not defined CUSTOM_LUFS_TARGET (
-    echo     ❌ LUFS target not defined
-    exit /b 1
-)
-if not defined CUSTOM_PEAK_LIMIT (
-    echo     ❌ Peak limit not defined
-    exit /b 1
-)
-if not defined CUSTOM_LRA_TARGET (
-    echo     ❌ LRA target not defined
-    exit /b 1
-)
+if not defined CUSTOM_LUFS_TARGET exit /b 1
+if not defined CUSTOM_PEAK_LIMIT exit /b 1
+if not defined CUSTOM_LRA_TARGET exit /b 1
 
-:: Build loudnorm filter parameters
 set "CUSTOM_NORMALIZATION_PARAMS=-af loudnorm=I=%CUSTOM_LUFS_TARGET%:TP=%CUSTOM_PEAK_LIMIT%:LRA=%CUSTOM_LRA_TARGET%:print_format=summary"
-
-echo     ✅ Normalization command built successfully
-echo     📋 FFmpeg filter: %CUSTOM_NORMALIZATION_PARAMS%
 call :LogEntry "[NORMALIZATION] Command built: %CUSTOM_NORMALIZATION_PARAMS%"
 exit /b 0
 
-::========================================
-:: PREVIEW NORMALIZATION IMPACT
-::========================================
-:PreviewNormalizationImpact
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                      📋 NORMALIZATION PREVIEW                               ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-
-if not defined NORMALIZATION_PRESET_NAME (
-    echo ⚠️ NO NORMALIZATION PRESET SELECTED
-    pause
-    goto :AudioNormalizationPresets
-)
-
-echo  🔊 CURRENT CONFIGURATION:
-echo   🎬 Preset: %NORMALIZATION_PRESET_NAME%
-echo   🎯 Target LUFS: %CUSTOM_LUFS_TARGET%
-echo   📊 True Peak: %CUSTOM_PEAK_LIMIT% dB
-echo   📈 Loudness Range: %CUSTOM_LRA_TARGET% LU
-echo.
-
-echo  📱 PLATFORM COMPLIANCE:
-if "%CUSTOM_LUFS_TARGET%"=="-23" (
-    echo   📺 Broadcast: ✅ Perfect  🎵 Streaming: ✅ Compatible  📱 Instagram: ✅ Excellent
-)
-if "%CUSTOM_LUFS_TARGET%"=="-18" (
-    echo   📺 Broadcast: ✅ Compatible  📱 Instagram: ✅ Perfect  🎬 YouTube: ✅ Good
-)
-if "%CUSTOM_LUFS_TARGET%"=="-14" (
-    echo   🎬 YouTube: ✅ Perfect  📱 Instagram: ✅ Compatible  🎵 Streaming: ✅ Competitive
-)
-if "%CUSTOM_LUFS_TARGET%"=="-19" (
-    echo   🎤 Podcast: ✅ Perfect  📱 Instagram: ✅ Excellent  📺 Broadcast: ✅ Compatible
-)
-
-echo.
-echo  🔧 FFmpeg Command: %CUSTOM_NORMALIZATION_PARAMS%
-echo.
-pause
-goto :AudioNormalizationPresets
-
-::========================================
-:: DISABLE NORMALIZATION
-::========================================
 :DisableNormalization
 echo.
-echo 🔄 Disabling audio normalization...
+echo 🔄 Disabling normalization...
 set "CUSTOM_LUFS_TARGET="
 set "CUSTOM_PEAK_LIMIT="
 set "CUSTOM_LRA_TARGET="
 set "NORMALIZATION_PRESET_NAME="
 set "CUSTOM_NORMALIZATION_PARAMS="
-echo ✅ Audio normalization disabled - using raw audio levels
-call :LogEntry "[NORMALIZATION] Disabled - using raw audio levels"
+echo ✅ Normalization disabled - using raw audio levels
+call :LogEntry "[NORMALIZATION] Disabled"
 pause
 goto :AudioNormalizationPresets
 
-::========================================
 :: FUTURE IMPLEMENTATION STUBS
 ::========================================
 :NoiseReductionOptions
@@ -2430,17 +2254,52 @@ echo  [B] 🔙 Back to Audio Processing
 pause
 goto :AudioProcessingOptions
 
+:PreviewAudioProcessing
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    📋 AUDIO PROCESSING PREVIEW                               ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🎵 AUDIO ENHANCEMENT:
+if defined AUDIO_PRESET_NAME (
+    echo   🎬 Preset: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz, %CUSTOM_AUDIO_CHANNELS%ch)
+) else (
+    echo   🎵 Default: 256k, 48kHz, Stereo
+)
+
+echo.
+echo  🔊 NORMALIZATION:
+if defined NORMALIZATION_PRESET_NAME (
+    echo   🎯 Preset: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP)
+    echo   🔧 Filter: %CUSTOM_NORMALIZATION_PARAMS%
+) else (
+    echo   🔊 Disabled (using raw audio levels)
+)
+
+echo.
+if "%AUDIO_PROCESSING_ACTIVE%"=="Y" (
+    echo   ✅ Status: Audio processing ACTIVE - ready for encoding
+) else (
+    echo   ⚠️ Status: No processing active - using defaults
+)
+
+echo.
+pause
+goto :AudioProcessingOptions
+
 :ResetAudioProcessing
 echo.
-echo 🔄 Resetting all audio processing...
+echo 🔄 Resetting audio processing...
 set "CUSTOM_LUFS_TARGET="
 set "CUSTOM_PEAK_LIMIT="
 set "CUSTOM_LRA_TARGET="
 set "NORMALIZATION_PRESET_NAME="
 set "CUSTOM_NORMALIZATION_PARAMS="
 set "AUDIO_PROCESSING_ACTIVE=N"
-echo ✅ Audio processing reset - Audio Enhancement settings preserved
-call :LogEntry "[AUDIO_PROCESSING] Reset to disabled"
+echo ✅ Processing reset - Enhancement settings preserved
+call :LogEntry "[AUDIO_PROCESSING] Reset"
 pause
 goto :AudioProcessingOptions
 
@@ -2453,75 +2312,143 @@ if "%AUDIO_PROCESSING_ACTIVE%"=="N" (
 )
 
 echo.
-echo ✅ Applying audio processing configuration...
-if defined NORMALIZATION_PRESET_NAME (
-    echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
-)
+echo ✅ Applying audio processing...
+if defined NORMALIZATION_PRESET_NAME echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
 echo ✅ Audio processing applied successfully!
-
 set "CUSTOMIZATION_ACTIVE=Y"
-call :LogEntry "[AUDIO_PROCESSING] Configuration applied - Ready for encoding"
+call :LogEntry "[AUDIO_PROCESSING] Applied"
 pause
 goto :AdvancedCustomization
 
-::========================================
-:: PREVIEW AUDIO PROCESSING SETTINGS
-::========================================
-:PreviewAudioProcessing
+:PreviewAudioSettings
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    📋 AUDIO PROCESSING PREVIEW                               ║
+echo ║                          📋 PREVIEW AUDIO SETTINGS                           ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 
-echo  🎵 AUDIO ENHANCEMENT:
+echo  🎵 ENHANCEMENT:
 if defined AUDIO_PRESET_NAME (
     echo   🎬 Preset: %AUDIO_PRESET_NAME%
-    if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
-    if defined CUSTOM_AUDIO_SAMPLERATE echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
-    if defined CUSTOM_AUDIO_CHANNELS   echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
+    echo   🎯 Config: %CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz, %CUSTOM_AUDIO_CHANNELS%ch
 ) else (
-    echo   🎵 Default: 256k, 48kHz, Stereo
+    echo   🎵 Default: AAC-LC 256k, 48kHz, Stereo
 )
 
 echo.
-echo  🔊 AUDIO NORMALIZATION:
+echo  🔊 PROCESSING:
 if defined NORMALIZATION_PRESET_NAME (
-    echo   🎯 Preset: %NORMALIZATION_PRESET_NAME%
-    echo   📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP, %CUSTOM_LRA_TARGET% LRA
+    echo   🎯 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
 ) else (
-    echo   🔊 Disabled (using raw audio levels)
+    echo   🔊 No processing active
 )
 
 echo.
-echo  🔧 FFMPEG AUDIO CHAIN:
+echo  🔧 FFMPEG INTEGRATION:
 echo   Codec: AAC-LC (Instagram compliant)
-if defined CUSTOM_AUDIO_BITRATE (
-    echo   Bitrate: %CUSTOM_AUDIO_BITRATE%
-) else (
-    echo   Bitrate: 256k (default)
-)
-if defined CUSTOM_NORMALIZATION_PARAMS (
-    echo   Normalization: %CUSTOM_NORMALIZATION_PARAMS%
-) else (
-    echo   Normalization: None
-)
+if defined CUSTOM_AUDIO_BITRATE echo   Bitrate: %CUSTOM_AUDIO_BITRATE%
+if defined CUSTOM_NORMALIZATION_PARAMS echo   Normalization: %CUSTOM_NORMALIZATION_PARAMS%
 
 echo.
-if "%AUDIO_PROCESSING_ACTIVE%"=="Y" (
-    echo   ✅ Status: Audio processing ACTIVE - ready for encoding
+echo  🏆 COMPLIANCE: ✅ Instagram zero-recompression guaranteed
+if "%CUSTOMIZATION_ACTIVE%"=="Y" (
+    echo  ✅ Status: Customizations ACTIVE
 ) else (
-    echo   ⚠️ Status: No processing active - using default settings
+    echo  🛡️ Status: Using defaults
 )
 
 echo.
 pause
-goto :AudioProcessingOptions
+goto :CustomizeAudio
 
-:: ========================================
-:: ADVANCED AUDIO PARAMETERS
-:: ========================================
+:ResetAudioToDefault
+echo.
+echo 🔄 Resetting all audio settings...
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "AUDIO_PRESET_NAME="
+set "CUSTOM_LUFS_TARGET="
+set "CUSTOM_PEAK_LIMIT="
+set "CUSTOM_LRA_TARGET="
+set "NORMALIZATION_PRESET_NAME="
+set "CUSTOM_NORMALIZATION_PARAMS="
+set "AUDIO_PROCESSING_ACTIVE=N"
+echo ✅ Reset: AAC-LC 256k, 48kHz, Stereo (no processing)
+call :LogEntry "[AUDIO] Complete reset"
+pause
+goto :CustomizeAudio
+
+:ApplyAudioEnhancement
+if "%CUSTOMIZATION_ACTIVE%"=="N" (
+    echo.
+    echo ⚠️ No audio customizations to apply
+    echo 💡 Use [1] Professional Presets to configure audio settings first
+    pause
+    goto :CustomizeAudio
+)
+
+echo.
+echo ✅ Applying audio enhancement...
+if defined CUSTOM_AUDIO_BITRATE echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+if defined AUDIO_PRESET_NAME echo   🎬 Preset: %AUDIO_PRESET_NAME%
+if defined NORMALIZATION_PRESET_NAME echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME%
+echo ✅ Audio enhancement applied - ready for encoding!
+call :LogEntry "[AUDIO] Enhancement applied"
+pause
+goto :AdvancedCustomization
+
+:BuildAudioCommand
+echo   🎵 Building professional audio command...
+
+:: Initialize audio command
+set "AUDIO_COMMAND="
+
+:: Start with base AAC codec
+set "AUDIO_COMMAND=-c:a aac"
+
+:: Apply bitrate
+if defined CUSTOM_AUDIO_BITRATE (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a %CUSTOM_AUDIO_BITRATE%"
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a 256k"
+)
+
+:: Apply sample rate
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar %CUSTOM_AUDIO_SAMPLERATE%"
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar 48000"
+)
+
+:: Apply channels
+if defined CUSTOM_AUDIO_CHANNELS (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac %CUSTOM_AUDIO_CHANNELS%"
+) else (
+    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac 2"
+)
+
+:: Add professional AAC parameters
+set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
+
+:: INTEGRATE AUDIO NORMALIZATION
+if defined CUSTOM_NORMALIZATION_PARAMS (
+    set "AUDIO_COMMAND=%CUSTOM_NORMALIZATION_PARAMS% %AUDIO_COMMAND%"
+    echo     🔊 Normalization integrated: %NORMALIZATION_PRESET_NAME%
+    call :LogEntry "[AUDIO] Normalization integrated"
+)
+
+:: Log preset information if available
+if defined AUDIO_PRESET_NAME (
+    echo     🎬 Audio preset: %AUDIO_PRESET_NAME%
+    call :LogEntry "[AUDIO] Preset: %AUDIO_PRESET_NAME%"
+)
+
+echo     ✅ Audio command built: %AUDIO_COMMAND%
+call :LogEntry "[AUDIO] Command built successfully"
+exit /b 0
+
 :AudioAdvancedParameters
 cls
 echo.
@@ -2565,223 +2492,6 @@ echo.
 set /p "advanced_choice=Press B to return or Enter to continue: "
 goto :CustomizeAudio
 
-:: ========================================
-:: PREVIEW AUDIO SETTINGS
-:: ========================================
-:PreviewAudioSettings
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                          📋 PREVIEW AUDIO SETTINGS                           ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-echo  🎵 CURRENT AUDIO CONFIGURATION:
-echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo.
-echo  📊 BASE CONFIGURATION:
-echo   🎵 Codec: AAC-LC (Advanced Audio Codec - Low Complexity)
-echo   📋 Profile: LC (Instagram compliant)
-echo   🌐 Container: MP4 (FastStart enabled)
-echo.
-echo  🎛️ ACTIVE SETTINGS:
-if defined CUSTOM_AUDIO_BITRATE (
-    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE% ^(Custom^)
-) else (
-    echo   🎯 Bitrate: 256k ^(Profile default^)
-)
-
-if defined CUSTOM_AUDIO_SAMPLERATE (
-    echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz ^(Custom^)
-) else (
-    echo   📻 Sample Rate: 48000Hz ^(Profile default^)
-)
-
-if defined CUSTOM_AUDIO_CHANNELS (
-    echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS% ^(Custom^)
-) else (
-    echo   🔊 Channels: 2 ^(Profile default - Stereo^)
-)
-
-if defined AUDIO_PRESET_NAME (
-    echo   🎬 Audio Preset: %AUDIO_PRESET_NAME% ^(Professional preset applied^)
-    echo       ├─ Bitrate: %CUSTOM_AUDIO_BITRATE%
-    echo       ├─ Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz  
-    echo       └─ Channels: %CUSTOM_AUDIO_CHANNELS%
-)
-
-if defined CUSTOM_AUDIO_PROCESSING (
-    echo   ⚡ Processing: %CUSTOM_AUDIO_PROCESSING% ^(Custom processing^)
-) else (
-    echo   ⚡ Processing: None ^(Standard AAC-LC encoding^)
-)
-
-echo.
-echo  🔧 TECHNICAL IMPLEMENTATION:
-echo   • Final FFmpeg audio command will include:
-if defined CUSTOM_AUDIO_BITRATE (
-    echo     -c:a aac -b:a %CUSTOM_AUDIO_BITRATE%
-) else (
-    echo     -c:a aac -b:a 256k
-)
-if defined CUSTOM_AUDIO_SAMPLERATE (
-    echo     -ar %CUSTOM_AUDIO_SAMPLERATE%
-) else (
-    echo     -ar 48000
-)
-if defined CUSTOM_AUDIO_CHANNELS (
-    echo     -ac %CUSTOM_AUDIO_CHANNELS%
-) else (
-    echo     -ac 2
-)
-
-echo.
-echo  🏆 INSTAGRAM COMPLIANCE:
-echo   ✅ Codec: AAC-LC (Instagram native)
-echo   ✅ Container: MP4 (Instagram supported)
-echo   ✅ Parameters: All within Instagram specifications
-echo   ✅ Quality: Maintained for zero-recompression
-echo.
-echo  📊 ESTIMATED IMPACT:
-:: Calculate estimated file size impact
-set "size_impact=Standard"
-if defined CUSTOM_AUDIO_BITRATE (
-    if "%CUSTOM_AUDIO_BITRATE%"=="128k" set "size_impact=25%% smaller"
-    if "%CUSTOM_AUDIO_BITRATE%"=="160k" set "size_impact=15%% smaller"
-    if "%CUSTOM_AUDIO_BITRATE%"=="192k" set "size_impact=8%% smaller"
-    if "%CUSTOM_AUDIO_BITRATE%"=="256k" set "size_impact=Standard"
-    if "%CUSTOM_AUDIO_BITRATE%"=="320k" set "size_impact=20%% larger"
-)
-if defined CUSTOM_AUDIO_CHANNELS (
-    if "%CUSTOM_AUDIO_CHANNELS%"=="1" set "size_impact=50%% smaller (Mono)"
-)
-echo   💾 File Size: %size_impact% (compared to 256k stereo)
-echo   🎯 Quality Level: %quality_level%
-echo   📱 Instagram Upload: Zero-recompression guaranteed
-echo   🏆 Encoding Standard: Hollywood-level maintained
-echo.
-echo  📋 SYSTEM STATUS:
-if "%CUSTOMIZATION_ACTIVE%"=="Y" (
-    echo   ✅ Audio customizations are ACTIVE
-    echo   🎛️ Changes will be applied on encoding
-    echo   💾 Original settings backed up automatically
-) else (
-    echo   🛡️ No audio customizations active
-    echo   🎵 Will use profile default audio settings
-)
-echo.
-pause
-goto :CustomizeAudio
-
-:: ========================================
-:: RESET AUDIO TO DEFAULT
-:: ========================================
-:ResetAudioToDefault
-echo.
-echo 🔄 Resetting all audio settings to profile defaults...
-set "CUSTOM_AUDIO_BITRATE="
-set "CUSTOM_AUDIO_SAMPLERATE="
-set "CUSTOM_AUDIO_CHANNELS="
-set "CUSTOM_AUDIO_PROCESSING="
-set "AUDIO_PRESET_NAME="
-set "AUDIO_NORMALIZATION=N"
-set "AUDIO_FILTERING=N"
-set "CUSTOM_AUDIO_PARAMS="
-echo ✅ All audio settings restored to profile defaults
-echo   🎵 Codec: AAC-LC (Advanced Audio Codec)
-echo   🎯 Bitrate: 256k (Instagram standard)
-echo   📻 Sample Rate: 48000Hz (Instagram native)
-echo   🔊 Channels: 2 (Stereo)
-call :LogEntry "[AUDIO] All settings reset to profile defaults"
-pause
-goto :CustomizeAudio
-
-:: ========================================
-:: APPLY AUDIO ENHANCEMENT
-:: ========================================
-:ApplyAudioEnhancement
-if "%CUSTOMIZATION_ACTIVE%"=="N" (
-    echo.
-    echo ⚠️ No audio customizations to apply
-    echo 💡 Use [1] Professional Presets to configure audio settings first
-    pause
-    goto :CustomizeAudio
-)
-
-echo.
-echo ✅ Applying audio enhancement...
-echo.
-echo  📊 APPLIED AUDIO SETTINGS:
-if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
-if defined CUSTOM_AUDIO_SAMPLERATE echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
-if defined CUSTOM_AUDIO_CHANNELS   echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
-if defined AUDIO_PRESET_NAME       echo   🎬 Preset: %AUDIO_PRESET_NAME%
-echo.
-echo ✅ Audio enhancement applied successfully!
-echo 🎵 Audio settings will be used in the next encoding
-echo 🏆 Instagram compliance maintained
-echo.
-call :LogEntry "[AUDIO] Enhancement applied - Ready for encoding"
-pause
-goto :AdvancedCustomization
-
-:BuildAudioCommand
-echo   🎵 Building professional audio command...
-
-:: Initialize audio command
-set "AUDIO_COMMAND="
-
-:: Start with base AAC codec
-set "AUDIO_COMMAND=-c:a aac"
-
-:: Apply bitrate
-if defined CUSTOM_AUDIO_BITRATE (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a %CUSTOM_AUDIO_BITRATE%"
-    echo     🎯 Using custom bitrate: %CUSTOM_AUDIO_BITRATE%
-) else (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a 256k"
-    echo     🎯 Using default bitrate: 256k
-)
-
-:: Apply sample rate
-if defined CUSTOM_AUDIO_SAMPLERATE (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar %CUSTOM_AUDIO_SAMPLERATE%"
-    echo     📻 Using custom sample rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
-) else (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar 48000"
-    echo     📻 Using default sample rate: 48000Hz
-)
-
-:: Apply channels
-if defined CUSTOM_AUDIO_CHANNELS (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac %CUSTOM_AUDIO_CHANNELS%"
-    echo     🔊 Using custom channels: %CUSTOM_AUDIO_CHANNELS%
-) else (
-    set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac 2"
-    echo     🔊 Using default channels: 2 (Stereo)
-)
-
-:: Add professional AAC parameters
-set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
-
-:: INTEGRATE AUDIO NORMALIZATION
-if defined CUSTOM_NORMALIZATION_PARAMS (
-    :: Apply normalization filter before codec
-    set "AUDIO_COMMAND=%CUSTOM_NORMALIZATION_PARAMS% %AUDIO_COMMAND%"
-    echo     🔊 Applying normalization: %NORMALIZATION_PRESET_NAME%
-    echo     📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP
-    call :LogEntry "[AUDIO] Normalization integrated: %NORMALIZATION_PRESET_NAME%"
-)
-
-:: Log preset information if available
-if defined AUDIO_PRESET_NAME (
-    echo     🎬 Audio preset applied: %AUDIO_PRESET_NAME%
-    call :LogEntry "[AUDIO] Encoding with preset: %AUDIO_PRESET_NAME%"
-)
-
-echo     ✅ Complete audio command built: %AUDIO_COMMAND%
-call :LogEntry "[AUDIO] Complete command built successfully"
-exit /b 0
-
 :CustomizeColor
 cls
 echo.
@@ -2789,33 +2499,19 @@ echo ╔════════════════════════
 echo ║                       🎨 COLOR SCIENCE ADJUSTMENTS                           ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  📊 Current Color Settings:
-if defined COLOR_PARAMS (
-    echo   🎨 Profile Color: %COLOR_PARAMS%
-) else (
-    echo   🎨 Profile Color: BT.709 TV Range (Instagram standard)
-)
-if defined CUSTOM_COLOR_PARAMS echo   🎛️ Custom Color: %CUSTOM_COLOR_PARAMS% (will be applied)
-if defined COLOR_PRESET_NAME echo   🌈 Active Preset: %COLOR_PRESET_NAME%
-echo.
-echo  🎬 COLOR SCIENCE EXPLANATION:
-echo   • Professional presets optimized for different display types
-echo   • Color Range = Luminance levels (TV=16-235 standard)
-echo   • Color Primaries = Color gamut width (BT.709, BT.2020, DCI-P3)
-echo   • Transfer = Gamma curve characteristics (BT.709 standard, HDR variants)
-echo   • Matrix = YUV conversion method for video encoding
-echo   • Instagram requires BT.709 TV Range for guaranteed zero-recompression
+echo  📊 Current: Profile default (BT.709 TV Range)
+if defined COLOR_PRESET_NAME echo  🎛️ Active: %COLOR_PRESET_NAME%
+if defined CUSTOM_COLOR_PARAMS echo  🌈 Custom: %CUSTOM_COLOR_PARAMS%
 echo.
 echo  ┌─────────────────────────────────────────────────────────────────┐
-echo  │ 🎨 PROFESSIONAL COLOR PRESETS - DISPLAY OPTIMIZED               │
+echo  │ 🎨 PROFESSIONAL COLOR PRESETS                                   │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
-echo  [1] 📱 Instagram Native - BT.709 TV Range (guaranteed compliance)
-echo  [2] 📺 TV LED 4K - Enhanced colors for 4K LED TVs (non-HDR)
-echo  [3] 🎬 YouTube Platform - Optimized for YouTube uploads
-echo  [4] 🎮 sRGB Standard - Gaming/streaming optimized
-echo  [5] 📋 Preview Color Settings - See all parameters
-echo  [6] 🔄 Reset to Profile Default - Instagram compliance
+echo  [1] 📱 Instagram Native - BT.709 TV (guaranteed compliance)
+echo  [2] 📺 TV LED 4K - BT.2020 enhanced (non-HDR)
+echo  [3] 🎬 YouTube Platform - YT optimized
+echo  [4] 🎮 sRGB Standard - Gaming/streaming
+echo  [5] 🔄 Reset to Default
 echo  [B] 🔙 Back to Advanced Menu
 echo.
 set /p "color_choice=Select color preset [1-7, B]: "
@@ -2824,8 +2520,7 @@ if "%color_choice%"=="1" call :SetColorPreset "instagram_native" "Instagram Nati
 if "%color_choice%"=="2" call :SetColorPreset "tv_led_4k" "TV LED 4K"
 if "%color_choice%"=="3" call :SetColorPreset "youtube_platform" "YouTube Platform"
 if "%color_choice%"=="4" call :SetColorPreset "srgb_standard" "sRGB Standard"
-if "%color_choice%"=="5" goto :PreviewColorSettings
-if "%color_choice%"=="6" goto :ResetColorToDefault
+if "%color_choice%"=="5" goto :ResetColorToDefault
 if /i "%color_choice%"=="B" goto :AdvancedCustomization
 
 echo ❌ Invalid choice. Please select 1-6 or B.
@@ -2836,9 +2531,6 @@ goto :CustomizeColor
 set "preset_id=%~1"
 set "COLOR_PRESET_NAME=%~2"
 
-echo.
-echo 🎨 Applying %COLOR_PRESET_NAME% preset...
-
 if "%preset_id%"=="instagram_native" goto :ApplyInstagramNative
 if "%preset_id%"=="tv_led_4k" goto :ApplyTVLED4K  
 if "%preset_id%"=="youtube_platform" goto :ApplyYouTubePlatform
@@ -2846,19 +2538,13 @@ if "%preset_id%"=="srgb_standard" goto :ApplySRGBStandard
 
 echo ❌ Unknown preset ID: %preset_id%
 pause
-goto :CustomizeColor
+goto :AdvancedCustomization
 
 :ApplyInstagramNative
 set "CUSTOM_COLOR_RANGE=tv"
 set "CUSTOM_COLOR_PRIMARIES=bt709"
 set "CUSTOM_COLOR_TRC=bt709"
 set "CUSTOM_COLOR_SPACE=bt709"
-echo   📱 INSTAGRAM NATIVE CONFIGURATION:
-echo     • Color Range: TV (16-235) - Instagram standard
-echo     • Primaries: BT.709 - Web compatible
-echo     • Transfer: BT.709 - Standard gamma
-echo     • Matrix: BT.709 - Standard YUV conversion
-echo     • Compliance: 100%% Instagram zero-recompression guaranteed
 goto :SetColorPresetComplete
 
 :ApplyTVLED4K
@@ -2866,14 +2552,6 @@ set "CUSTOM_COLOR_RANGE=tv"
 set "CUSTOM_COLOR_PRIMARIES=bt2020"
 set "CUSTOM_COLOR_TRC=bt709"
 set "CUSTOM_COLOR_SPACE=bt2020nc"
-echo   📺 TV LED 4K CONFIGURATION:
-echo     • Color Range: TV (16-235) - LED TV standard
-echo     • Primaries: BT.2020 - Wide gamut for 4K TVs
-echo     • Transfer: BT.709 - Non-HDR compatible
-echo     • Matrix: BT.2020nc - Enhanced color space
-echo     • Display: Optimized for modern 4K LED TVs
-echo     • Quality: Enhanced colors with full TV compatibility
-echo     • Instagram: Compatible (may enhance colors on 4K displays)
 goto :SetColorPresetComplete
 
 :ApplyYouTubePlatform
@@ -2881,14 +2559,6 @@ set "CUSTOM_COLOR_RANGE=tv"
 set "CUSTOM_COLOR_PRIMARIES=bt709"
 set "CUSTOM_COLOR_TRC=bt709"
 set "CUSTOM_COLOR_SPACE=bt709"
-echo   🎬 YOUTUBE PLATFORM CONFIGURATION:
-echo     • Color Range: TV (16-235) - YouTube standard
-echo     • Primaries: BT.709 - YouTube compatible
-echo     • Transfer: BT.709 - YouTube optimized
-echo     • Matrix: BT.709 - YouTube processing
-echo     • Quality: Optimized for YouTube compression algorithms
-echo     • Platform: Maximum YouTube compatibility and quality retention
-echo     • Compliance: YouTube verified, Instagram cross-compatible
 goto :SetColorPresetComplete
 
 :ApplySRGBStandard
@@ -2896,119 +2566,37 @@ set "CUSTOM_COLOR_RANGE=pc"
 set "CUSTOM_COLOR_PRIMARIES=bt709"
 set "CUSTOM_COLOR_TRC=iec61966-2-1"
 set "CUSTOM_COLOR_SPACE=bt709"
-echo   🎮 sRGB STANDARD CONFIGURATION:
-echo     • Color Range: PC (0-255) - Full range
-echo     • Primaries: BT.709 - sRGB compatible
-echo     • Transfer: sRGB - Gaming/streaming standard
-echo     • Matrix: BT.709 - Standard conversion
-echo     • Warning: PC range may cause Instagram recompression
-echo     • Use case: Gaming content, full range displays
 goto :SetColorPresetComplete
 
 :SetColorPresetComplete
-:: Build custom color command
 call :BuildColorCommand
 if not errorlevel 1 (
-    echo   ✅ Color preset applied successfully: %COLOR_PRESET_NAME%
+    echo   ✅ %COLOR_PRESET_NAME% applied successfully
     set "COLOR_CUSTOMIZATION_ACTIVE=Y"
     set "CUSTOMIZATION_ACTIVE=Y"
-    call :LogEntry "[COLOR] Preset applied: %COLOR_PRESET_NAME%"
+    call :LogEntry "[COLOR] Preset: %COLOR_PRESET_NAME%"
+    if "%COLOR_PRESET_NAME%"=="sRGB Standard" (
+        echo ⚠️ Note: PC range may cause Instagram recompression
+    )
 ) else (
-    echo   ❌ Failed to build color command
+    echo.
+    echo ❌ Failed to apply color preset
     call :ResetColorToDefault
 )
 
 pause
-goto :CustomizeColor
+goto :AdvancedCustomization
 
 :BuildColorCommand
-echo   🔧 Building color command...
+if not defined CUSTOM_COLOR_RANGE exit /b 1
+if not defined CUSTOM_COLOR_PRIMARIES exit /b 1
+if not defined CUSTOM_COLOR_TRC exit /b 1
+if not defined CUSTOM_COLOR_SPACE exit /b 1
 
-:: Validate required parameters
-if not defined CUSTOM_COLOR_RANGE (
-    echo     ❌ Color range not defined
-    exit /b 1
-)
-if not defined CUSTOM_COLOR_PRIMARIES (
-    echo     ❌ Color primaries not defined
-    exit /b 1
-)
-if not defined CUSTOM_COLOR_TRC (
-    echo     ❌ Transfer characteristics not defined
-    exit /b 1
-)
-if not defined CUSTOM_COLOR_SPACE (
-    echo     ❌ Color space not defined
-    exit /b 1
-)
-
-:: Build color parameters - FIXED VERSION
 set "CUSTOM_COLOR_PARAMS=-color_range %CUSTOM_COLOR_RANGE% -color_primaries %CUSTOM_COLOR_PRIMARIES% -color_trc %CUSTOM_COLOR_TRC% -colorspace %CUSTOM_COLOR_SPACE%"
 
-echo     ✅ Color command built successfully
-echo     📋 Parameters: %CUSTOM_COLOR_PARAMS%
 call :LogEntry "[COLOR] Command built: %CUSTOM_COLOR_PARAMS%"
 exit /b 0
-
-:PreviewColorSettings
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                          📋 COLOR SETTINGS PREVIEW                           ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-echo  🎨 CURRENT COLOR CONFIGURATION:
-echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-if defined COLOR_PRESET_NAME (
-    echo   🌈 Active Preset: %COLOR_PRESET_NAME%
-) else (
-    echo   🌈 Active Preset: Profile Default (BT.709 TV)
-)
-echo.
-echo  📊 TECHNICAL PARAMETERS:
-if defined CUSTOM_COLOR_PARAMS (
-    echo   🎛️ Custom Parameters: %CUSTOM_COLOR_PARAMS%
-    echo   📋 Breakdown:
-    if defined CUSTOM_COLOR_RANGE     echo     • Color Range: %CUSTOM_COLOR_RANGE%
-    if defined CUSTOM_COLOR_PRIMARIES echo     • Color Primaries: %CUSTOM_COLOR_PRIMARIES%
-    if defined CUSTOM_COLOR_TRC       echo     • Transfer: %CUSTOM_COLOR_TRC%
-    if defined CUSTOM_COLOR_SPACE     echo     • Matrix: %CUSTOM_COLOR_SPACE%
-) else if defined COLOR_PARAMS (
-    echo   🎬 Profile Parameters: %COLOR_PARAMS%
-    echo   📋 Standard BT.709 TV Range configuration
-) else (
-    echo   🎬 Default Parameters: -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
-)
-echo.
-echo  🎯 INSTAGRAM COMPLIANCE CHECK:
-if defined CUSTOM_COLOR_RANGE if defined CUSTOM_COLOR_PRIMARIES if defined CUSTOM_COLOR_TRC if defined CUSTOM_COLOR_SPACE (
-    if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt709" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt709" (
-        echo   ✅ Status: GUARANTEED zero-recompression
-        echo   🏆 Configuration: Instagram Native compliant
-    ) else if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt2020" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt2020nc" (
-        echo   ✅ Status: Instagram compatible with enhanced colors
-        echo   📺 Configuration: TV LED 4K optimized
-    ) else (
-        echo   ⚠️ Status: Compliance varies by configuration
-        echo   💡 Recommendation: Use Instagram Native for guaranteed compliance
-    )
-) else (
-    echo   ✅ Status: Using profile default (guaranteed compliance)
-)
-echo.
-echo  📈 FFMPEG COMMAND PREVIEW:
-echo   -pix_fmt yuv420p
-if defined CUSTOM_COLOR_PARAMS (
-    echo   %CUSTOM_COLOR_PARAMS%
-) else if defined COLOR_PARAMS (
-    echo   %COLOR_PARAMS%
-) else (
-    echo   -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
-)
-echo  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-echo.
-pause
-goto :CustomizeColor
 
 :ResetColorToDefault
 echo.
@@ -3020,7 +2608,7 @@ set "CUSTOM_COLOR_SPACE="
 set "COLOR_PRESET_NAME="
 set "CUSTOM_COLOR_PARAMS="
 set "COLOR_CUSTOMIZATION_ACTIVE=N"
-echo ✅ Color settings reset to BT.709 TV Range (Instagram compliance guaranteed)
+echo ✅ Reset to BT.709 TV Range (Instagram compliance guaranteed)
 call :LogEntry "[COLOR] Reset to profile defaults"
 pause
 goto :CustomizeColor
@@ -3029,7 +2617,7 @@ goto :CustomizeColor
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                         📊 PROFILE MANAGEMENT SYSTEM                        ║
+echo ║                       📊 PROFILE MANAGEMENT SYSTEM                           ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo  🎬 Current Profile: %PROFILE_NAME%
@@ -3069,7 +2657,6 @@ goto :ShowProfessionalMainMenu
 :: ========================================
 :: FUTURE DEVELOPMENT STUBS
 :: ========================================
-
 :QualityValidation
 echo.
 echo ⏳ VMAF Quality Validation will be implemented in future version
@@ -3091,9 +2678,6 @@ echo 💡 Anonymous performance and quality metrics
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: SYSTEM UTILITIES
-:: ========================================
 :DetectSystemCapabilities
 echo 🔍 Detecting system capabilities...
 :: Architecture detection
@@ -3203,9 +2787,6 @@ echo   ✅ FFmpeg validated: !FFMPEG_CMD!
 call :LogEntry "[OK] FFmpeg validated"
 exit /b 0
 
-:: ========================================
-:: MODULAR SYSTEM UTILITIES
-:: ========================================
 :ValidateModularProfiles
 cls
 echo.
@@ -3314,9 +2895,6 @@ findstr /C:"X264_PARAMS=" "%profile_file%" >nul || (
 echo     ✅ Profile structure valid
 exit /b 0
 
-::========================================
-:: RELOAD MODULAR PROFILES - CORREÇÃO DEFINITIVA
-::========================================
 :ReloadModularProfiles
 cls
 echo.
@@ -3378,9 +2956,6 @@ call :LogEntry "[MODULAR] Reloaded - Available: %MODULAR_PROFILES_AVAILABLE%"
 pause
 goto :ShowProfessionalMainMenu
 
-::========================================
-:: VERIFICAÇÃO INDIVIDUAL DE PROFILES
-::========================================
 :CheckIndividualProfiles
 echo   🔍 Checking individual profile files...
 
@@ -3471,9 +3046,6 @@ echo.
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: SYSTEM INFORMATION & UTILITIES
-:: ========================================
 :AnalyzeInputFile
 cls
 echo.
@@ -3547,9 +3119,6 @@ echo.
 pause
 goto :ShowProfessionalMainMenu
 
-:: ========================================
-:: TIME & LOGGING UTILITIES
-:: ========================================
 :GetTimeInSeconds
 set "current_time=%time%"
 if "%current_time:~0,1%"==" " set "current_time=%current_time:~1%"
@@ -3603,9 +3172,6 @@ if not defined EXEC_LOG (
 echo [%time:~0,8%] %~1>>"!EXEC_LOG!"
 exit /b 0
 
-:: ========================================
-:: EXIT & ERROR HANDLING
-:: ========================================
 :ExitProfessional
 cls
 echo.
