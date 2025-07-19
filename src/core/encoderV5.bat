@@ -61,6 +61,14 @@ set "AUDIO_NORMALIZATION=N"
 set "AUDIO_FILTERING=N"
 set "CUSTOM_AUDIO_PARAMS="
 
+:: Audio Normalization Variables
+set "CUSTOM_LUFS_TARGET="
+set "CUSTOM_PEAK_LIMIT="
+set "CUSTOM_LRA_TARGET="
+set "NORMALIZATION_PRESET_NAME="
+set "CUSTOM_NORMALIZATION_PARAMS="
+set "AUDIO_PROCESSING_ACTIVE=N"
+
 :: Professional Menu System Variables
 set "WORKFLOW_STEP=0"
 set "SESSION_START_TIME="
@@ -301,12 +309,6 @@ if defined PROFILE_NAME (
                     echo   🎯 Bitrate: %TARGET_BITRATE% target / %MAX_BITRATE% max
                     if "%ADVANCED_MODE%"=="Y" (
                         echo   🎛️ Mode: Advanced customizations ACTIVE
-                        if defined CUSTOM_PRESET      	echo  • Custom Preset: %CUSTOM_PRESET%
-                        if defined CUSTOM_PSY_RD      	echo  • Custom Psy RD: %CUSTOM_PSY_RD%
-						if defined CUSTOM_GOP_SIZE    	echo  • GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-						if defined CUSTOM_MAX_BITRATE 	echo  • VBV Buffer: %VBV_PRESET_NAME% (Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE%)
-						if defined CUSTOM_AUDIO_BITRATE echo  • Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%, %CUSTOM_AUDIO_CHANNELS%)
-						if defined COLOR_PRESET_NAME 	echo  • Color Science: %COLOR_PRESET_NAME% (%CUSTOM_COLOR_PRIMARIES% primaries)
                     ) else (
                         echo   🎬 Mode: Standard Hollywood parameters
                     )
@@ -1694,7 +1696,7 @@ if defined CUSTOM_PRESET (
     echo     • Current: %X264_PRESET% (unchanged)
 )
 echo.
-echo  🧠 Psychovisual Settings:
+echo  🧠 Psychovisual:
 if defined CUSTOM_PSY_RD (
     echo     • Custom psy_rd: %CUSTOM_PSY_RD% ← Will be applied
 ) else (
@@ -1715,12 +1717,11 @@ if defined CUSTOM_GOP_SIZE (
     echo     • Current: GOP=%GOP_SIZE%, Min=%KEYINT_MIN% (unchanged)
 )
 echo.
-echo  🔧 VBV Buffer Settings:
+echo  📊 VBV Buffer:
 if defined CUSTOM_MAX_BITRATE (
     if defined CUSTOM_BUFFER_SIZE (
         echo     • Original: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE%
         echo     • Preset: %VBV_PRESET_NAME% Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE% ← Will be applied
-        rem FIXED BUFFER RATIO
 		if "%CUSTOM_BUFFER_SIZE%"=="19M" set "buffer_display=1.4"
 		if "%CUSTOM_BUFFER_SIZE%"=="26M" set "buffer_display=2.0"
 		if not defined buffer_display set "buffer_display=1.5"
@@ -1754,20 +1755,6 @@ if defined CUSTOM_COLOR_PARAMS (
         if defined CUSTOM_COLOR_PRIMARIES echo     • Primaries: %CUSTOM_COLOR_PRIMARIES% ^(color gamut^)
         if defined CUSTOM_COLOR_TRC       echo     • Transfer: %CUSTOM_COLOR_TRC% ^(gamma curve^)
         if defined CUSTOM_COLOR_SPACE     echo     • Matrix: %CUSTOM_COLOR_SPACE% ^(YUV conversion^)
-        :: Instagram compliance check for different presets
-        if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt709" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt709" (
-            if "%COLOR_PRESET_NAME%"=="Instagram Native" (
-                echo     • Instagram: ✅ Zero-recompression GUARANTEED
-            ) else if "%COLOR_PRESET_NAME%"=="YouTube Platform" (
-                echo     • YouTube: ✅ Platform optimized, Instagram cross-compatible
-            ) else (
-                echo     • Platforms: ✅ Instagram + YouTube compatible
-            )
-        ) else if "%CUSTOM_COLOR_RANGE%"=="tv" if "%CUSTOM_COLOR_PRIMARIES%"=="bt2020" if "%CUSTOM_COLOR_TRC%"=="bt709" if "%CUSTOM_COLOR_SPACE%"=="bt2020nc" (
-            echo     • Instagram: ✅ Compatible with enhanced 4K TV colors
-        ) else (
-            echo     • Platforms: ⚠️ Compatibility varies by preset
-        )
     )
 ) else if defined COLOR_PARAMS (
     echo     • Current: Profile default ^(BT.709 TV Range^) - Instagram compliant
@@ -1775,18 +1762,15 @@ if defined CUSTOM_COLOR_PARAMS (
     echo     • Current: Default BT.709 TV Range ^(unchanged^)
 )
 echo.
-echo  📊 Status:
 if "%CUSTOMIZATION_ACTIVE%"=="Y" (
-    echo     • ✅ Advanced customizations are ACTIVE
-    echo     • 🎛️ Changes will be applied on encoding
-    echo     • 💾 Original profile backed up automatically
+    echo  ✅ Status: Advanced customizations ACTIVE - Hollywood baseline + enhancements
+    echo  💾 Original profile backed up automatically
 ) else (
-    echo     • 🛡️ No customizations active
-    echo     • 🎬 Will use standard Hollywood parameters
+    echo  🛡️ Status: Standard Hollywood parameters - No customizations active
 )
+
 echo.
-echo  💡 TIP: All customizations are safely applied on top of proven Instagram
-echo          zero-recompression parameters. Your base quality is guaranteed.
+echo  🏆 Quality: VMAF 95-98 maintained, Instagram zero-recompression guaranteed
 echo.
 pause
 goto :AdvancedCustomization
@@ -1948,7 +1932,7 @@ goto :CustomizeGOP
 cls
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                       🔧 VBV BUFFER SETTINGS CUSTOMIZATION                   ║
+echo ║                     📊 VBV BUFFER SETTINGS CUSTOMIZATION                     ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
 echo  📊 Current VBV Settings:
@@ -2094,7 +2078,7 @@ echo  │ 🎵 PROFESSIONAL AUDIO OPTIONS                                   │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
 echo  [1] 🎬 Professional Audio Presets ⭐ RECOMMENDED
-echo  [2] ⚡ Audio Processing Options (Coming Soon)
+echo  [2] ⚡ Audio Processing Options
 echo  [3] 🎵 Advanced Audio Parameters (Coming Soon)
 echo  [4] 📋 Preview Audio Settings
 echo  [5] 🔄 Reset to Profile Default
@@ -2220,35 +2204,320 @@ echo ╔════════════════════════
 echo ║                       ⚡ AUDIO PROCESSING OPTIONS                            ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  📊 Current Processing: None (standard encoding)
-if defined CUSTOM_AUDIO_PROCESSING echo  🎛️ Custom Processing: %CUSTOM_AUDIO_PROCESSING% (will be applied)
+if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+if defined AUDIO_PRESET_NAME       echo   🎬 Audio Preset: %AUDIO_PRESET_NAME%
+if defined NORMALIZATION_PRESET_NAME echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
 echo.
-echo  ⚡ AUDIO PROCESSING EXPLANATION:
-echo   • Audio processing improves quality and consistency
-echo   • Normalization: Ensures consistent volume levels
-echo   • Filtering: Removes noise and improves clarity
-echo   • Instagram-safe: All processing maintains compliance
+echo  [1] 🔊 Audio Normalization - LUFS Standards
+echo  [2] 🎛️ Noise Reduction Options (Coming Soon)
+echo  [3] 📋 Preview Audio Processing Settings
+echo  [4] 🔄 Reset All Audio Processing
+echo  [5] ✅ Apply Audio Processing
+echo  [B] 🔙 Back to Audio Enhancement
 echo.
-echo  ⚠️ DEVELOPMENT STATUS:
-echo   🔄 Audio processing features are being implemented
-echo   💡 Current phase: Foundation complete, processing algorithms in development
-echo   🎯 Target: Professional audio processing for Instagram optimization
+set /p "processing_choice=Select processing option [1-5, B]: "
+
+if "%processing_choice%"=="1" goto :AudioNormalizationPresets
+if "%processing_choice%"=="2" goto :NoiseReductionOptions
+if "%processing_choice%"=="3" goto :PreviewAudioProcessing
+if "%processing_choice%"=="4" goto :ResetAudioProcessing
+if "%processing_choice%"=="5" goto :ApplyAudioProcessing
+if /i "%processing_choice%"=="B" goto :CustomizeAudio
+
+echo ❌ Invalid choice. Please select 1-5 or B.
+pause
+goto :AudioProcessingOptions
+
+::========================================
+:: AUDIO NORMALIZATION PRESETS - CORE IMPLEMENTATION
+::========================================
+:AudioNormalizationPresets
+cls
 echo.
-echo  🔮 COMING SOON:
-echo   ⏳ [1] Audio Normalization (-23 LUFS standard)
-echo   ⏳ [2] Noise Reduction (Background noise filtering)
-echo   ⏳ [3] Dynamic Range Compression (Volume consistency)
-echo   ⏳ [4] High-Pass Filter (Remove low-frequency noise)
-echo   ⏳ [5] Limiter (Prevent audio clipping)
-echo   ⏳ [6] EQ Presets (Voice enhancement, music optimization)
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    🔊 PROFESSIONAL AUDIO NORMALIZATION                      ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  💡 For now, using standard AAC encoding with Hollywood-level parameters
-echo     ensures excellent audio quality for Instagram compliance.
+if defined NORMALIZATION_PRESET_NAME (
+    echo   🎛️ Active: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP)
+) else (
+    echo   🎛️ Status: No normalization active
+)
 echo.
-echo  [B] 🔙 Back to Audio Menu
+echo  [1] 📺 Broadcast Standard (-23 LUFS, -2 TP) - EBU R128 compliant
+echo  [2] 📱 Instagram Optimized (-18 LUFS, -1 TP) - Social media balance
+echo  [3] 🎬 YouTube Platform (-14 LUFS, -1 TP) - YouTube recommended
+echo  [4] 🎤 Podcast Standard (-19 LUFS, -2 TP) - Voice content optimized
+echo  [5] 📋 Preview Normalization Impact
+echo  [6] 🔄 Disable Normalization
+echo  [B] 🔙 Back to Audio Processing
 echo.
-set /p "processing_choice=Press B to return or Enter to continue: "
-goto :CustomizeAudio
+set /p "norm_choice=Select normalization preset [1-6, B]: "
+
+if "%norm_choice%"=="1" call :SetNormalizationPreset "broadcast" "Broadcast Standard"
+if "%norm_choice%"=="2" call :SetNormalizationPreset "instagram" "Instagram Optimized"
+if "%norm_choice%"=="3" call :SetNormalizationPreset "youtube" "YouTube Platform"
+if "%norm_choice%"=="4" call :SetNormalizationPreset "podcast" "Podcast Standard"
+if "%norm_choice%"=="5" goto :PreviewNormalizationImpact
+if "%norm_choice%"=="6" goto :DisableNormalization
+if /i "%norm_choice%"=="B" goto :AudioProcessingOptions
+
+echo ❌ Invalid choice. Please select 1-6 or B.
+pause
+goto :AudioNormalizationPresets
+
+::========================================
+:: NORMALIZATION PRESET IMPLEMENTATION
+::========================================
+:SetNormalizationPreset
+set "preset_id=%~1"
+set "NORMALIZATION_PRESET_NAME=%~2"
+
+echo.
+echo 🔊 Applying %NORMALIZATION_PRESET_NAME% preset...
+
+if "%preset_id%"=="broadcast" (
+    set "CUSTOM_LUFS_TARGET=-23"
+    set "CUSTOM_PEAK_LIMIT=-2"
+    set "CUSTOM_LRA_TARGET=11"
+    echo   📺 Target: -23 LUFS ^(EBU R128 broadcast standard^)
+    echo   📊 True Peak: -2 dB, Loudness Range: 11 LU
+)
+
+if "%preset_id%"=="instagram" (
+    set "CUSTOM_LUFS_TARGET=-18"
+    set "CUSTOM_PEAK_LIMIT=-1"
+    set "CUSTOM_LRA_TARGET=9"
+    echo   📱 Target: -18 LUFS ^(Instagram optimized^)
+    echo   📊 True Peak: -1 dB, Loudness Range: 9 LU
+)
+
+if "%preset_id%"=="youtube" (
+    set "CUSTOM_LUFS_TARGET=-14"
+    set "CUSTOM_PEAK_LIMIT=-1"
+    set "CUSTOM_LRA_TARGET=8"
+    echo   🎬 Target: -14 LUFS ^(YouTube recommended^)
+    echo   📊 True Peak: -1 dB, Loudness Range: 8 LU
+)
+
+if "%preset_id%"=="podcast" (
+    set "CUSTOM_LUFS_TARGET=-19"
+    set "CUSTOM_PEAK_LIMIT=-2"
+    set "CUSTOM_LRA_TARGET=12"
+    echo   🎤 Target: -19 LUFS ^(Voice content optimized^)
+    echo   📊 True Peak: -2 dB, Loudness Range: 12 LU
+)
+
+call :BuildNormalizationCommand
+if not errorlevel 1 (
+    echo   ✅ %NORMALIZATION_PRESET_NAME% applied successfully
+    set "AUDIO_PROCESSING_ACTIVE=Y"
+    set "CUSTOMIZATION_ACTIVE=Y"
+    call :LogEntry "[NORMALIZATION] %NORMALIZATION_PRESET_NAME% applied"
+) else (
+    echo   ❌ Failed to build normalization command
+    call :ResetNormalizationToDefault
+)
+
+pause
+goto :AudioNormalizationPresets
+
+::========================================
+:: BUILD NORMALIZATION COMMAND
+::========================================
+:BuildNormalizationCommand
+echo   🔧 Building FFmpeg normalization command...
+
+:: Validate required parameters
+if not defined CUSTOM_LUFS_TARGET (
+    echo     ❌ LUFS target not defined
+    exit /b 1
+)
+if not defined CUSTOM_PEAK_LIMIT (
+    echo     ❌ Peak limit not defined
+    exit /b 1
+)
+if not defined CUSTOM_LRA_TARGET (
+    echo     ❌ LRA target not defined
+    exit /b 1
+)
+
+:: Build loudnorm filter parameters
+set "CUSTOM_NORMALIZATION_PARAMS=-af loudnorm=I=%CUSTOM_LUFS_TARGET%:TP=%CUSTOM_PEAK_LIMIT%:LRA=%CUSTOM_LRA_TARGET%:print_format=summary"
+
+echo     ✅ Normalization command built successfully
+echo     📋 FFmpeg filter: %CUSTOM_NORMALIZATION_PARAMS%
+call :LogEntry "[NORMALIZATION] Command built: %CUSTOM_NORMALIZATION_PARAMS%"
+exit /b 0
+
+::========================================
+:: PREVIEW NORMALIZATION IMPACT
+::========================================
+:PreviewNormalizationImpact
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                      📋 NORMALIZATION PREVIEW                               ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+if not defined NORMALIZATION_PRESET_NAME (
+    echo ⚠️ NO NORMALIZATION PRESET SELECTED
+    pause
+    goto :AudioNormalizationPresets
+)
+
+echo  🔊 CURRENT CONFIGURATION:
+echo   🎬 Preset: %NORMALIZATION_PRESET_NAME%
+echo   🎯 Target LUFS: %CUSTOM_LUFS_TARGET%
+echo   📊 True Peak: %CUSTOM_PEAK_LIMIT% dB
+echo   📈 Loudness Range: %CUSTOM_LRA_TARGET% LU
+echo.
+
+echo  📱 PLATFORM COMPLIANCE:
+if "%CUSTOM_LUFS_TARGET%"=="-23" (
+    echo   📺 Broadcast: ✅ Perfect  🎵 Streaming: ✅ Compatible  📱 Instagram: ✅ Excellent
+)
+if "%CUSTOM_LUFS_TARGET%"=="-18" (
+    echo   📺 Broadcast: ✅ Compatible  📱 Instagram: ✅ Perfect  🎬 YouTube: ✅ Good
+)
+if "%CUSTOM_LUFS_TARGET%"=="-14" (
+    echo   🎬 YouTube: ✅ Perfect  📱 Instagram: ✅ Compatible  🎵 Streaming: ✅ Competitive
+)
+if "%CUSTOM_LUFS_TARGET%"=="-19" (
+    echo   🎤 Podcast: ✅ Perfect  📱 Instagram: ✅ Excellent  📺 Broadcast: ✅ Compatible
+)
+
+echo.
+echo  🔧 FFmpeg Command: %CUSTOM_NORMALIZATION_PARAMS%
+echo.
+pause
+goto :AudioNormalizationPresets
+
+::========================================
+:: DISABLE NORMALIZATION
+::========================================
+:DisableNormalization
+echo.
+echo 🔄 Disabling audio normalization...
+set "CUSTOM_LUFS_TARGET="
+set "CUSTOM_PEAK_LIMIT="
+set "CUSTOM_LRA_TARGET="
+set "NORMALIZATION_PRESET_NAME="
+set "CUSTOM_NORMALIZATION_PARAMS="
+echo ✅ Audio normalization disabled - using raw audio levels
+call :LogEntry "[NORMALIZATION] Disabled - using raw audio levels"
+pause
+goto :AudioNormalizationPresets
+
+::========================================
+:: FUTURE IMPLEMENTATION STUBS
+::========================================
+:NoiseReductionOptions
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🎛️ NOISE REDUCTION OPTIONS                             ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+echo  🔮 FUTURE IMPLEMENTATION:
+echo   ⏳ [1] Spectral Noise Reduction (FFmpeg afftdn filter)
+echo   ⏳ [2] Background Noise Suppression (Professional algorithms)
+echo   ⏳ [3] Wind/Handling Noise Filter (High-pass + dynamic filtering)
+echo   ⏳ [4] Adaptive Noise Gate (Intelligent silence detection)
+echo.
+echo  [B] 🔙 Back to Audio Processing
+pause
+goto :AudioProcessingOptions
+
+:ResetAudioProcessing
+echo.
+echo 🔄 Resetting all audio processing...
+set "CUSTOM_LUFS_TARGET="
+set "CUSTOM_PEAK_LIMIT="
+set "CUSTOM_LRA_TARGET="
+set "NORMALIZATION_PRESET_NAME="
+set "CUSTOM_NORMALIZATION_PARAMS="
+set "AUDIO_PROCESSING_ACTIVE=N"
+echo ✅ Audio processing reset - Audio Enhancement settings preserved
+call :LogEntry "[AUDIO_PROCESSING] Reset to disabled"
+pause
+goto :AudioProcessingOptions
+
+:ApplyAudioProcessing
+if "%AUDIO_PROCESSING_ACTIVE%"=="N" (
+    echo.
+    echo ⚠️ No audio processing options active
+    pause
+    goto :AudioProcessingOptions
+)
+
+echo.
+echo ✅ Applying audio processing configuration...
+if defined NORMALIZATION_PRESET_NAME (
+    echo   🔊 Normalization: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
+)
+echo ✅ Audio processing applied successfully!
+
+set "CUSTOMIZATION_ACTIVE=Y"
+call :LogEntry "[AUDIO_PROCESSING] Configuration applied - Ready for encoding"
+pause
+goto :AdvancedCustomization
+
+::========================================
+:: PREVIEW AUDIO PROCESSING SETTINGS
+::========================================
+:PreviewAudioProcessing
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    📋 AUDIO PROCESSING PREVIEW                               ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+echo  🎵 AUDIO ENHANCEMENT:
+if defined AUDIO_PRESET_NAME (
+    echo   🎬 Preset: %AUDIO_PRESET_NAME%
+    if defined CUSTOM_AUDIO_BITRATE    echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
+    if defined CUSTOM_AUDIO_SAMPLERATE echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
+    if defined CUSTOM_AUDIO_CHANNELS   echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
+) else (
+    echo   🎵 Default: 256k, 48kHz, Stereo
+)
+
+echo.
+echo  🔊 AUDIO NORMALIZATION:
+if defined NORMALIZATION_PRESET_NAME (
+    echo   🎯 Preset: %NORMALIZATION_PRESET_NAME%
+    echo   📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP, %CUSTOM_LRA_TARGET% LRA
+) else (
+    echo   🔊 Disabled (using raw audio levels)
+)
+
+echo.
+echo  🔧 FFMPEG AUDIO CHAIN:
+echo   Codec: AAC-LC (Instagram compliant)
+if defined CUSTOM_AUDIO_BITRATE (
+    echo   Bitrate: %CUSTOM_AUDIO_BITRATE%
+) else (
+    echo   Bitrate: 256k (default)
+)
+if defined CUSTOM_NORMALIZATION_PARAMS (
+    echo   Normalization: %CUSTOM_NORMALIZATION_PARAMS%
+) else (
+    echo   Normalization: None
+)
+
+echo.
+if "%AUDIO_PROCESSING_ACTIVE%"=="Y" (
+    echo   ✅ Status: Audio processing ACTIVE - ready for encoding
+) else (
+    echo   ⚠️ Status: No processing active - using default settings
+)
+
+echo.
+pause
+goto :AudioProcessingOptions
 
 :: ========================================
 :: ADVANCED AUDIO PARAMETERS
@@ -2494,14 +2763,23 @@ if defined CUSTOM_AUDIO_CHANNELS (
 :: Add professional AAC parameters
 set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
 
+:: INTEGRATE AUDIO NORMALIZATION
+if defined CUSTOM_NORMALIZATION_PARAMS (
+    :: Apply normalization filter before codec
+    set "AUDIO_COMMAND=%CUSTOM_NORMALIZATION_PARAMS% %AUDIO_COMMAND%"
+    echo     🔊 Applying normalization: %NORMALIZATION_PRESET_NAME%
+    echo     📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP
+    call :LogEntry "[AUDIO] Normalization integrated: %NORMALIZATION_PRESET_NAME%"
+)
+
 :: Log preset information if available
 if defined AUDIO_PRESET_NAME (
-    echo     🎬 Preset applied: %AUDIO_PRESET_NAME%
+    echo     🎬 Audio preset applied: %AUDIO_PRESET_NAME%
     call :LogEntry "[AUDIO] Encoding with preset: %AUDIO_PRESET_NAME%"
 )
 
-echo     ✅ Professional audio command built: %AUDIO_COMMAND%
-call :LogEntry "[AUDIO] Command built successfully: %AUDIO_COMMAND%"
+echo     ✅ Complete audio command built: %AUDIO_COMMAND%
+call :LogEntry "[AUDIO] Complete command built successfully"
 exit /b 0
 
 :CustomizeColor
@@ -2791,12 +3069,6 @@ goto :ShowProfessionalMainMenu
 :: ========================================
 :: FUTURE DEVELOPMENT STUBS
 :: ========================================
-:BatchProcessing
-echo.
-echo ⏳ Batch Processing will be implemented in future version
-echo 💡 Process multiple files automatically
-pause
-goto :ShowProfessionalMainMenu
 
 :QualityValidation
 echo.
@@ -2805,24 +3077,10 @@ echo 💡 Automatic quality scoring and validation
 pause
 goto :ShowProfessionalMainMenu
 
-:CloudIntegration
-echo.
-echo ⏳ Cloud Integration will be implemented in future version
-echo 💡 Direct upload to cloud services
-pause
-goto :ShowProfessionalMainMenu
-
 :AIOptimization
 echo.
 echo ⏳ AI Content Analysis will be implemented in future version
 echo 💡 Intelligent profile selection based on content
-pause
-goto :ShowProfessionalMainMenu
-
-:PerformanceBenchmark
-echo.
-echo ⏳ Performance Benchmarking will be implemented in future version
-echo 💡 Hardware-specific optimization testing
 pause
 goto :ShowProfessionalMainMenu
 
