@@ -107,11 +107,17 @@ for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
 set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
 
+:: CORREÇÃO CRÍTICA: INICIALIZAÇÃO SEGURA
+set "MODULAR_PROFILE_COUNT=0"
+
 :: SINGLE VALIDATION CHECK
 if exist "%PROFILES_DIR%" (
-    set "MODULAR_PROFILE_COUNT=0"
-    for %%F in ("%PROFILES_DIR%\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
-    
+    :: VERSÃO CORRIGIDA - LOOP SEGURO
+    for %%F in ("%PROFILES_DIR%\*.prof") do (
+        if exist "%%F" (
+            set /a "MODULAR_PROFILE_COUNT+=1"
+        )
+    )
     if !MODULAR_PROFILE_COUNT! GTR 0 (
         echo ✅ Modular system: !MODULAR_PROFILE_COUNT! profiles active
         set "MODULAR_PROFILES_AVAILABLE=Y"
@@ -127,11 +133,17 @@ if exist "%PROFILES_DIR%" (
         set "PROFILES_DIR=!ALT_PROFILES_DIR!"
         set "CONFIG_FILE=C:\Users\Gabriel\encoder\src\config\encoder_config.json"
         set "MODULAR_PROFILES_AVAILABLE=Y"
+        :: RESET E RECÁLCULO SEGURO
         set "MODULAR_PROFILE_COUNT=0"
-        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do (
+            if exist "%%F" (
+                set /a "MODULAR_PROFILE_COUNT+=1"
+            )
+        )
     ) else (
         echo ❌ Profiles directory not found
         set "MODULAR_PROFILES_AVAILABLE=N"
+        set "MODULAR_PROFILE_COUNT=0"
     )
 )
 
@@ -229,11 +241,18 @@ call :LogEntry "[SYSTEM] Professional Menu System initialized"
 exit /b 0
 
 :ShowProfessionalMainMenu
+echo 🐛 DEBUG: ShowProfessionalMainMenu - START
+echo 🐛 DEBUG: Called from: %0
+echo 🐛 DEBUG: ERRORLEVEL: %ERRORLEVEL%
+echo 🐛 DEBUG: Current time: %time%
+
 cls
 call :ShowProfessionalHeader
 call :ShowSystemDashboard
 call :ShowMainMenuOptions
 call :ProcessMainMenuChoice
+
+echo 🐛 DEBUG: ShowProfessionalMainMenu - END (should not reach here)
 exit /b 0
 
 :ShowProfessionalHeader
@@ -382,26 +401,70 @@ exit /b 0
 :ProcessMainMenuChoice
 set /p "main_choice=🎯 Select option [0-7, V, R, M, D]: "
 
+echo 🐛 DEBUG: User entered: "%main_choice%"
+echo 🐛 DEBUG: main_choice variable: [%main_choice%]
+
 if not defined main_choice (
     echo ❌ Please select an option
+    echo 🐛 DEBUG: main_choice was empty/undefined
     pause
     goto :ShowProfessionalMainMenu
 )
 
-if "%main_choice%"=="1" goto :ConfigureFiles
-if "%main_choice%"=="2" goto :ConfigureProfile
-if "%main_choice%"=="3" goto :StartEncoding
-if "%main_choice%"=="4" goto :AdvancedCustomization
-if "%main_choice%"=="5" goto :AnalyzeInputFile
-if "%main_choice%"=="6" goto :ProfileManagement
-if /i "%main_choice%"=="V" goto :ValidateModularProfiles
-if /i "%main_choice%"=="R" goto :ReloadModularProfiles
-if /i "%main_choice%"=="M" goto :ShowModularSystemInfo
-if "%main_choice%"=="7" goto :ShowSystemInfo
-if /i "%main_choice%"=="D" goto :DebugProfileVariables
-if "%main_choice%"=="0" goto :ExitProfessional
+echo 🐛 DEBUG: Processing choice: %main_choice%
+
+if "%main_choice%"=="1" (
+    echo 🐛 DEBUG: Going to ConfigureFiles
+    goto :ConfigureFiles
+)
+if "%main_choice%"=="2" (
+    echo 🐛 DEBUG: Going to ConfigureProfile  
+    goto :ConfigureProfile
+)
+if "%main_choice%"=="3" (
+    echo 🐛 DEBUG: Going to StartEncoding
+    goto :StartEncoding
+)
+if "%main_choice%"=="4" (
+    echo 🐛 DEBUG: Going to AdvancedCustomization
+    goto :AdvancedCustomization
+)
+if "%main_choice%"=="5" (
+    echo 🐛 DEBUG: Going to AnalyzeInputFile
+    goto :AnalyzeInputFile
+)
+if "%main_choice%"=="6" (
+    echo 🐛 DEBUG: Going to ProfileManagement
+    goto :ProfileManagement
+)
+if /i "%main_choice%"=="V" (
+    echo 🐛 DEBUG: Going to ValidateModularProfiles
+    goto :ValidateModularProfiles
+)
+if /i "%main_choice%"=="R" (
+    echo 🐛 DEBUG: Going to ReloadModularProfiles
+    goto :ReloadModularProfiles
+)
+if /i "%main_choice%"=="M" (
+    echo 🐛 DEBUG: Going to ShowModularSystemInfo
+    goto :ShowModularSystemInfo
+)
+if "%main_choice%"=="7" (
+    echo 🐛 DEBUG: Going to ShowSystemInfo
+    goto :ShowSystemInfo
+)
+if /i "%main_choice%"=="D" (
+    echo 🐛 DEBUG: Going to DebugProfileVariables
+    goto :DebugProfileVariables
+)
+if "%main_choice%"=="0" (
+    echo 🐛 DEBUG: Going to ExitProfessional
+    goto :ExitProfessional
+)
 
 echo ❌ Invalid choice. Please select 0-7 or V, R, M, D.
+echo 🐛 DEBUG: MAIN MENU ERROR - Invalid choice detected!
+echo 🐛 DEBUG: This should be the MAIN menu error, not GOP menu!
 pause
 goto :ShowProfessionalMainMenu
 
@@ -1643,55 +1706,8 @@ echo 🔄 Loading Advanced Customization Module...
 call "%~dp0advanced_customization.bat"
 echo.
 echo ✅ Customizations completed
-echo 🔄 Restarting main script...
+echo 🔄 Returning to main menu...
 pause
-cls
-echo.
-:: BYPASS COMPLETO - FORÇAR RECONSTRUÇÃO DO MENU PRINCIPAL
-call :ShowSystemDashboard  
-call :ShowMainMenuOptions
-call :ProcessMainMenuChoice
-exit /b 0
-
-:ProfileManagement
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                       📊 PROFILE MANAGEMENT SYSTEM                           ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-echo  🎬 Current Profile: %PROFILE_NAME%
-if "%ADVANCED_MODE%"=="Y" (
-    echo  🎛️ Status: Advanced customizations ACTIVE
-) else (
-    echo  🛡️ Status: Standard Hollywood parameters
-)
-echo.
-echo  📁 MODULAR PROFILE SYSTEM:
-echo   ✅ File-based profiles: %MODULAR_PROFILES_AVAILABLE%
-echo   📂 Profiles directory: %PROFILES_DIR%
-echo.
-echo  🔮 FUTURE FEATURES (Coming Soon):
-echo   ⏳ [1] Export Current Profile
-echo   ⏳ [2] Import Profile from File
-echo   ⏳ [3] Browse Profile Library
-echo   ⏳ [4] Create Profile Template
-echo   ⏳ [5] Profile Validation
-echo   ⏳ [6] Profile Sharing
-echo.
-echo  💡 Currently, profiles are managed through .prof files in:
-echo     %PROFILES_DIR%
-echo.
-echo  🎯 Available profiles:
-if exist "%PROFILES_DIR%\*.prof" (
-    for %%F in ("%PROFILES_DIR%\*.prof") do echo     • %%~nF.prof
-) else (
-    echo     • No profiles found
-)
-echo.
-echo  [B] 🔙 Back to Main Menu
-echo.
-set /p "profile_mgmt_choice=Press B to return or Enter to continue: "
 goto :ShowProfessionalMainMenu
 
 :: ========================================
