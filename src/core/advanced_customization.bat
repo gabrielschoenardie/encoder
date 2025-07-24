@@ -44,11 +44,10 @@ echo  [5] 🎵 Audio Enhancement Options
 echo  [6] 🌈 Color Science Adjustments
 echo  [7] 📋 Preview All Settings
 echo  [8] 🔄 Restore Original Profile
-echo  [9] ✅ Apply Customizations
-echo  [P] 📊 Profile Management (Export/Import/Library)
-echo  [0] 🔙 Back to Standard Profile
+echo  [9] ✅ Apply Customizations ⭐ EXIT MODULE
+echo  [0] 🔙 Back to Standard Profile ⭐ EXIT MODULE
 echo.
-set /p "custom_choice=Select customization option [0-9, P]: "
+set /p "custom_choice=Select customization option [0-9]: "
 
 if "%custom_choice%"=="1" goto :CustomizePreset
 if "%custom_choice%"=="2" goto :CustomizePsychovisual
@@ -58,11 +57,10 @@ if "%custom_choice%"=="5" goto :CustomizeAudio
 if "%custom_choice%"=="6" goto :CustomizeColor
 if "%custom_choice%"=="7" goto :PreviewAllCustomizations
 if "%custom_choice%"=="8" goto :RestoreOriginalProfile
-if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
-if /i "%custom_choice%"=="P" goto :ProfileManagementStub
-if "%custom_choice%"=="0" goto :ShowProfessionalMainMenu
+if "%custom_choice%"=="9" goto :ApplyAndExit
+if "%custom_choice%"=="0" goto :ExitModule
 
-echo ❌ Invalid choice. Please select 0-9 or P.
+echo ❌ Invalid choice. Please select 0-9.
 pause
 goto :AdvancedCustomizationMain
 
@@ -106,14 +104,10 @@ if "%preset_choice%"=="6" set "CUSTOM_PRESET=placebo"
 if /i "%preset_choice%"=="B" goto :AdvancedCustomizationMain
 
 if defined CUSTOM_PRESET (
-    echo.
-    echo ✅ Preset changed to: %CUSTOM_PRESET%
-    echo 💡 This change will be applied when you choose "Apply Customizations"
+    echo ✅ Preset set to: %CUSTOM_PRESET%
     set "CUSTOMIZATION_ACTIVE=Y"
-    echo [%time:~0,8%] [ADVANCED] Preset set to: %CUSTOM_PRESET%>>"!EXEC_LOG!"
     pause
 )
-
 goto :AdvancedCustomizationMain
 
 :CustomizePsychovisual
@@ -138,42 +132,22 @@ echo  [2] 1.0,0.15  - Balanced (recommended most content)
 echo  [3] 1.0,0.20  - Enhanced (more detail preservation)
 echo  [4] 1.2,0.25  - Aggressive (maximum detail, viral content)
 echo  [5] 1.5,0.30  - Maximum (cinema-grade, larger files)
-echo  [6] Custom    - Manual input
 echo  [B] Back to Advanced Menu
 echo.
-set /p "psy_choice=Select psy_rd setting [1-6, B]: "
+set /p "psy_choice=Select psy_rd setting [1-5, B]: "
 
 if "%psy_choice%"=="1" set "CUSTOM_PSY_RD=0.8,0.10"
 if "%psy_choice%"=="2" set "CUSTOM_PSY_RD=1.0,0.15"
 if "%psy_choice%"=="3" set "CUSTOM_PSY_RD=1.0,0.20"
 if "%psy_choice%"=="4" set "CUSTOM_PSY_RD=1.2,0.25"
 if "%psy_choice%"=="5" set "CUSTOM_PSY_RD=1.5,0.30"
-if "%psy_choice%"=="6" goto :CustomPsyInput
 if /i "%psy_choice%"=="B" goto :AdvancedCustomizationMain
 
 if defined CUSTOM_PSY_RD (
-    echo.
-    echo ✅ Psychovisual RD changed to: %CUSTOM_PSY_RD%
-    echo 💡 More details will be preserved in the final image
+    echo ✅ Psychovisual set to: %CUSTOM_PSY_RD%
     set "CUSTOMIZATION_ACTIVE=Y"
-    echo [%time:~0,8%] [ADVANCED] Psy RD set to: %CUSTOM_PSY_RD%>>"!EXEC_LOG!"
     pause
 )
-
-
-goto :AdvancedCustomizationMain
-
-:CustomPsyInput
-echo.
-echo Enter custom psy_rd values (format: X.X,X.XX):
-echo Example: 1.0,0.15 (first value: 0.5-2.0, second: 0.05-0.40)
-set /p "CUSTOM_PSY_RD=psy_rd value: "
-if defined CUSTOM_PSY_RD (
-    echo ✅ Custom psy_rd defined: %CUSTOM_PSY_RD%
-    set "CUSTOMIZATION_ACTIVE=Y"
-    echo [%time:~0,8%] [ADVANCED] Custom Psy RD: %CUSTOM_PSY_RD%>>"!EXEC_LOG!"
-)
-pause
 goto :AdvancedCustomizationMain
 
 :CustomizeGOP
@@ -219,9 +193,12 @@ if "%gop_choice%"=="7" goto :ResetGOPToProfile
 if "%gop_choice%"=="C" goto :CompareGOPPresets
 if /i "%gop_choice%"=="B" goto :AdvancedCustomizationMain
 
-echo ❌ Invalid choice. Please select 1-7 or B, C.
-pause
-goto :CustomizeGOP
+if defined GOP_PRESET_NAME (
+    echo ✅ GOP set to: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+    set "CUSTOMIZATION_ACTIVE=Y"
+    pause
+)
+goto :AdvancedCustomizationMain
 
 :SetGOPValues
 set "CUSTOM_GOP_SIZE=%~1"
@@ -323,9 +300,7 @@ if "%vbv_choice%"=="6" call :SetVBVValues 2.5 "Fast Network"
 if "%vbv_choice%"=="7" goto :ResetVBVToProfile
 if /i "%vbv_choice%"=="B" goto :AdvancedCustomizationMain
 
-echo ❌ Invalid choice. Please select 1-7 or B.
-pause
-goto :CustomizeVBV
+goto :AdvancedCustomizationMain
 
 :SetVBVValues
 set "vbv_multiplier=%~1"
@@ -371,7 +346,7 @@ if "%VBV_PRESET_NAME%"=="Fast Network" echo 💡 Optimized for: High bandwidth, 
 set "CUSTOMIZATION_ACTIVE=Y"
 echo [%time:~0,8%] [ADVANCED] VBV set: %VBV_PRESET_NAME% (Max:%CUSTOM_MAX_BITRATE%, Buf:%CUSTOM_BUFFER_SIZE%)>>"!EXEC_LOG!"
 pause
-goto :AdvancedCustomizationMain
+exit /b 0
 
 :ResetVBVToProfile
 echo.
@@ -417,9 +392,13 @@ if "%audio_choice%"=="5" goto :ResetAudioToDefault
 if "%audio_choice%"=="6" goto :ApplyAudioEnhancement
 if /i "%audio_choice%"=="B" goto :AdvancedCustomizationMain
 
-echo ❌ Invalid choice. Please select 1-6 or B.
-pause
-goto :CustomizeAudio
+if defined AUDIO_PRESET_NAME (
+    set "CUSTOM_AUDIO_SAMPLERATE=48000"
+    echo ✅ Audio set to: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
+    set "CUSTOMIZATION_ACTIVE=Y"
+    pause
+)
+goto :AdvancedCustomizationMain
 
 :AudioProfessionalPresets
 cls
@@ -455,7 +434,6 @@ if "%preset_choice%"=="5" call :SetAudioPreset "320k" "48000" "2" "Cinematic"
 if "%preset_choice%"=="6" goto :ResetAudioPresetToDefault
 if /i "%preset_choice%"=="B" goto :CustomizeAudio
 
-echo ❌ Invalid choice. Please select 1-6 or B.
 pause
 goto :AudioProfessionalPresets
 
@@ -514,7 +492,6 @@ if "%processing_choice%"=="4" goto :ResetAudioProcessing
 if "%processing_choice%"=="5" goto :ApplyAudioProcessing
 if /i "%processing_choice%"=="B" goto :CustomizeAudio
 
-echo ❌ Invalid choice. Please select 1-5 or B.
 pause
 goto :AudioProcessingOptions
 
@@ -548,7 +525,6 @@ if "%norm_choice%"=="4" call :SetNormalizationPreset "podcast" "Podcast Standard
 if "%norm_choice%"=="5" goto :DisableNormalization
 if /i "%norm_choice%"=="B" goto :AudioProcessingOptions
 
-echo ❌ Invalid choice. Please select 1-5 or B.
 pause
 goto :AudioNormalizationPresets
 
@@ -879,9 +855,12 @@ if "%color_choice%"=="4" call :SetColorPreset "srgb_standard" "sRGB Standard"
 if "%color_choice%"=="5" goto :ResetColorToDefault
 if /i "%color_choice%"=="B" goto :AdvancedCustomizationMain
 
-echo ❌ Invalid choice. Please select 1-5 or B.
-pause
-goto :CustomizeColor
+if defined COLOR_PRESET_NAME (
+    echo ✅ Color set to: %COLOR_PRESET_NAME%
+    set "CUSTOMIZATION_ACTIVE=Y"
+    pause
+)
+goto :AdvancedCustomizationMain
 
 :SetColorPreset
 set "preset_id=%~1"
@@ -1113,44 +1092,6 @@ echo [%time:~0,8%] [ADVANCED] Profile restored to original settings>>"!EXEC_LOG!
 pause
 goto :AdvancedCustomizationMain
 
-:ApplyAdvancedCustomizations
-if "%CUSTOMIZATION_ACTIVE%"=="N" (
-    echo.
-    echo ⚠️ No active customizations to apply
-    echo 💡 Use menu options to customize parameters first
-    pause
-    goto :AdvancedCustomizationMain
-)
-
-echo.
-echo ✅ Applying advanced customizations...
-set "ADVANCED_MODE=Y"
-
-:: Backup original parameters if not already done
-if not defined PROFILE_BACKUP (
-    set "PROFILE_BACKUP=%X264_PARAMS%"
-    set "PRESET_BACKUP=%X264_PRESET%"
-)
-
-echo ✅ Customizations applied successfully!
-echo 🎬 Ready for encoding with customized parameters!
-echo [%time:~0,8%] [ADVANCED] V5.2 Advanced customizations applied successfully>>"!EXEC_LOG!"
-
-echo.
-echo 📋 CUSTOMIZATIONS SUMMARY:
-if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
-if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
-if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
-if defined COLOR_PRESET_NAME echo   🎨 Color: %COLOR_PRESET_NAME%
-
-echo.
-echo 🏠 Press any key to return to main menu...
-pause
-
-exit /b 0
-
 :: ========================================
 :: PROFILE MANAGEMENT STUB
 :: ========================================
@@ -1184,5 +1125,44 @@ echo  💡 Currently, profiles are managed through .prof files in the profiles d
 echo.
 echo  [B] 🔙 Back to Advanced Menu
 echo.
-set /p "profile_mgmt_choice=Press B to return or Enter to continue: "
+pause
 goto :AdvancedCustomizationMain
+
+:ApplyAndExit
+cls
+echo ✅ APPLYING CUSTOMIZATIONS...
+echo.
+if "%CUSTOMIZATION_ACTIVE%"=="N" (
+    echo ⚠️ No customizations to apply
+    pause
+    goto :AdvancedCustomizationMain
+)
+
+set "ADVANCED_MODE=Y"
+echo ✅ Customizations applied successfully!
+echo 🎬 Ready for encoding with customized parameters!
+
+echo.
+echo 📋 CUSTOMIZATIONS SUMMARY:
+if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
+if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
+if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
+if defined COLOR_PRESET_NAME echo   🌈 Color: %COLOR_PRESET_NAME%
+
+echo.
+echo 🏠 Returning to main menu...
+echo ✅ Module completed successfully
+echo [%time:~0,8%] [ADVANCED] Customizations applied, exiting module>>"!EXEC_LOG!"
+
+pause
+endlocal
+exit /b 0
+
+:ExitModule
+echo 🏠 Returning to main menu without changes...
+echo [%time:~0,8%] [ADVANCED] Exiting module without changes>>"!EXEC_LOG!"
+pause
+endlocal
+exit /b 0
