@@ -241,18 +241,11 @@ call :LogEntry "[SYSTEM] Professional Menu System initialized"
 exit /b 0
 
 :ShowProfessionalMainMenu
-echo 🐛 DEBUG: ShowProfessionalMainMenu - START
-echo 🐛 DEBUG: Called from: %0
-echo 🐛 DEBUG: ERRORLEVEL: %ERRORLEVEL%
-echo 🐛 DEBUG: Current time: %time%
-
 cls
 call :ShowProfessionalHeader
 call :ShowSystemDashboard
 call :ShowMainMenuOptions
 call :ProcessMainMenuChoice
-
-echo 🐛 DEBUG: ShowProfessionalMainMenu - END (should not reach here)
 exit /b 0
 
 :ShowProfessionalHeader
@@ -401,70 +394,26 @@ exit /b 0
 :ProcessMainMenuChoice
 set /p "main_choice=🎯 Select option [0-7, V, R, M, D]: "
 
-echo 🐛 DEBUG: User entered: "%main_choice%"
-echo 🐛 DEBUG: main_choice variable: [%main_choice%]
-
 if not defined main_choice (
     echo ❌ Please select an option
-    echo 🐛 DEBUG: main_choice was empty/undefined
     pause
     goto :ShowProfessionalMainMenu
 )
 
-echo 🐛 DEBUG: Processing choice: %main_choice%
-
-if "%main_choice%"=="1" (
-    echo 🐛 DEBUG: Going to ConfigureFiles
-    goto :ConfigureFiles
-)
-if "%main_choice%"=="2" (
-    echo 🐛 DEBUG: Going to ConfigureProfile  
-    goto :ConfigureProfile
-)
-if "%main_choice%"=="3" (
-    echo 🐛 DEBUG: Going to StartEncoding
-    goto :StartEncoding
-)
-if "%main_choice%"=="4" (
-    echo 🐛 DEBUG: Going to AdvancedCustomization
-    goto :AdvancedCustomization
-)
-if "%main_choice%"=="5" (
-    echo 🐛 DEBUG: Going to AnalyzeInputFile
-    goto :AnalyzeInputFile
-)
-if "%main_choice%"=="6" (
-    echo 🐛 DEBUG: Going to ProfileManagement
-    goto :ProfileManagement
-)
-if /i "%main_choice%"=="V" (
-    echo 🐛 DEBUG: Going to ValidateModularProfiles
-    goto :ValidateModularProfiles
-)
-if /i "%main_choice%"=="R" (
-    echo 🐛 DEBUG: Going to ReloadModularProfiles
-    goto :ReloadModularProfiles
-)
-if /i "%main_choice%"=="M" (
-    echo 🐛 DEBUG: Going to ShowModularSystemInfo
-    goto :ShowModularSystemInfo
-)
-if "%main_choice%"=="7" (
-    echo 🐛 DEBUG: Going to ShowSystemInfo
-    goto :ShowSystemInfo
-)
-if /i "%main_choice%"=="D" (
-    echo 🐛 DEBUG: Going to DebugProfileVariables
-    goto :DebugProfileVariables
-)
-if "%main_choice%"=="0" (
-    echo 🐛 DEBUG: Going to ExitProfessional
-    goto :ExitProfessional
-)
+if "%main_choice%"=="1" goto :ConfigureFiles
+if "%main_choice%"=="2" goto :ConfigureProfile
+if "%main_choice%"=="3" goto :StartEncoding
+if "%main_choice%"=="4" goto :AdvancedCustomization
+if "%main_choice%"=="5" goto :AnalyzeInputFile
+if "%main_choice%"=="6" goto :ProfileManagement
+if /i "%main_choice%"=="V" goto :ValidateModularProfiles
+if /i "%main_choice%"=="R" goto :ReloadModularProfiles
+if /i "%main_choice%"=="M" goto :ShowModularSystemInfo
+if "%main_choice%"=="7" goto :ShowSystemInfo
+if /i "%main_choice%"=="D" goto :DebugProfileVariables
+if "%main_choice%"=="0" goto :ExitProfessional
 
 echo ❌ Invalid choice. Please select 0-7 or V, R, M, D.
-echo 🐛 DEBUG: MAIN MENU ERROR - Invalid choice detected!
-echo 🐛 DEBUG: This should be the MAIN menu error, not GOP menu!
 pause
 goto :ShowProfessionalMainMenu
 
@@ -940,6 +889,7 @@ set /p "confirm_encoding=🎬 Start Hollywood-level encoding? (Y/N): "
 if /i not "%confirm_encoding:~0,1%"=="Y" goto :ShowProfessionalMainMenu
 
 call :ConfigureAdvancedSettings
+call :LoadAdvancedConfiguration
 call :CreateBackup
 call :ExecuteEncoding
 
@@ -1706,9 +1656,15 @@ echo 🔄 Loading Advanced Customization Module...
 call "%~dp0advanced_customization.bat"
 echo.
 echo ✅ Customizations completed
+echo 🔄 Loading customizations into main script...
+
+:: CRITICAL: Load advanced configuration if available
+call :LoadAdvancedConfig
+
+echo ✅ Customizations integrated successfully
 echo 🔄 Returning to main menu...
 pause
-goto :ShowProfessionalMainMenu
+cls
 
 :: ========================================
 :: FUTURE DEVELOPMENT STUBS
@@ -2165,3 +2121,155 @@ echo  💡 For support, check the documentation or report the issue
 echo.
 pause
 exit /b 1
+
+::========================================
+:: PARSING FIX - ENCODERV5.BAT LoadAdvancedConfig
+:: Fix para format: set "VAR=VALUE"
+::========================================
+
+:LoadAdvancedConfig
+echo 🔄 Loading advanced customizations...
+
+:: Find the most recent advanced config file
+set "ADVANCED_CONFIG_FILE="
+for /f "delims=" %%F in ('dir "%TEMP%\encoder_advanced_config_*.tmp" /b /o:-d 2^>nul') do (
+    set "ADVANCED_CONFIG_FILE=%TEMP%\%%F"
+    goto :config_found
+)
+
+:config_found
+if not defined ADVANCED_CONFIG_FILE (
+    echo   ℹ️ No advanced customizations found - using profile defaults
+    exit /b 0
+)
+
+if not exist "%ADVANCED_CONFIG_FILE%" (
+    echo   ⚠️ Advanced config file not accessible
+    exit /b 0
+)
+
+echo   📂 Loading from: %ADVANCED_CONFIG_FILE%
+
+:: RESET ALL CUSTOM VARIABLES FIRST
+set "CUSTOM_PRESET="
+set "CUSTOM_PSY_RD="
+set "CUSTOM_GOP_SIZE="
+set "CUSTOM_KEYINT_MIN="
+set "GOP_PRESET_NAME="
+set "CUSTOM_MAX_BITRATE="
+set "CUSTOM_BUFFER_SIZE="
+set "VBV_PRESET_NAME="
+set "CUSTOM_AUDIO_BITRATE="
+set "CUSTOM_AUDIO_SAMPLERATE="
+set "CUSTOM_AUDIO_CHANNELS="
+set "AUDIO_PRESET_NAME="
+set "CUSTOM_COLOR_PARAMS="
+set "COLOR_PRESET_NAME="
+
+:: ENHANCED PARSING FOR "set VAR=VALUE" FORMAT
+for /f "usebackq delims=" %%A in ("%ADVANCED_CONFIG_FILE%") do (
+    set "line=%%A"
+    
+    :: Skip comment lines
+    if not "!line:~0,2!"=="::" (
+        :: Check if line starts with "set "
+        if "!line:~0,4!"=="set " (
+            :: Extract variable assignment from set command
+            set "assignment=!line:~4!"
+            
+            :: Remove quotes around assignment
+            set "assignment=!assignment:"=!"
+            
+            :: Parse VAR=VALUE
+            for /f "tokens=1* delims==" %%B in ("!assignment!") do (
+                set "param_name=%%B"
+                set "param_value=%%C"
+                
+                :: Remove any remaining spaces
+                for /f "tokens=* delims= " %%D in ("!param_name!") do set "param_name=%%D"
+                
+                :: ASSIGN VARIABLES - EXACT MATCHING
+                if "!param_name!"=="CUSTOM_PRESET" set "CUSTOM_PRESET=!param_value!"
+                if "!param_name!"=="CUSTOM_PSY_RD" set "CUSTOM_PSY_RD=!param_value!"
+                if "!param_name!"=="CUSTOM_GOP_SIZE" set "CUSTOM_GOP_SIZE=!param_value!"
+                if "!param_name!"=="CUSTOM_KEYINT_MIN" set "CUSTOM_KEYINT_MIN=!param_value!"
+                if "!param_name!"=="GOP_PRESET_NAME" set "GOP_PRESET_NAME=!param_value!"
+                if "!param_name!"=="CUSTOM_MAX_BITRATE" set "CUSTOM_MAX_BITRATE=!param_value!"
+                if "!param_name!"=="CUSTOM_BUFFER_SIZE" set "CUSTOM_BUFFER_SIZE=!param_value!"
+                if "!param_name!"=="VBV_PRESET_NAME" set "VBV_PRESET_NAME=!param_value!"
+                if "!param_name!"=="CUSTOM_AUDIO_BITRATE" set "CUSTOM_AUDIO_BITRATE=!param_value!"
+                if "!param_name!"=="CUSTOM_AUDIO_SAMPLERATE" set "CUSTOM_AUDIO_SAMPLERATE=!param_value!"
+                if "!param_name!"=="CUSTOM_AUDIO_CHANNELS" set "CUSTOM_AUDIO_CHANNELS=!param_value!"
+                if "!param_name!"=="AUDIO_PRESET_NAME" set "AUDIO_PRESET_NAME=!param_value!"
+                if "!param_name!"=="CUSTOM_COLOR_PARAMS" set "CUSTOM_COLOR_PARAMS=!param_value!"
+                if "!param_name!"=="COLOR_PRESET_NAME" set "COLOR_PRESET_NAME=!param_value!"
+            )
+        )
+    )
+)
+
+:: DETAILED VALIDATION WITH PROPER FEEDBACK
+echo   🔍 Validating loaded configuration...
+set "VALIDATION_ERRORS=0"
+set "LOADED_VARS=0"
+
+:: Check loaded variables with detailed output
+if defined CUSTOM_PRESET (
+    echo     ✅ x264 Preset: %CUSTOM_PRESET%
+    set /a "LOADED_VARS+=1"
+)
+
+if defined CUSTOM_PSY_RD (
+    echo     ✅ Psychovisual: %CUSTOM_PSY_RD%
+    set /a "LOADED_VARS+=1"
+)
+
+if defined CUSTOM_GOP_SIZE (
+    if defined CUSTOM_KEYINT_MIN (
+        echo     ✅ GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+        set /a "LOADED_VARS+=1"
+    ) else (
+        echo     ⚠️ GOP size loaded but min keyint missing
+        set /a "VALIDATION_ERRORS+=1"
+    )
+) 
+
+if defined CUSTOM_MAX_BITRATE (
+    if defined CUSTOM_BUFFER_SIZE (
+        echo     ✅ VBV Buffer: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+        set /a "LOADED_VARS+=1"
+    ) else (
+        echo     ⚠️ Max bitrate loaded but buffer size missing
+        set /a "VALIDATION_ERRORS+=1"
+    )
+)
+
+if defined AUDIO_PRESET_NAME (
+    echo     ✅ Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz)
+    set /a "LOADED_VARS+=1"
+)
+
+if defined COLOR_PRESET_NAME (
+    echo     ✅ Color Science: %COLOR_PRESET_NAME%
+    set /a "LOADED_VARS+=1"
+)
+
+:: FINAL STATUS
+if !VALIDATION_ERRORS! GTR 0 (
+    echo     ❌ %VALIDATION_ERRORS% validation errors found
+    echo     💡 Some customizations may not be applied correctly
+    call :LogEntry "[CONFIG] Advanced config validation: %VALIDATION_ERRORS% errors"
+) else (
+    if !LOADED_VARS! GTR 0 (
+        echo     ✅ All customizations validated successfully (%LOADED_VARS% loaded)
+        set "ADVANCED_MODE=Y"
+        set "CUSTOMIZATION_ACTIVE=Y"
+        call :LogEntry "[CONFIG] Advanced customizations loaded successfully: %LOADED_VARS% variables"
+    ) else (
+        echo     ℹ️ Standard mode - no advanced validation needed
+        call :LogEntry "[CONFIG] Standard mode - no customizations to load"
+    )
+)
+
+echo   ✅ Advanced configuration loading completed
+exit /b 0
