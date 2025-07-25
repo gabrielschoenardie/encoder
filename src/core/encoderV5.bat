@@ -1032,53 +1032,50 @@ if "!PASS_TYPE!"=="PASS2" (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
-if defined X264_PARAMS (
-	echo   🎭 Applying Hollywood parameters via FFmpeg flags...
-    :: Use custom preset if available from advanced customization module
-    if defined CUSTOM_PRESET (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
-        echo   🎛️ Using custom preset from module: !CUSTOM_PRESET!
-    ) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
-        echo   🎬 Using profile default preset: veryslow
-    )
-    
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-    
-    :: Apply Hollywood parameters via FFmpeg flags
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
-	:: PSYCHOVISUAL OPTIMIZATION
-	if defined CUSTOM_PSY_RD (
-		:: Parse custom psy_rd (format: X.X,X.XX)
-		for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
-			set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd %%A:%%B"
-		)
-		echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
-	) else (
-		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
-		echo   🧠 Default psychovisual: 1.0:0.15
-	)
-	
-	:: ADVANCED QUANTIZATION
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -coder 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
+:: PRESET APPLICATION - FIXED LOGIC
+echo   🎭 Applying encoding preset...
+if defined CUSTOM_PRESET (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+    echo     🎛️ Using custom preset: !CUSTOM_PRESET!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+    echo     🎬 Using profile preset: !X264_PRESET!
 )
+
+:: TUNE PARAMETER
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+    
+:: Apply Hollywood parameters via FFmpeg flags
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
+:: PSYCHOVISUAL OPTIMIZATION
+if defined CUSTOM_PSY_RD (
+	:: Parse custom psy_rd (format: X.X,X.XX)
+	for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
+		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd %%A:%%B"
+		echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
+	)
+) else (
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
+	echo   🧠 Default psychovisual: 1.0:0.15
+)
+	:: ADVANCED QUANTIZATION
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -coder 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
 
 :: VIDEO PROCESSING
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
@@ -2128,29 +2125,27 @@ exit /b 1
 ::========================================
 
 :LoadAdvancedConfig
-echo 🔄 Loading advanced customizations...
+echo 🔧 Loading advanced customizations...
 
-:: Find the most recent advanced config file
-set "ADVANCED_CONFIG_FILE="
-for /f "delims=" %%F in ('dir "%TEMP%\encoder_advanced_config_*.tmp" /b /o:-d 2^>nul') do (
-    set "ADVANCED_CONFIG_FILE=%TEMP%\%%F"
-    goto :config_found
+:: Get most recent config file
+set "TEMP_CONFIG_FILE="
+for /f "delims=" %%F in ('dir /b /od "%TEMP%\encoder_advanced_config_*.tmp" 2^>nul') do (
+    set "TEMP_CONFIG_FILE=%TEMP%\%%F"
 )
 
-:config_found
-if not defined ADVANCED_CONFIG_FILE (
-    echo   ℹ️ No advanced customizations found - using profile defaults
+if not defined TEMP_CONFIG_FILE (
+    echo   ℹ️ No advanced config found - using profile defaults
     exit /b 0
 )
 
-if not exist "%ADVANCED_CONFIG_FILE%" (
-    echo   ⚠️ Advanced config file not accessible
+if not exist "%TEMP_CONFIG_FILE%" (
+    echo   ⚠️ Config file not accessible: %TEMP_CONFIG_FILE%
     exit /b 0
 )
 
-echo   📂 Loading from: %ADVANCED_CONFIG_FILE%
+echo   📁 Config file: %TEMP_CONFIG_FILE%
 
-:: RESET ALL CUSTOM VARIABLES FIRST
+:: Reset all custom variables to ensure clean state
 set "CUSTOM_PRESET="
 set "CUSTOM_PSY_RD="
 set "CUSTOM_GOP_SIZE="
@@ -2159,117 +2154,144 @@ set "GOP_PRESET_NAME="
 set "CUSTOM_MAX_BITRATE="
 set "CUSTOM_BUFFER_SIZE="
 set "VBV_PRESET_NAME="
-set "CUSTOM_AUDIO_BITRATE="
-set "CUSTOM_AUDIO_SAMPLERATE="
-set "CUSTOM_AUDIO_CHANNELS="
-set "AUDIO_PRESET_NAME="
-set "CUSTOM_COLOR_PARAMS="
 set "COLOR_PRESET_NAME="
+set "CUSTOM_COLOR_PARAMS="
+set "ADVANCED_MODE="
+set "CUSTOMIZATION_ACTIVE="
 
-:: ENHANCED PARSING FOR "set VAR=VALUE" FORMAT
-for /f "usebackq delims=" %%A in ("%ADVANCED_CONFIG_FILE%") do (
+:: Enhanced parsing logic - handles "set VAR=VALUE" format
+echo   🔄 Parsing configuration...
+for /f "usebackq tokens=*" %%A in ("%TEMP_CONFIG_FILE%") do (
     set "line=%%A"
+    call :ParseConfigLine "!line!"
+)
+
+:: Validate and apply loaded customizations
+call :ValidateLoadedConfig
+
+if "%ADVANCED_MODE%"=="Y" (
+    if "%CUSTOMIZATION_ACTIVE%"=="Y" (
+        echo   ✅ Advanced customizations loaded successfully
+        echo   🎛️ Mode: ACTIVE with custom parameters
+        call :LogEntry "[ADVANCED] Customizations loaded and validated"
+    ) else (
+        echo   ⚠️ Advanced mode active but no customizations loaded
+        call :LogEntry "[ADVANCED] Mode active but no customizations"
+    )
+) else (
+    echo   ℹ️ Using standard Hollywood parameters (no advanced mode)
+    call :LogEntry "[ADVANCED] Standard mode - no customizations"
+)
+
+exit /b 0
+
+:ParseConfigLine
+set "config_line=%~1"
+
+:: Skip empty lines and comments
+if "!config_line!"=="" exit /b 0
+if "!config_line:~0,1!"=="#" exit /b 0
+if "!config_line:~0,2!"=="::" exit /b 0
+
+:: Handle "set VAR=VALUE" format
+if "!config_line:~0,4!"=="set " (
+    :: Extract variable assignment from 'set "VAR=VALUE"'
+    set "var_part=!config_line:~5!"
     
-    :: Skip comment lines
-    if not "!line:~0,2!"=="::" (
-        :: Check if line starts with "set "
-        if "!line:~0,4!"=="set " (
-            :: Extract variable assignment from set command
-            set "assignment=!line:~4!"
-            
-            :: Remove quotes around assignment
-            set "assignment=!assignment:"=!"
-            
-            :: Parse VAR=VALUE
-            for /f "tokens=1* delims==" %%B in ("!assignment!") do (
-                set "param_name=%%B"
-                set "param_value=%%C"
-                
-                :: Remove any remaining spaces
-                for /f "tokens=* delims= " %%D in ("!param_name!") do set "param_name=%%D"
-                
-                :: ASSIGN VARIABLES - EXACT MATCHING
-                if "!param_name!"=="CUSTOM_PRESET" set "CUSTOM_PRESET=!param_value!"
-                if "!param_name!"=="CUSTOM_PSY_RD" set "CUSTOM_PSY_RD=!param_value!"
-                if "!param_name!"=="CUSTOM_GOP_SIZE" set "CUSTOM_GOP_SIZE=!param_value!"
-                if "!param_name!"=="CUSTOM_KEYINT_MIN" set "CUSTOM_KEYINT_MIN=!param_value!"
-                if "!param_name!"=="GOP_PRESET_NAME" set "GOP_PRESET_NAME=!param_value!"
-                if "!param_name!"=="CUSTOM_MAX_BITRATE" set "CUSTOM_MAX_BITRATE=!param_value!"
-                if "!param_name!"=="CUSTOM_BUFFER_SIZE" set "CUSTOM_BUFFER_SIZE=!param_value!"
-                if "!param_name!"=="VBV_PRESET_NAME" set "VBV_PRESET_NAME=!param_value!"
-                if "!param_name!"=="CUSTOM_AUDIO_BITRATE" set "CUSTOM_AUDIO_BITRATE=!param_value!"
-                if "!param_name!"=="CUSTOM_AUDIO_SAMPLERATE" set "CUSTOM_AUDIO_SAMPLERATE=!param_value!"
-                if "!param_name!"=="CUSTOM_AUDIO_CHANNELS" set "CUSTOM_AUDIO_CHANNELS=!param_value!"
-                if "!param_name!"=="AUDIO_PRESET_NAME" set "AUDIO_PRESET_NAME=!param_value!"
-                if "!param_name!"=="CUSTOM_COLOR_PARAMS" set "CUSTOM_COLOR_PARAMS=!param_value!"
-                if "!param_name!"=="COLOR_PRESET_NAME" set "COLOR_PRESET_NAME=!param_value!"
-            )
+    :: Remove quotes if present
+    if "!var_part:~0,1!"=="""" (
+        if "!var_part:~-1!"=="""" (
+            set "var_part=!var_part:~1,-1!"
         )
     )
-)
-
-:: DETAILED VALIDATION WITH PROPER FEEDBACK
-echo   🔍 Validating loaded configuration...
-set "VALIDATION_ERRORS=0"
-set "LOADED_VARS=0"
-
-:: Check loaded variables with detailed output
-if defined CUSTOM_PRESET (
-    echo     ✅ x264 Preset: %CUSTOM_PRESET%
-    set /a "LOADED_VARS+=1"
-)
-
-if defined CUSTOM_PSY_RD (
-    echo     ✅ Psychovisual: %CUSTOM_PSY_RD%
-    set /a "LOADED_VARS+=1"
-)
-
-if defined CUSTOM_GOP_SIZE (
-    if defined CUSTOM_KEYINT_MIN (
-        echo     ✅ GOP Structure: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-        set /a "LOADED_VARS+=1"
-    ) else (
-        echo     ⚠️ GOP size loaded but min keyint missing
-        set /a "VALIDATION_ERRORS+=1"
-    )
-) 
-
-if defined CUSTOM_MAX_BITRATE (
-    if defined CUSTOM_BUFFER_SIZE (
-        echo     ✅ VBV Buffer: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-        set /a "LOADED_VARS+=1"
-    ) else (
-        echo     ⚠️ Max bitrate loaded but buffer size missing
-        set /a "VALIDATION_ERRORS+=1"
+    
+    :: Split by = to get variable name and value
+    for /f "tokens=1* delims==" %%B in ("!var_part!") do (
+        set "var_name=%%B"
+        set "var_value=%%C"
+        call :AssignVariable "!var_name!" "!var_value!"
     )
 )
 
-if defined AUDIO_PRESET_NAME (
-    echo     ✅ Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%, %CUSTOM_AUDIO_SAMPLERATE%Hz)
-    set /a "LOADED_VARS+=1"
+exit /b 0
+
+:AssignVariable
+set "var_name=%~1"
+set "var_value=%~2"
+
+:: Apply variable based on name - FIXED SYNTAX
+if "!var_name!"=="CUSTOM_PRESET" (
+    set "CUSTOM_PRESET=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_PSY_RD" (
+    set "CUSTOM_PSY_RD=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_GOP_SIZE" (
+    set "CUSTOM_GOP_SIZE=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_KEYINT_MIN" (
+    set "CUSTOM_KEYINT_MIN=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="GOP_PRESET_NAME" (
+    set "GOP_PRESET_NAME=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_MAX_BITRATE" (
+    set "CUSTOM_MAX_BITRATE=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_BUFFER_SIZE" (
+    set "CUSTOM_BUFFER_SIZE=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="VBV_PRESET_NAME" (
+    set "VBV_PRESET_NAME=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="COLOR_PRESET_NAME" (
+    set "COLOR_PRESET_NAME=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOM_COLOR_PARAMS" (
+    set "CUSTOM_COLOR_PARAMS=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="ADVANCED_MODE" (
+    set "ADVANCED_MODE=!var_value!"
+    exit /b 0
+)
+if "!var_name!"=="CUSTOMIZATION_ACTIVE" (
+    set "CUSTOMIZATION_ACTIVE=!var_value!"
+    exit /b 0
 )
 
-if defined COLOR_PRESET_NAME (
-    echo     ✅ Color Science: %COLOR_PRESET_NAME%
-    set /a "LOADED_VARS+=1"
-)
+exit /b 0
 
-:: FINAL STATUS
-if !VALIDATION_ERRORS! GTR 0 (
-    echo     ❌ %VALIDATION_ERRORS% validation errors found
-    echo     💡 Some customizations may not be applied correctly
-    call :LogEntry "[CONFIG] Advanced config validation: %VALIDATION_ERRORS% errors"
+:ValidateLoadedConfig
+:: Validate that we have a coherent configuration
+set "config_valid=Y"
+set "custom_count=0"
+
+:: Count loaded customizations
+if defined CUSTOM_PRESET set /a "custom_count+=1"
+if defined CUSTOM_PSY_RD set /a "custom_count+=1"
+if defined CUSTOM_GOP_SIZE set /a "custom_count+=1"
+if defined CUSTOM_MAX_BITRATE set /a "custom_count+=1"
+if defined COLOR_PRESET_NAME set /a "custom_count+=1"
+
+if !custom_count! GTR 0 (
+    echo   📊 Loaded !custom_count! customization groups
+    if defined CUSTOM_PRESET echo     • Preset: !CUSTOM_PRESET!
+    if defined CUSTOM_PSY_RD echo     • Psychovisual: !CUSTOM_PSY_RD!
+    if defined GOP_PRESET_NAME echo     • GOP: !GOP_PRESET_NAME! (!CUSTOM_GOP_SIZE!/!CUSTOM_KEYINT_MIN!)
+    if defined VBV_PRESET_NAME echo     • VBV: !VBV_PRESET_NAME! (!CUSTOM_MAX_BITRATE!/!CUSTOM_BUFFER_SIZE!)
+    if defined COLOR_PRESET_NAME echo     • Color: !COLOR_PRESET_NAME!
 ) else (
-    if !LOADED_VARS! GTR 0 (
-        echo     ✅ All customizations validated successfully (%LOADED_VARS% loaded)
-        set "ADVANCED_MODE=Y"
-        set "CUSTOMIZATION_ACTIVE=Y"
-        call :LogEntry "[CONFIG] Advanced customizations loaded successfully: %LOADED_VARS% variables"
-    ) else (
-        echo     ℹ️ Standard mode - no advanced validation needed
-        call :LogEntry "[CONFIG] Standard mode - no customizations to load"
-    )
+    echo   ℹ️ No customizations loaded - using profile defaults
 )
 
-echo   ✅ Advanced configuration loading completed
 exit /b 0
