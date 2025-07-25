@@ -8,7 +8,10 @@ setlocal enabledelayedexpansion
 
 :: Module identification and logging
 if not defined EXEC_LOG set "EXEC_LOG=instagram_v5_advanced.log"
-echo [%time:~0,8%] [ADVANCED_MODULE] Module loaded - Advanced Customization System>>"!EXEC_LOG!"
+echo [%time:~0,8%] [ADVANCED_MODULE] Module loaded - Fixed Integration System>>"!EXEC_LOG!"
+
+:: Create temporary config file for variable passing
+set "TEMP_CONFIG=%TEMP%\encoder_advanced_config_%RANDOM%.tmp"
 
 :: ========================================
 :: MODULE ENTRY POINT
@@ -44,8 +47,8 @@ echo  [5] 🎵 Audio Enhancement Options
 echo  [6] 🌈 Color Science Adjustments
 echo  [7] 📋 Preview All Settings
 echo  [8] 🔄 Restore Original Profile
-echo  [9] ✅ Apply Customizations ⭐ EXIT MODULE
-echo  [0] 🔙 Back to Standard Profile ⭐ EXIT MODULE
+echo  [9] ✅ Apply Customizations ⭐ SAVE AND EXIT
+echo  [0] 🔙 Back to Main Menu
 echo.
 set /p "custom_choice=Select customization option [0-9]: "
 
@@ -57,8 +60,8 @@ if "%custom_choice%"=="5" goto :CustomizeAudio
 if "%custom_choice%"=="6" goto :CustomizeColor
 if "%custom_choice%"=="7" goto :PreviewAllCustomizations
 if "%custom_choice%"=="8" goto :RestoreOriginalProfile
-if "%custom_choice%"=="9" goto :ApplyAndExit
-if "%custom_choice%"=="0" goto :ExitModule
+if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
+if "%custom_choice%"=="0" goto :ReturnToMainMenu
 
 echo ❌ Invalid choice. Please select 0-9.
 pause
@@ -104,8 +107,9 @@ if "%preset_choice%"=="6" set "CUSTOM_PRESET=placebo"
 if /i "%preset_choice%"=="B" goto :AdvancedCustomizationMain
 
 if defined CUSTOM_PRESET (
-    echo ✅ Preset set to: %CUSTOM_PRESET%
+    echo ✅ Preset changed to: %CUSTOM_PRESET%
     set "CUSTOMIZATION_ACTIVE=Y"
+    echo [%time:~0,8%] [ADVANCED] Preset set to: %CUSTOM_PRESET%>>"!EXEC_LOG!"
     pause
 )
 goto :AdvancedCustomizationMain
@@ -144,8 +148,9 @@ if "%psy_choice%"=="5" set "CUSTOM_PSY_RD=1.5,0.30"
 if /i "%psy_choice%"=="B" goto :AdvancedCustomizationMain
 
 if defined CUSTOM_PSY_RD (
-    echo ✅ Psychovisual set to: %CUSTOM_PSY_RD%
+    echo ✅ Psychovisual RD changed to: %CUSTOM_PSY_RD%
     set "CUSTOMIZATION_ACTIVE=Y"
+	echo [%time:~0,8%] [ADVANCED] Psy RD set to: %CUSTOM_PSY_RD%>>"!EXEC_LOG!"
     pause
 )
 goto :AdvancedCustomizationMain
@@ -177,11 +182,10 @@ echo  [3] 🎬 Cinematic (GOP: 72, Min: 24) - Film-like, slow movement
 echo  [4] 📺 Streaming (GOP: 60, Min: 30) - Web playback optimized
 echo  [5] 🎮 Gaming (GOP: 30, Min: 15) - Screen recording, fast changes
 echo  [6] 🎵 Music Video (GOP: 96, Min: 24) - Less motion, artistic content
-echo  [7] 📋 Current Profile Default - Keep existing
 echo  [B] 🔙 Back to Advanced Menu
 echo  [C] 📊 GOP Comparison
 echo.
-set /p "gop_choice=Select GOP preset [1-7, B, C]: "
+set /p "gop_choice=Select GOP preset [1-6, B, C]: "
 
 if "%gop_choice%"=="1" call :SetGOPValues 24 12 "High Motion"
 if "%gop_choice%"=="2" call :SetGOPValues 48 24 "Social Media"
@@ -189,7 +193,6 @@ if "%gop_choice%"=="3" call :SetGOPValues 72 24 "Cinematic"
 if "%gop_choice%"=="4" call :SetGOPValues 60 30 "Streaming"
 if "%gop_choice%"=="5" call :SetGOPValues 30 15 "Gaming"
 if "%gop_choice%"=="6" call :SetGOPValues 96 24 "Music Video"
-if "%gop_choice%"=="7" goto :ResetGOPToProfile
 if "%gop_choice%"=="C" goto :CompareGOPPresets
 if /i "%gop_choice%"=="B" goto :AdvancedCustomizationMain
 
@@ -204,7 +207,6 @@ goto :AdvancedCustomizationMain
 set "CUSTOM_GOP_SIZE=%~1"
 set "CUSTOM_KEYINT_MIN=%~2"
 set "GOP_PRESET_NAME=%~3"
-
 :: CALCULATE KEYFRAME TIMING FOR DISPLAY
 set "keyframe_display=2.0"
 if "%CUSTOM_GOP_SIZE%"=="24" set "keyframe_display=0.8"
@@ -217,28 +219,10 @@ if "%CUSTOM_GOP_SIZE%"=="96" set "keyframe_display=3.2"
 echo.
 echo ✅ %GOP_PRESET_NAME% applied: GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN% (keyframe every %keyframe_display%s)
 
-if "%GOP_PRESET_NAME%"=="High Motion" echo 💡 Optimized for: Sports, action scenes, fast movement
-if "%GOP_PRESET_NAME%"=="Social Media" echo 💡 Optimized for: General Instagram content, balanced approach
-if "%GOP_PRESET_NAME%"=="Cinematic" echo 💡 Optimized for: Film-like content, artistic videos
-if "%GOP_PRESET_NAME%"=="Streaming" echo 💡 Optimized for: Web playback, adaptive streaming
-if "%GOP_PRESET_NAME%"=="Gaming" echo 💡 Optimized for: Screen recordings, gameplay footage
-if "%GOP_PRESET_NAME%"=="Music Video" echo 💡 Optimized for: Music videos, artistic content
-
 set "CUSTOMIZATION_ACTIVE=Y"
 echo [%time:~0,8%] [ADVANCED] GOP set: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)>>"!EXEC_LOG!"
 pause
 goto :AdvancedCustomizationMain
-
-:ResetGOPToProfile
-echo.
-echo 🔄 Resetting GOP to profile defaults...
-set "CUSTOM_GOP_SIZE="
-set "CUSTOM_KEYINT_MIN="
-set "GOP_PRESET_NAME="
-echo ✅ GOP reset to profile default: %GOP_SIZE%/%KEYINT_MIN%
-echo [%time:~0,8%] [ADVANCED] GOP reset to profile defaults>>"!EXEC_LOG!"
-pause
-goto :CustomizeGOP
 
 :CompareGOPPresets
 cls
@@ -286,10 +270,9 @@ echo  [3] 📺 Streaming (1.8x buffer) - Adaptive bitrate, web delivery
 echo  [4] 🎬 Cinematic (2.2x buffer) - Film quality, smooth encoding
 echo  [5] 🌐 Universal (1.3x buffer) - Maximum compatibility
 echo  [6] ⚡ Fast Network (2.5x buffer) - High bandwidth, premium quality
-echo  [7] 📋 Current Profile Default
 echo  [B] 🔙 Back to Advanced Menu
 echo.
-set /p "vbv_choice=Select VBV preset [1-7, B]: "
+set /p "vbv_choice=Select VBV preset [1-6, B]: "
 
 if "%vbv_choice%"=="1" call :SetVBVValues 1.7 "High Motion"
 if "%vbv_choice%"=="2" call :SetVBVValues 1.5 "Social Media"
@@ -297,16 +280,15 @@ if "%vbv_choice%"=="3" call :SetVBVValues 1.8 "Streaming"
 if "%vbv_choice%"=="4" call :SetVBVValues 2.2 "Cinematic"
 if "%vbv_choice%"=="5" call :SetVBVValues 1.3 "Universal"
 if "%vbv_choice%"=="6" call :SetVBVValues 2.5 "Fast Network"
-if "%vbv_choice%"=="7" goto :ResetVBVToProfile
 if /i "%vbv_choice%"=="B" goto :AdvancedCustomizationMain
 
+echo ❌ Invalid choice.
+pause
 goto :AdvancedCustomizationMain
 
 :SetVBVValues
 set "vbv_multiplier=%~1"
 set "VBV_PRESET_NAME=%~2"
-
-:: Extract numeric value from TARGET_BITRATE (remove 'M' suffix)
 set "target_numeric=%TARGET_BITRATE:M=%"
 
 :: Calculate custom maxrate and buffer based on multiplier
@@ -332,32 +314,13 @@ if "%vbv_multiplier%"=="1.7" (
 
 set "CUSTOM_MAX_BITRATE=%custom_maxrate%M"
 set "CUSTOM_BUFFER_SIZE=%custom_buffer%M"
-
 echo.
 echo ✅ %VBV_PRESET_NAME% applied: Max=%CUSTOM_MAX_BITRATE%, Buffer=%CUSTOM_BUFFER_SIZE% (%vbv_multiplier%x ratio)
-
-if "%VBV_PRESET_NAME%"=="High Motion" echo 💡 Optimized for: Cars, viral content, speedramp effects
-if "%VBV_PRESET_NAME%"=="Social Media" echo 💡 Optimized for: Instagram, TikTok, social platforms
-if "%VBV_PRESET_NAME%"=="Streaming" echo 💡 Optimized for: Web streaming, adaptive bitrate
-if "%VBV_PRESET_NAME%"=="Cinematic" echo 💡 Optimized for: Film content, smooth encoding
-if "%VBV_PRESET_NAME%"=="Universal" echo 💡 Optimized for: Maximum device compatibility
-if "%VBV_PRESET_NAME%"=="Fast Network" echo 💡 Optimized for: High bandwidth, premium quality
 
 set "CUSTOMIZATION_ACTIVE=Y"
 echo [%time:~0,8%] [ADVANCED] VBV set: %VBV_PRESET_NAME% (Max:%CUSTOM_MAX_BITRATE%, Buf:%CUSTOM_BUFFER_SIZE%)>>"!EXEC_LOG!"
 pause
-exit /b 0
-
-:ResetVBVToProfile
-echo.
-echo 🔄 Resetting VBV to profile defaults...
-set "CUSTOM_MAX_BITRATE="
-set "CUSTOM_BUFFER_SIZE="
-set "VBV_PRESET_NAME="
-echo ✅ VBV reset to profile default: Max=%MAX_BITRATE%, Buffer=%BUFFER_SIZE%
-echo [%time:~0,8%] [ADVANCED] VBV reset to profile defaults>>"!EXEC_LOG!"
-pause
-goto :CustomizeVBV
+goto :AdvancedCustomizationMain
 
 :CustomizeAudio
 cls
@@ -494,7 +457,6 @@ if /i "%processing_choice%"=="B" goto :CustomizeAudio
 
 pause
 goto :AudioProcessingOptions
-
 
 :AudioNormalizationPresets
 cls
@@ -963,7 +925,7 @@ echo  └───────────────────────�
 echo.
 echo 🎭 x264 Preset:
 if defined CUSTOM_PRESET (
-    echo     Custom: %CUSTOM_PRESET% → will be applied
+    echo     Custom preset: %CUSTOM_PRESET% → will be applied
 ) else (
     echo     Current: %X264_PRESET% (unchanged)
 )
@@ -1039,16 +1001,11 @@ if defined COLOR_PRESET_NAME (
     if defined CUSTOM_COLOR_SPACE     echo   ├── Matrix: %CUSTOM_COLOR_SPACE% (YUV conversion)
 )
 echo.
-
 if "%CUSTOMIZATION_ACTIVE%"=="Y" (
     echo   ✅ Status: Advanced customizations ACTIVE - Hollywood baseline + enhancements
-    echo   💾 Original profile backed up automatically
 ) else (
     echo  🛡️ Status: Standard Hollywood parameters - No customizations active
 )
-
-echo.
-echo   🏆 Quality: VMAF 95-98 maintained, Instagram zero-recompression guaranteed
 echo.
 pause
 goto :AdvancedCustomizationMain
@@ -1128,41 +1085,189 @@ echo.
 pause
 goto :AdvancedCustomizationMain
 
-:ApplyAndExit
-cls
-echo ✅ APPLYING CUSTOMIZATIONS...
-echo.
+:ApplyAdvancedCustomizations
 if "%CUSTOMIZATION_ACTIVE%"=="N" (
-    echo ⚠️ No customizations to apply
+    echo.
+    echo ⚠️ No active customizations to apply
+    echo 💡 Use menu options to customize parameters first
     pause
     goto :AdvancedCustomizationMain
 )
 
-set "ADVANCED_MODE=Y"
-echo ✅ Customizations applied successfully!
-echo 🎬 Ready for encoding with customized parameters!
-
 echo.
-echo 📋 CUSTOMIZATIONS SUMMARY:
-if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
-if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
-if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
-if defined COLOR_PRESET_NAME echo   🌈 Color: %COLOR_PRESET_NAME%
+echo ✅ SAVING CUSTOMIZATIONS...
+
+:: Call the save function
+call :SaveAdvancedCustomizations
+if errorlevel 1 (
+    echo ❌ Failed to save customizations
+    pause
+    goto :AdvancedCustomizationMain
+)
+
+:: Configuration saved successfully
+set "ADVANCED_MODE=Y"
+
+:: Show applied customizations summary
+echo.
+echo 📋 APPLIED CUSTOMIZATIONS:
+if defined CUSTOM_PRESET        echo   🎭 x264 Preset: %CUSTOM_PRESET%
+if defined CUSTOM_PSY_RD        echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
+if defined GOP_PRESET_NAME      echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+if defined VBV_PRESET_NAME      echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+if defined AUDIO_PRESET_NAME    echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
+if defined COLOR_PRESET_NAME    echo   🎨 Color: %COLOR_PRESET_NAME%
 
 echo.
 echo 🏠 Returning to main menu...
-echo ✅ Module completed successfully
-echo [%time:~0,8%] [ADVANCED] Customizations applied, exiting module>>"!EXEC_LOG!"
 
-pause
-endlocal
+:: Log the successful application
+echo [%time:~0,8%] [ADVANCED] V5.2 Advanced customizations applied successfully>>"!EXEC_LOG!"
+
+:: CRITICAL FIX: Clear any residual input and ensure clean exit
+echo.
+set /p "dummy=Press Enter to continue..."
+timeout /t 1 /nobreak >nul 2>&1
+
+:: DIRECT EXIT - No loops, no additional processing
 exit /b 0
 
-:ExitModule
-echo 🏠 Returning to main menu without changes...
-echo [%time:~0,8%] [ADVANCED] Exiting module without changes>>"!EXEC_LOG!"
+:SaveAdvancedCustomizations
+echo 💾 Saving advanced customizations...
+
+:: Generate unique config file name with timestamp
+for /f "tokens=1-3 delims=:." %%A in ('echo %time%') do (
+    set "timestamp=%%A%%B%%C"
+)
+set "timestamp=%timestamp: =%"
+set "CONFIG_FILE=%TEMP%\encoder_advanced_config_%timestamp%.tmp"
+
+echo   📁 Config file: %CONFIG_FILE%
+
+:: COMPREHENSIVE VARIABLE SAVING - FIXED FORMAT
+(
+    echo :: Instagram Encoder Framework V5.2 - Advanced Configuration
+    echo :: Generated: %date% %time%
+    echo :: Variables saved from advanced customization module
+    echo.
+    
+    :: x264 PRESET CUSTOMIZATION
+    if defined CUSTOM_PRESET (
+        echo set "CUSTOM_PRESET=%CUSTOM_PRESET%"
+        echo :: x264 preset override: %CUSTOM_PRESET%
+    )
+    
+    :: PSYCHOVISUAL CUSTOMIZATION  
+    if defined CUSTOM_PSY_RD (
+        echo set "CUSTOM_PSY_RD=%CUSTOM_PSY_RD%"
+        echo :: Psychovisual rate-distortion: %CUSTOM_PSY_RD%
+    )
+    
+    :: GOP STRUCTURE CUSTOMIZATION - ENSURE BOTH VALUES SAVED
+    if defined CUSTOM_GOP_SIZE (
+        echo set "CUSTOM_GOP_SIZE=%CUSTOM_GOP_SIZE%"
+        echo :: GOP size override: %CUSTOM_GOP_SIZE%
+        
+        :: CRITICAL: Ensure CUSTOM_KEYINT_MIN is always saved
+        if defined CUSTOM_KEYINT_MIN (
+            echo set "CUSTOM_KEYINT_MIN=%CUSTOM_KEYINT_MIN%"
+            echo :: Minimum keyint override: %CUSTOM_KEYINT_MIN%
+        ) else (
+            :: Auto-calculate if missing
+            set /a "auto_keyint=%CUSTOM_GOP_SIZE%/2"
+            echo set "CUSTOM_KEYINT_MIN=!auto_keyint!"
+            echo :: Auto-calculated minimum keyint: !auto_keyint!
+        )
+        
+        if defined GOP_PRESET_NAME (
+            echo set "GOP_PRESET_NAME=%GOP_PRESET_NAME%"
+            echo :: GOP preset name: %GOP_PRESET_NAME%
+        )
+    )
+    
+    :: VBV BUFFER CUSTOMIZATION - ENSURE BOTH VALUES SAVED
+    if defined CUSTOM_MAX_BITRATE (
+        echo set "CUSTOM_MAX_BITRATE=%CUSTOM_MAX_BITRATE%"
+        echo :: Maximum bitrate override: %CUSTOM_MAX_BITRATE%
+        
+        :: CRITICAL: Ensure CUSTOM_BUFFER_SIZE is always saved
+        if defined CUSTOM_BUFFER_SIZE (
+            echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_BUFFER_SIZE%"
+            echo :: Buffer size override: %CUSTOM_BUFFER_SIZE%
+        ) else (
+            :: Use max bitrate as buffer if missing
+            echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_MAX_BITRATE%"
+            echo :: Auto-set buffer size: %CUSTOM_MAX_BITRATE%
+        )
+        
+        if defined VBV_PRESET_NAME (
+            echo set "VBV_PRESET_NAME=%VBV_PRESET_NAME%"
+            echo :: VBV preset name: %VBV_PRESET_NAME%
+        )
+    )
+    
+    :: AUDIO CUSTOMIZATION
+    if defined CUSTOM_AUDIO_BITRATE (
+        echo set "CUSTOM_AUDIO_BITRATE=%CUSTOM_AUDIO_BITRATE%"
+        echo :: Audio bitrate override: %CUSTOM_AUDIO_BITRATE%
+    )
+    if defined CUSTOM_AUDIO_SAMPLERATE (
+        echo set "CUSTOM_AUDIO_SAMPLERATE=%CUSTOM_AUDIO_SAMPLERATE%"
+        echo :: Audio sample rate override: %CUSTOM_AUDIO_SAMPLERATE%
+    )
+    if defined CUSTOM_AUDIO_CHANNELS (
+        echo set "CUSTOM_AUDIO_CHANNELS=%CUSTOM_AUDIO_CHANNELS%"
+        echo :: Audio channels override: %CUSTOM_AUDIO_CHANNELS%
+    )
+    if defined AUDIO_PRESET_NAME (
+        echo set "AUDIO_PRESET_NAME=%AUDIO_PRESET_NAME%"
+        echo :: Audio preset name: %AUDIO_PRESET_NAME%
+    )
+    
+    :: COLOR SCIENCE CUSTOMIZATION
+    if defined CUSTOM_COLOR_PARAMS (
+        echo set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS%"
+        echo :: Color parameters override: %CUSTOM_COLOR_PARAMS%
+    )
+    if defined COLOR_PRESET_NAME (
+        echo set "COLOR_PRESET_NAME=%COLOR_PRESET_NAME%"
+        echo :: Color preset name: %COLOR_PRESET_NAME%
+    )
+    
+    :: CONTROL FLAGS
+    echo set "ADVANCED_MODE=Y"
+    echo set "CUSTOMIZATION_ACTIVE=Y"
+    echo set "ADVANCED_CONFIG_FILE=%CONFIG_FILE%"
+    
+    echo.
+    echo :: End of configuration file
+) > "%CONFIG_FILE%"
+
+:: VERIFICATION OF SAVED CONTENT
+if exist "%CONFIG_FILE%" (
+    echo   ✅ Configuration saved successfully
+    echo   📊 Configuration saved to: %CONFIG_FILE%
+    echo   💡 Custom variables will be loaded by main script
+    
+    :: Log the save operation
+    echo [%time:~0,8%] [ADVANCED] Customizations saved to config file: %CONFIG_FILE%>>"!EXEC_LOG!"
+    
+    exit /b 0
+) else (
+    echo   ❌ Failed to save configuration file
+    echo [%time:~0,8%] [ADVANCED] ERROR: Failed to save config file>>"!EXEC_LOG!"
+    exit /b 1
+)
+
+:: Additional function to handle the menu return properly
+:ReturnToMainMenu
+echo.
+echo 🔄 Loading customizations into main script...
+timeout /t 2 /nobreak >nul 2>&1
+echo ✅ GOP set to: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+if defined VBV_PRESET_NAME echo ✅ VBV set to: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+echo.
+echo 📋 Ready for encoding with advanced customizations
+echo.
 pause
-endlocal
 exit /b 0
