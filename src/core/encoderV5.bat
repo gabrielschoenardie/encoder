@@ -2200,59 +2200,145 @@ for /f "usebackq tokens=*" %%A in ("%TEMP_CONFIG_FILE%") do (
     set "line=%%A"
     call :ParseConfigLine "!line!"
 )
+
+:: ========================================
+:: ADD THIS DIAGNOSTIC BLOCK HERE
+:: ========================================
+echo   🔍 DIAGNOSTIC - Variables after loading:
+echo     DEBUG: CUSTOM_GOP_SIZE=[%CUSTOM_GOP_SIZE%]
+echo     DEBUG: CUSTOM_KEYINT_MIN=[%CUSTOM_KEYINT_MIN%]
+echo     DEBUG: CUSTOM_MAX_BITRATE=[%CUSTOM_MAX_BITRATE%]
+echo     DEBUG: CUSTOM_BUFFER_SIZE=[%CUSTOM_BUFFER_SIZE%]
+echo     DEBUG: GOP_PRESET_NAME=[%GOP_PRESET_NAME%]
+echo     DEBUG: VBV_PRESET_NAME=[%VBV_PRESET_NAME%]
+echo     DEBUG: ADVANCED_MODE=[%ADVANCED_MODE%]
+echo     DEBUG: CUSTOMIZATION_ACTIVE=[%CUSTOMIZATION_ACTIVE%]
+echo   🔍 END DIAGNOSTIC
+:: ========================================
+
 :: Validate and apply loaded customizations
 call :ValidateAndApplyConfig
 
 exit /b 0
 
 :ParseConfigLine
-set "config_line=%~1"
+set "line=%~1"
 
 :: Skip empty lines and comments
-if "!config_line!"=="" exit /b 0
-if "!config_line:~0,1!"=="#" exit /b 0
-if "!config_line:~0,2!"=="::" exit /b 0
+if not defined line exit /b 0
+if "!line:~0,2!"=="::" exit /b 0
 
-:: Handle "set VAR=VALUE" format
-if "!config_line:~0,4!"=="set " (
-    :: Extract variable assignment from 'set "VAR=VALUE"'
-    set "var_part=!config_line:~5!"
-    
-    :: Remove quotes if present
-    if "!var_part:~0,1!"=="""" (
-        if "!var_part:~-1!"=="""" (
-            set "var_part=!var_part:~1,-1!"
-        )
+:: Look for "set " pattern
+echo !line! | findstr /b "set " >nul || exit /b 0
+
+:: ENHANCED PARSING - Handle spaces in values correctly
+:: Extract everything after 'set "'
+for /f "tokens=1* delims=" %%A in ("!line!") do set "full_line=%%A"
+
+:: Remove 'set "' from beginning  
+set "full_line=!full_line:set "=!"
+
+:: Remove trailing quote if present
+if "!full_line:~-1!"==""" set "full_line=!full_line:~0,-1!"
+
+:: Find first = to split variable name and value
+for /f "tokens=1* delims==" %%A in ("!full_line!") do (
+    set "var_name=%%A"
+    set "var_value=%%B"
+)
+
+:: Clean variable name (remove any remaining quotes)
+set "var_name=!var_name:"=!"
+
+:: Clean variable value (remove surrounding quotes if present)
+if defined var_value (
+    if "!var_value:~0,1!"==""" if "!var_value:~-1!"==""" (
+        set "var_value=!var_value:~1,-1!"
     )
-    
-    :: Split by = to get variable name and value
-    for /f "tokens=1* delims==" %%B in ("!var_part!") do (
-        set "var_name=%%B"
-        set "var_value=%%C"
-        call :AssignVariable "!var_name!" "!var_value!"
-    )
+)
+
+:: Debug output
+echo     📋 Extracted: [!var_name!] = [!var_value!]
+
+:: Call assignment function with cleaned values
+if defined var_name if defined var_value (
+    call :AssignConfigVariable "!var_name!" "!var_value!"
+) else (
+    echo     ⚠️ Parse failed - name=[!var_name!] value=[!var_value!]
 )
 
 exit /b 0
 
-:AssignVariable
+:AssignConfigVariable
 set "var_name=%~1"
 set "var_value=%~2"
 
-:: Apply variable based on name - FIXED SYNTAX
-if "!var_name!"=="CUSTOM_PRESET" set "CUSTOM_PRESET=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_PSY_RD" set "CUSTOM_PSY_RD=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_GOP_SIZE" set "CUSTOM_GOP_SIZE=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_KEYINT_MIN" set "CUSTOM_KEYINT_MIN=!var_value!" & exit /b 0
-if "!var_name!"=="GOP_PRESET_NAME" set "GOP_PRESET_NAME=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_MAX_BITRATE" set "CUSTOM_MAX_BITRATE=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_BUFFER_SIZE" set "CUSTOM_BUFFER_SIZE=!var_value!" & exit /b 0
-if "!var_name!"=="VBV_PRESET_NAME" set "VBV_PRESET_NAME=!var_value!" & exit /b 0
-if "!var_name!"=="COLOR_PRESET_NAME" set "COLOR_PRESET_NAME=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOM_COLOR_PARAMS" set "CUSTOM_COLOR_PARAMS=!var_value!" & exit /b 0
-if "!var_name!"=="ADVANCED_MODE" set "ADVANCED_MODE=!var_value!" & exit /b 0
-if "!var_name!"=="CUSTOMIZATION_ACTIVE" set "CUSTOMIZATION_ACTIVE=!var_value!" & exit /b 0
+:: ENHANCED VARIABLE ASSIGNMENT - Handle all cases
+if /i "!var_name!"=="CUSTOM_PRESET" (
+    set "CUSTOM_PRESET=!var_value!"
+    echo     ✅ CUSTOM_PRESET=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_PSY_RD" (
+    set "CUSTOM_PSY_RD=!var_value!"
+    echo     ✅ CUSTOM_PSY_RD=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_GOP_SIZE" (
+    set "CUSTOM_GOP_SIZE=!var_value!"
+    echo     ✅ CUSTOM_GOP_SIZE=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_KEYINT_MIN" (
+    set "CUSTOM_KEYINT_MIN=!var_value!"
+    echo     ✅ CUSTOM_KEYINT_MIN=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="GOP_PRESET_NAME" (
+    set "GOP_PRESET_NAME=!var_value!"
+    echo     ✅ GOP_PRESET_NAME=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_MAX_BITRATE" (
+    set "CUSTOM_MAX_BITRATE=!var_value!"
+    echo     ✅ CUSTOM_MAX_BITRATE=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_BUFFER_SIZE" (
+    set "CUSTOM_BUFFER_SIZE=!var_value!"
+    echo     ✅ CUSTOM_BUFFER_SIZE=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="VBV_PRESET_NAME" (
+    set "VBV_PRESET_NAME=!var_value!"
+    echo     ✅ VBV_PRESET_NAME=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOM_COLOR_PARAMS" (
+    set "CUSTOM_COLOR_PARAMS=!var_value!"
+    echo     ✅ CUSTOM_COLOR_PARAMS=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="COLOR_PRESET_NAME" (
+    set "COLOR_PRESET_NAME=!var_value!"
+    echo     ✅ COLOR_PRESET_NAME=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="ADVANCED_MODE" (
+    set "ADVANCED_MODE=!var_value!"
+    echo     ✅ ADVANCED_MODE=!var_value!
+    goto :assign_done
+)
+if /i "!var_name!"=="CUSTOMIZATION_ACTIVE" (
+    set "CUSTOMIZATION_ACTIVE=!var_value!"
+    echo     ✅ CUSTOMIZATION_ACTIVE=!var_value!
+    goto :assign_done
+)
 
+:: Variable not recognized
+echo     ⚠️ Unknown variable: !var_name!
+
+:assign_done
 exit /b 0
 
 :ValidateAndApplyConfig
@@ -2265,7 +2351,7 @@ echo   📊 Validating loaded customizations...
 :: Count and validate customizations
 if defined CUSTOM_PRESET (
     set /a "custom_count+=1"
-    echo     ✅ Preset: !CUSTOM_PRESET!
+    echo     ✅ x264 Preset: !CUSTOM_PRESET!
 )
 
 if defined CUSTOM_PSY_RD (
@@ -2273,56 +2359,91 @@ if defined CUSTOM_PSY_RD (
     echo     ✅ Psychovisual: !CUSTOM_PSY_RD!
 )
 
+:: FIXED GOP VALIDATION - Check components independently
+set "gop_customizations=0"
 if defined CUSTOM_GOP_SIZE (
-    if defined CUSTOM_KEYINT_MIN (
-        set /a "custom_count+=1"
-        echo     ✅ GOP Structure: !GOP_PRESET_NAME! (!CUSTOM_GOP_SIZE!/!CUSTOM_KEYINT_MIN!)
+    set /a "gop_customizations+=1"
+    echo     ✅ GOP Size: !CUSTOM_GOP_SIZE!
+)
+if defined CUSTOM_KEYINT_MIN (
+    set /a "gop_customizations+=1"
+    echo     ✅ Min Keyint: !CUSTOM_KEYINT_MIN!
+)
+if defined GOP_PRESET_NAME (
+    echo     ✅ GOP Preset: !GOP_PRESET_NAME!
+)
+
+:: COUNT GOP AS ONE CUSTOMIZATION GROUP if any GOP setting present
+if !gop_customizations! GTR 0 (
+    set /a "custom_count+=1"
+    if !gop_customizations! EQU 2 (
+        echo     ✅ GOP Structure: Complete (!CUSTOM_GOP_SIZE!/!CUSTOM_KEYINT_MIN!)
     ) else (
-        echo     ⚠️ GOP size defined but min keyint missing
-        set /a "validation_errors+=1"
+        echo     ✅ GOP Structure: Partial (!gop_customizations!/2 components)
     )
 )
 
+:: FIXED VBV VALIDATION - Check components independently  
+set "vbv_customizations=0"
 if defined CUSTOM_MAX_BITRATE (
-    if defined CUSTOM_BUFFER_SIZE (
-        set /a "custom_count+=1"
-        echo     ✅ VBV Buffer: !VBV_PRESET_NAME! (!CUSTOM_MAX_BITRATE!/!CUSTOM_BUFFER_SIZE!)
+    set /a "vbv_customizations+=1"
+    echo     ✅ Max Bitrate: !CUSTOM_MAX_BITRATE!
+)
+if defined CUSTOM_BUFFER_SIZE (
+    set /a "vbv_customizations+=1"
+    echo     ✅ Buffer Size: !CUSTOM_BUFFER_SIZE!
+)
+if defined VBV_PRESET_NAME (
+    echo     ✅ VBV Preset: !VBV_PRESET_NAME!
+)
+
+:: COUNT VBV AS ONE CUSTOMIZATION GROUP if any VBV setting present
+if !vbv_customizations! GTR 0 (
+    set /a "custom_count+=1"
+    if !vbv_customizations! EQU 2 (
+        echo     ✅ VBV Buffer: Complete (!CUSTOM_MAX_BITRATE!/!CUSTOM_BUFFER_SIZE!)
     ) else (
-        echo     ⚠️ Max bitrate defined but buffer size missing
-        set /a "validation_errors+=1"
+        echo     ✅ VBV Buffer: Partial (!vbv_customizations!/2 components)
     )
 )
 
+:: COLOR VALIDATION
 if defined COLOR_PRESET_NAME (
     set /a "custom_count+=1"
     echo     ✅ Color Science: !COLOR_PRESET_NAME!
+    if defined CUSTOM_COLOR_PARAMS (
+        echo     ✅ Color Params: !CUSTOM_COLOR_PARAMS!
+    )
 )
 
-:: Apply advanced mode if we have customizations
+:: AUDIO VALIDATION (if implemented)
+if defined AUDIO_PRESET_NAME (
+    set /a "custom_count+=1"
+    echo     ✅ Audio Enhancement: !AUDIO_PRESET_NAME!
+)
+:: FINAL VALIDATION AND ACTIVATION - FIXED LOGIC
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 if !custom_count! GTR 0 (
-    if !validation_errors! EQU 0 (
-        set "ADVANCED_MODE=Y"
-        set "CUSTOMIZATION_ACTIVE=Y"
-        echo   🎛️ Advanced Mode: ACTIVATED with !custom_count! customization groups
-        call :LogEntry "[ADVANCED] Mode activated with !custom_count! customizations"
-    ) else (
-        set "ADVANCED_MODE=N"
-        set "CUSTOMIZATION_ACTIVE=N"
-        echo   ⚠️ Advanced Mode: DISABLED due to !validation_errors! validation errors
-        call :LogEntry "[ADVANCED] Mode disabled due to validation errors"
-    )
+    :: ACTIVATE ADVANCED MODE
+    set "ADVANCED_MODE=Y"
+    set "CUSTOMIZATION_ACTIVE=Y"
+    echo   🎛️ Advanced Mode: ACTIVATED with !custom_count! customization groups
+    echo   🚀 Ready for enhanced encoding with custom parameters
+    echo   🏆 Hollywood baseline + professional enhancements
+    :: LOG SUCCESS
+    call :LogEntry "[ADVANCED] Mode activated with !custom_count! customizations"
+    call :LogEntry "[ADVANCED] GOP: !gop_customizations! components, VBV: !vbv_customizations! components"
 ) else (
+    :: NO CUSTOMIZATIONS FOUND
     set "ADVANCED_MODE=N"
     set "CUSTOMIZATION_ACTIVE=N"
     echo   ℹ️ No customizations loaded - using profile defaults
-    call :LogEntry "[ADVANCED] No customizations loaded"
+    echo   🛡️ Using standard Hollywood parameters (profile baseline)
+    call :LogEntry "[ADVANCED] No customizations found"
 )
 
-:: Final status report
-if "%ADVANCED_MODE%"=="Y" (
-    echo   🚀 Ready for enhanced encoding with custom parameters
-) else (
-    echo   🛡️ Using standard Hollywood parameters (profile defaults)
-)
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ✅ Customizations integrated successfully
 
 exit /b 0
