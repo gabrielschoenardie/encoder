@@ -2200,22 +2200,8 @@ for /f "usebackq tokens=*" %%A in ("%TEMP_CONFIG_FILE%") do (
     set "line=%%A"
     call :ParseConfigLine "!line!"
 )
-
 :: Validate and apply loaded customizations
-:ValidateLoadedConfig
-if "%ADVANCED_MODE%"=="Y" (
-    if "%CUSTOMIZATION_ACTIVE%"=="Y" (
-        echo   ✅ Advanced customizations loaded successfully
-        echo   🎛️ Mode: ACTIVE with custom parameters
-        call :LogEntry "[ADVANCED] Customizations loaded and validated"
-    ) else (
-        echo   ⚠️ Advanced mode active but no customizations loaded
-        call :LogEntry "[ADVANCED] Mode active but no customizations"
-    )
-) else (
-    echo   ℹ️ Using standard Hollywood parameters (no advanced mode)
-    call :LogEntry "[ADVANCED] Standard mode - no customizations"
-)
+call :ValidateAndApplyConfig
 
 exit /b 0
 
@@ -2254,78 +2240,89 @@ set "var_name=%~1"
 set "var_value=%~2"
 
 :: Apply variable based on name - FIXED SYNTAX
-if "!var_name!"=="CUSTOM_PRESET" (
-    set "CUSTOM_PRESET=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_PSY_RD" (
-    set "CUSTOM_PSY_RD=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_GOP_SIZE" (
-    set "CUSTOM_GOP_SIZE=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_KEYINT_MIN" (
-    set "CUSTOM_KEYINT_MIN=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="GOP_PRESET_NAME" (
-    set "GOP_PRESET_NAME=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_MAX_BITRATE" (
-    set "CUSTOM_MAX_BITRATE=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_BUFFER_SIZE" (
-    set "CUSTOM_BUFFER_SIZE=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="VBV_PRESET_NAME" (
-    set "VBV_PRESET_NAME=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="COLOR_PRESET_NAME" (
-    set "COLOR_PRESET_NAME=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOM_COLOR_PARAMS" (
-    set "CUSTOM_COLOR_PARAMS=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="ADVANCED_MODE" (
-    set "ADVANCED_MODE=!var_value!"
-    exit /b 0
-)
-if "!var_name!"=="CUSTOMIZATION_ACTIVE" (
-    set "CUSTOMIZATION_ACTIVE=!var_value!"
-    exit /b 0
-)
+if "!var_name!"=="CUSTOM_PRESET" set "CUSTOM_PRESET=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_PSY_RD" set "CUSTOM_PSY_RD=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_GOP_SIZE" set "CUSTOM_GOP_SIZE=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_KEYINT_MIN" set "CUSTOM_KEYINT_MIN=!var_value!" & exit /b 0
+if "!var_name!"=="GOP_PRESET_NAME" set "GOP_PRESET_NAME=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_MAX_BITRATE" set "CUSTOM_MAX_BITRATE=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_BUFFER_SIZE" set "CUSTOM_BUFFER_SIZE=!var_value!" & exit /b 0
+if "!var_name!"=="VBV_PRESET_NAME" set "VBV_PRESET_NAME=!var_value!" & exit /b 0
+if "!var_name!"=="COLOR_PRESET_NAME" set "COLOR_PRESET_NAME=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOM_COLOR_PARAMS" set "CUSTOM_COLOR_PARAMS=!var_value!" & exit /b 0
+if "!var_name!"=="ADVANCED_MODE" set "ADVANCED_MODE=!var_value!" & exit /b 0
+if "!var_name!"=="CUSTOMIZATION_ACTIVE" set "CUSTOMIZATION_ACTIVE=!var_value!" & exit /b 0
 
 exit /b 0
 
-:ValidateLoadedConfig
-:: Validate that we have a coherent configuration
-set "config_valid=Y"
+:ValidateAndApplyConfig
+:: Count loaded customizations and validate coherence
 set "custom_count=0"
+set "validation_errors=0"
 
-:: Count loaded customizations
-if defined CUSTOM_PRESET set /a "custom_count+=1"
-if defined CUSTOM_PSY_RD set /a "custom_count+=1"
-if defined CUSTOM_GOP_SIZE set /a "custom_count+=1"
-if defined CUSTOM_MAX_BITRATE set /a "custom_count+=1"
-if defined COLOR_PRESET_NAME set /a "custom_count+=1"
+echo   📊 Validating loaded customizations...
 
+:: Count and validate customizations
+if defined CUSTOM_PRESET (
+    set /a "custom_count+=1"
+    echo     ✅ Preset: !CUSTOM_PRESET!
+)
+
+if defined CUSTOM_PSY_RD (
+    set /a "custom_count+=1"
+    echo     ✅ Psychovisual: !CUSTOM_PSY_RD!
+)
+
+if defined CUSTOM_GOP_SIZE (
+    if defined CUSTOM_KEYINT_MIN (
+        set /a "custom_count+=1"
+        echo     ✅ GOP Structure: !GOP_PRESET_NAME! (!CUSTOM_GOP_SIZE!/!CUSTOM_KEYINT_MIN!)
+    ) else (
+        echo     ⚠️ GOP size defined but min keyint missing
+        set /a "validation_errors+=1"
+    )
+)
+
+if defined CUSTOM_MAX_BITRATE (
+    if defined CUSTOM_BUFFER_SIZE (
+        set /a "custom_count+=1"
+        echo     ✅ VBV Buffer: !VBV_PRESET_NAME! (!CUSTOM_MAX_BITRATE!/!CUSTOM_BUFFER_SIZE!)
+    ) else (
+        echo     ⚠️ Max bitrate defined but buffer size missing
+        set /a "validation_errors+=1"
+    )
+)
+
+if defined COLOR_PRESET_NAME (
+    set /a "custom_count+=1"
+    echo     ✅ Color Science: !COLOR_PRESET_NAME!
+)
+
+:: Apply advanced mode if we have customizations
 if !custom_count! GTR 0 (
-    echo   📊 Loaded !custom_count! customization groups
-    if defined CUSTOM_PRESET echo     • Preset: !CUSTOM_PRESET!
-    if defined CUSTOM_PSY_RD echo     • Psychovisual: !CUSTOM_PSY_RD!
-    if defined GOP_PRESET_NAME echo     • GOP: !GOP_PRESET_NAME! (!CUSTOM_GOP_SIZE!/!CUSTOM_KEYINT_MIN!)
-    if defined VBV_PRESET_NAME echo     • VBV: !VBV_PRESET_NAME! (!CUSTOM_MAX_BITRATE!/!CUSTOM_BUFFER_SIZE!)
-    if defined COLOR_PRESET_NAME echo     • Color: !COLOR_PRESET_NAME!
+    if !validation_errors! EQU 0 (
+        set "ADVANCED_MODE=Y"
+        set "CUSTOMIZATION_ACTIVE=Y"
+        echo   🎛️ Advanced Mode: ACTIVATED with !custom_count! customization groups
+        call :LogEntry "[ADVANCED] Mode activated with !custom_count! customizations"
+    ) else (
+        set "ADVANCED_MODE=N"
+        set "CUSTOMIZATION_ACTIVE=N"
+        echo   ⚠️ Advanced Mode: DISABLED due to !validation_errors! validation errors
+        call :LogEntry "[ADVANCED] Mode disabled due to validation errors"
+    )
 ) else (
+    set "ADVANCED_MODE=N"
+    set "CUSTOMIZATION_ACTIVE=N"
     echo   ℹ️ No customizations loaded - using profile defaults
+    call :LogEntry "[ADVANCED] No customizations loaded"
+)
+
+:: Final status report
+if "%ADVANCED_MODE%"=="Y" (
+    echo   🚀 Ready for enhanced encoding with custom parameters
+) else (
+    echo   🛡️ Using standard Hollywood parameters (profile defaults)
 )
 
 exit /b 0
