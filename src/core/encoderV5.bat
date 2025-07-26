@@ -889,7 +889,7 @@ set /p "confirm_encoding=🎬 Start Hollywood-level encoding? (Y/N): "
 if /i not "%confirm_encoding:~0,1%"=="Y" goto :ShowProfessionalMainMenu
 
 call :ConfigureAdvancedSettings
-call :LoadAdvancedConfiguration
+call :LoadAdvancedConfig
 call :CreateBackup
 call :ExecuteEncoding
 
@@ -1032,16 +1032,17 @@ if "!PASS_TYPE!"=="PASS2" (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: PRESET APPLICATION - FIXED LOGIC
-echo   🎭 Applying encoding preset...
+:: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
+if defined X264_PARAMS (
+echo   🎭 Applying Hollywood parameters via FFmpeg flags...
+:: Use custom preset if available from advanced customization module
 if defined CUSTOM_PRESET (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
-    echo     🎛️ Using custom preset: !CUSTOM_PRESET!
+    echo   🎛️ Using custom preset from module: !CUSTOM_PRESET!
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
-    echo     🎬 Using profile preset: !X264_PRESET!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
+    echo   🎬 Using profile default preset: veryslow
 )
-
 :: TUNE PARAMETER
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
     
@@ -1053,7 +1054,8 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
-:: PSYCHOVISUAL OPTIMIZATION
+
+echo   🧠 Applying psychovisual settings...
 if defined CUSTOM_PSY_RD (
 	:: Parse custom psy_rd (format: X.X,X.XX)
 	for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
@@ -1064,7 +1066,7 @@ if defined CUSTOM_PSY_RD (
 	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
 	echo   🧠 Default psychovisual: 1.0:0.15
 )
-	:: ADVANCED QUANTIZATION
+:: ADVANCED QUANTIZATION
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
@@ -1084,22 +1086,27 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flag
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
 
 :: Apply custom GOP settings if available, otherwise use profile defaults
+echo   🎬 Applying GOP structure...
 if defined CUSTOM_GOP_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !CUSTOM_GOP_SIZE!"
-    echo   🎬 Using custom GOP: !CUSTOM_GOP_SIZE! frames (!GOP_PRESET_NAME!)
-) else if defined GOP_SIZE (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
-    echo   📊 Using profile GOP: !GOP_SIZE! frames
+    echo   🎬 Using custom GOP: !CUSTOM_GOP_SIZE! frames
+    if defined CUSTOM_KEYINT_MIN (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !CUSTOM_KEYINT_MIN!"
+        echo     🎬 Custom min keyint: !CUSTOM_KEYINT_MIN! frames
+    )
+    if defined GOP_PRESET_NAME (
+        echo     🎯 GOP preset: !GOP_PRESET_NAME!
+    )
+) else (
+	if defined GOP_SIZE (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
+        echo     📊 Profile GOP size: !GOP_SIZE! frames
+    )
+    if defined KEYINT_MIN (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+        echo     📊 Profile min keyint: !KEYINT_MIN! frames
+    )
 )
-
-if defined CUSTOM_KEYINT_MIN (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !CUSTOM_KEYINT_MIN!"
-    echo   ⚡ Using custom Min Keyint: !CUSTOM_KEYINT_MIN! frames
-) else if defined KEYINT_MIN (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
-    echo   📊 Using profile Min Keyint: !KEYINT_MIN! frames
-)
-
 :: Advanced GOP structure parameters for Hollywood-level control
 if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
     :: Calculate optimal b-frame pyramid for custom GOP
@@ -1112,11 +1119,16 @@ if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
     echo   🎭 GOP-optimized B-frames: !gop_bframes!
 )
 :: COLOR SCIENCE (BT.709 TV Range)
+echo   🎨 Applying color science...
 if defined CUSTOM_COLOR_PARAMS (
-    echo     🎛️ Using custom color settings: %COLOR_PRESET_NAME%
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !CUSTOM_COLOR_PARAMS!"
+	echo     🎛️ Custom color settings applied
+    if defined COLOR_PRESET_NAME (
+        echo     🎯 Color preset: !COLOR_PRESET_NAME!
+    )
 ) else if defined COLOR_PARAMS (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !COLOR_PARAMS!"
+	echo     📊 Profile color settings applied
 ) else (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709"
 )
@@ -1124,60 +1136,82 @@ if defined CUSTOM_COLOR_PARAMS (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: CONFIGURAÇÕES ESPECÍFICAS POR PASSADA
+:: PASS-SPECIFIC CONFIGURATIONS - FIXED LOGIC
 if "!PASS_TYPE!"=="PASS1" (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-	if defined CUSTOM_MAX_BITRATE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
-		echo   📊 Using custom maxrate from module: !CUSTOM_MAX_BITRATE! (!VBV_PRESET_NAME!)
-	) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-		echo   📊 Using profile maxrate: !MAX_BITRATE!
-	)
-	if defined CUSTOM_BUFFER_SIZE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
-		echo   🔧 Using custom buffer from module: !CUSTOM_BUFFER_SIZE! (!VBV_PRESET_NAME!)
-	) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-        echo   🔧 Using profile buffer: !BUFFER_SIZE!		
-	)
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+    call :ApplyPass1Config
 ) else if "!PASS_TYPE!"=="PASS2" (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-	if defined CUSTOM_MAX_BITRATE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
-    ) else (
-		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-    )
+    call :ApplyPass2Config
+) else (
+    echo   ❌ Unknown pass type: !PASS_TYPE!
+    exit /b 1
+)
+
+echo   ✅ FFmpeg command built successfully
+exit /b 0
+
+:ApplyPass1Config
+echo   🔄 Configuring Pass 1 (Analysis)
+
+:: Bitrate settings
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+if defined CUSTOM_MAX_BITRATE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
+	echo   📊 Using custom maxrate from module: !CUSTOM_MAX_BITRATE! (!VBV_PRESET_NAME!)
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+	echo   📊 Using profile maxrate: !MAX_BITRATE!
+)
+if defined CUSTOM_BUFFER_SIZE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
+	echo   🔧 Using custom buffer from module: !CUSTOM_BUFFER_SIZE!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    echo   🔧 Using profile buffer: !BUFFER_SIZE!		
+)
+:: Pass 1 specific settings
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
+
+exit /b 0
+
+:ApplyPass2Config
+echo   🎬 Configuring Pass 2 (Final Creation)
+
+:: Bitrate settings
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
+
+:: VBV settings - Same logic as Pass 1
+if defined CUSTOM_MAX_BITRATE (
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
+) else (
+	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+)
 	if defined CUSTOM_BUFFER_SIZE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+)
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
+
+:: BUILD AND INTEGRATE AUDIO COMMAND
+call :BuildAudioCommand
+if not errorlevel 1 (
+    if defined AUDIO_COMMAND (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
+        echo   🎵 Audio settings from module integrated
     ) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    )
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
-	
-    :: BUILD AND INTEGRATE AUDIO COMMAND
-    call :BuildAudioCommand
-    if not errorlevel 1 (
-        if defined AUDIO_COMMAND (
-            set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
-            echo   🎵 Audio settings from module integrated
-        ) else (
-            set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
-            echo   🎵 Default audio settings applied
-        )
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+        echo   🎵 Default audio settings applied
+		)
     ) else (
         set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
         echo   ⚠️ Audio command build failed, using defaults
-    )
-    
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
-)
-
+	)
+		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
+	)
 echo   ✅ Command built successfully with module integrations
 exit /b 0
 
@@ -2123,10 +2157,8 @@ exit /b 1
 :: PARSING FIX - ENCODERV5.BAT LoadAdvancedConfig
 :: Fix para format: set "VAR=VALUE"
 ::========================================
-
 :LoadAdvancedConfig
 echo 🔧 Loading advanced customizations...
-
 :: Get most recent config file
 set "TEMP_CONFIG_FILE="
 for /f "delims=" %%F in ('dir /b /od "%TEMP%\encoder_advanced_config_*.tmp" 2^>nul') do (
@@ -2135,15 +2167,18 @@ for /f "delims=" %%F in ('dir /b /od "%TEMP%\encoder_advanced_config_*.tmp" 2^>n
 
 if not defined TEMP_CONFIG_FILE (
     echo   ℹ️ No advanced config found - using profile defaults
+    call :LogEntry "[ADVANCED] No config file found - using defaults"
     exit /b 0
 )
 
 if not exist "%TEMP_CONFIG_FILE%" (
     echo   ⚠️ Config file not accessible: %TEMP_CONFIG_FILE%
+    call :LogEntry "[ADVANCED] Config file not accessible"
     exit /b 0
 )
 
 echo   📁 Config file: %TEMP_CONFIG_FILE%
+call :LogEntry "[ADVANCED] Loading config from: %TEMP_CONFIG_FILE%"
 
 :: Reset all custom variables to ensure clean state
 set "CUSTOM_PRESET="
@@ -2167,8 +2202,7 @@ for /f "usebackq tokens=*" %%A in ("%TEMP_CONFIG_FILE%") do (
 )
 
 :: Validate and apply loaded customizations
-call :ValidateLoadedConfig
-
+:ValidateLoadedConfig
 if "%ADVANCED_MODE%"=="Y" (
     if "%CUSTOMIZATION_ACTIVE%"=="Y" (
         echo   ✅ Advanced customizations loaded successfully
