@@ -105,19 +105,39 @@ echo 🔧 Loading modular configuration...
 set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
-set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
 
-:: CORREÇÃO CRÍTICA: INICIALIZAÇÃO SEGURA
-set "MODULAR_PROFILE_COUNT=0"
+:: ========================================
+:: CRITICAL FIX: CONFIG_FILE PRIORITY LOGIC
+:: ========================================
 
-:: SINGLE VALIDATION CHECK
-if exist "%PROFILES_DIR%" (
-    :: VERSÃO CORRIGIDA - LOOP SEGURO
-    for %%F in ("%PROFILES_DIR%\*.prof") do (
-        if exist "%%F" (
-            set /a "MODULAR_PROFILE_COUNT+=1"
-        )
+:: STEP 1: CHECK FOR TEMP CUSTOMIZATIONS FILE (PRIORITY)
+set "TEMP_DIR=%TEMP%"
+set "CONFIG_FILE_FOUND=N"
+
+if exist "%TEMP_DIR%\encoder_advanced_config_*.tmp" (
+    echo   🎯 Checking for customizations...
+    for %%F in ("%TEMP_DIR%\encoder_advanced_config_*.tmp") do (
+        set "CONFIG_FILE=%%F"
+        set "CONFIG_FILE_FOUND=Y"
+        echo   ✅ Customizations found: %%~nxF
+        goto :config_priority_done
     )
+)
+
+:: STEP 2: FALLBACK TO SYSTEM CONFIG IF NO CUSTOMIZATIONS
+:config_priority_done
+if "%CONFIG_FILE_FOUND%"=="N" (
+    set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
+    echo   📋 Using system config: encoder_config.json
+) else (
+    echo   🎛️ Using customizations: %CONFIG_FILE%
+)
+
+:: SINGLE VALIDATION CHECK (PRESERVE EXISTING LOGIC)
+if exist "%PROFILES_DIR%" (
+    set "MODULAR_PROFILE_COUNT=0"
+    for %%F in ("%PROFILES_DIR%\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+    
     if !MODULAR_PROFILE_COUNT! GTR 0 (
         echo ✅ Modular system: !MODULAR_PROFILE_COUNT! profiles active
         set "MODULAR_PROFILES_AVAILABLE=Y"
@@ -126,28 +146,24 @@ if exist "%PROFILES_DIR%" (
         set "MODULAR_PROFILES_AVAILABLE=N"
     )
 ) else (
-    :: FALLBACK PATH CHECK
+    :: FALLBACK PATH CHECK (PRESERVE EXISTING LOGIC)
     set "ALT_PROFILES_DIR=C:\Users\Gabriel\encoder\src\profiles\presets"
     if exist "!ALT_PROFILES_DIR!" (
         echo ✅ Found at alternative location
         set "PROFILES_DIR=!ALT_PROFILES_DIR!"
-        set "CONFIG_FILE=C:\Users\Gabriel\encoder\src\config\encoder_config.json"
+        :: PRESERVE CONFIG_FILE LOGIC - DON'T OVERRIDE HERE
         set "MODULAR_PROFILES_AVAILABLE=Y"
-        :: RESET E RECÁLCULO SEGURO
         set "MODULAR_PROFILE_COUNT=0"
-        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do (
-            if exist "%%F" (
-                set /a "MODULAR_PROFILE_COUNT+=1"
-            )
-        )
+        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
     ) else (
         echo ❌ Profiles directory not found
         set "MODULAR_PROFILES_AVAILABLE=N"
-        set "MODULAR_PROFILE_COUNT=0"
     )
 )
 
 call :LogEntry "[MODULAR] System: %MODULAR_PROFILES_AVAILABLE%, Profiles: !MODULAR_PROFILE_COUNT!"
+call :LogEntry "[CONFIG] Using file: %CONFIG_FILE%"
+echo   📋 Config file resolved: %CONFIG_FILE%
 exit /b 0
 
 :LoadModularProfileFile
