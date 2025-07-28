@@ -2153,121 +2153,184 @@ echo.
 pause
 exit /b 1
 
-::========================================
-:: PARSING FIX - ENCODERV5.BAT LoadAdvancedConfig
-:: Fix para format: set "VAR=VALUE"
-::========================================
 :LoadAdvancedConfig
-echo 🔧 Loading advanced customizations...
-:: Get most recent config file
-set "TEMP_CONFIG_FILE="
-for /f "delims=" %%F in ('dir /b /od "%TEMP%\encoder_advanced_config_*.tmp" 2^>nul') do (
-    set "TEMP_CONFIG_FILE=%TEMP%\%%F"
+:: FIXED LoadAdvancedConfig - Direct line parsing instead of FOR loop
+echo 🔄 Loading advanced configuration...
+
+if not exist "%CONFIG_FILE%" (
+    echo   ❌ Config file not found: %CONFIG_FILE%
+    exit /b 1
 )
 
-if not defined TEMP_CONFIG_FILE (
-    echo   ℹ️ No advanced config found - using profile defaults
-    call :LogEntry "[ADVANCED] No config file found - using defaults"
-    exit /b 0
-)
+echo   ✅ Config file found: %CONFIG_FILE%
+echo   🔍 File contents:
+type "%CONFIG_FILE%"
+echo.
 
-if not exist "%TEMP_CONFIG_FILE%" (
-    echo   ⚠️ Config file not accessible: %TEMP_CONFIG_FILE%
-    call :LogEntry "[ADVANCED] Config file not accessible"
-    exit /b 0
-)
+echo   🔄 Parsing configuration with DIRECT method...
 
-echo   📁 Config file: %TEMP_CONFIG_FILE%
-call :LogEntry "[ADVANCED] Loading config from: %TEMP_CONFIG_FILE%"
-
-:: Reset all custom variables to ensure clean state
-set "CUSTOM_PRESET="
-set "CUSTOM_PSY_RD="
-set "CUSTOM_GOP_SIZE="
-set "CUSTOM_KEYINT_MIN="
-set "GOP_PRESET_NAME="
-set "CUSTOM_MAX_BITRATE="
-set "CUSTOM_BUFFER_SIZE="
-set "VBV_PRESET_NAME="
-set "COLOR_PRESET_NAME="
-set "CUSTOM_COLOR_PARAMS="
-set "ADVANCED_MODE="
-set "CUSTOMIZATION_ACTIVE="
-
-:: Enhanced parsing logic - handles "set VAR=VALUE" format
-echo   🔄 Parsing configuration...
-for /f "usebackq tokens=*" %%A in ("%TEMP_CONFIG_FILE%") do (
-    set "line=%%A"
-    call :ParseConfigLine "!line!"
-)
-
-:: ========================================
-:: ADD THIS DIAGNOSTIC BLOCK HERE
-:: ========================================
-echo   🔍 DIAGNOSTIC - Variables after loading:
-echo     DEBUG: CUSTOM_GOP_SIZE=[%CUSTOM_GOP_SIZE%]
-echo     DEBUG: CUSTOM_KEYINT_MIN=[%CUSTOM_KEYINT_MIN%]
-echo     DEBUG: CUSTOM_MAX_BITRATE=[%CUSTOM_MAX_BITRATE%]
-echo     DEBUG: CUSTOM_BUFFER_SIZE=[%CUSTOM_BUFFER_SIZE%]
-echo     DEBUG: GOP_PRESET_NAME=[%GOP_PRESET_NAME%]
-echo     DEBUG: VBV_PRESET_NAME=[%VBV_PRESET_NAME%]
-echo     DEBUG: ADVANCED_MODE=[%ADVANCED_MODE%]
-echo     DEBUG: CUSTOMIZATION_ACTIVE=[%CUSTOMIZATION_ACTIVE%]
-echo   🔍 END DIAGNOSTIC
-:: ========================================
-
-:: Validate and apply loaded customizations
-call :ValidateAndApplyConfig
-
-exit /b 0
-
-:ParseConfigLine
-set "line=%~1"
-
-:: Skip empty lines and comments
-if not defined line exit /b 0
-if "!line:~0,2!"=="::" exit /b 0
-
-:: Look for "set " pattern
-echo !line! | findstr /b "set " >nul || exit /b 0
-
-:: ENHANCED PARSING - Handle spaces in values correctly
-:: Extract everything after 'set "'
-for /f "tokens=1* delims=" %%A in ("!line!") do set "full_line=%%A"
-
-:: Remove 'set "' from beginning  
-set "full_line=!full_line:set "=!"
-
-:: Remove trailing quote if present
-if "!full_line:~-1!"==""" set "full_line=!full_line:~0,-1!"
-
-:: Find first = to split variable name and value
-for /f "tokens=1* delims==" %%A in ("!full_line!") do (
-    set "var_name=%%A"
-    set "var_value=%%B"
-)
-
-:: Clean variable name (remove any remaining quotes)
-set "var_name=!var_name:"=!"
-
-:: Clean variable value (remove surrounding quotes if present)
-if defined var_value (
-    if "!var_value:~0,1!"==""" if "!var_value:~-1!"==""" (
-        set "var_value=!var_value:~1,-1!"
+:: DIRECT PARSING - Read specific lines without FOR loop
+:: Method: Use FINDSTR to extract each line individually
+findstr /C:"set \"CUSTOM_PRESET=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
     )
 )
 
-:: Debug output
-echo     📋 Extracted: [!var_name!] = [!var_value!]
-
-:: Call assignment function with cleaned values
-if defined var_name if defined var_value (
-    call :AssignConfigVariable "!var_name!" "!var_value!"
-) else (
-    echo     ⚠️ Parse failed - name=[!var_name!] value=[!var_value!]
+findstr /C:"set \"CUSTOM_PSY_RD=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
 )
 
+findstr /C:"set \"CUSTOM_GOP_SIZE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+findstr /C:"set \"CUSTOM_KEYINT_MIN=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+findstr /C:"set \"GOP_PRESET_NAME=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+findstr /C:"set \"CUSTOM_MAX_BITRATE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+findstr /C:"set \"CUSTOM_BUFFER_SIZE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+findstr /C:"set \"VBV_PRESET_NAME=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
+if not errorlevel 1 (
+    set /p "line_content=" < temp_line.tmp
+    if defined line_content (
+        echo   📋 Processing: !line_content!
+        call :ParseConfigLine "!line_content!"
+        if not errorlevel 1 call :AssignConfigVariable
+    )
+)
+
+echo   📊 Configuration parsing completed
+call :ValidateAndApplyConfig
 exit /b 0
+
+:ParseConfigLine
+:: WORKING ParseConfigLine function - Direct from successful test
+set "config_line=%~1"
+set "var_name="
+set "var_value="
+
+echo     🔍 RECEIVED: [%config_line%]
+
+:: Validate input
+if not defined config_line (
+    echo     ❌ Empty line received
+    exit /b 1
+)
+
+:: Check if line starts with "set "
+if not "%config_line:~0,4%"=="set " (
+    echo     ⚠️ Line doesn't start with 'set '
+    exit /b 1
+)
+
+:: Remove 'set ' (first 4 characters)  
+set "without_set=%config_line:~4%"
+echo     📋 After removing 'set ': [%without_set%]
+
+:: Remove surrounding quotes if present
+if "%without_set:~0,1%"==" " set "without_set=%without_set:~1%"
+if "%without_set:~0,1%"="""" (
+    if "%without_set:~-1%"="""" (
+        set "without_set=%without_set:~1,-1%"
+        echo     📋 After quote removal: [%without_set%]
+    )
+)
+
+:: Find equals position manually
+call :FindEqualsPosition "%without_set%"
+if errorlevel 1 (
+    echo     ❌ No equals sign found
+    exit /b 1
+)
+
+:: Extract name and value using the found position
+call set "var_name=%%without_set:~0,%equals_pos%%%"
+set /a "value_start=%equals_pos%+1"
+call set "var_value=%%without_set:~%value_start%%%"
+
+echo     📋 EXTRACTED: name=[%var_name%] value=[%var_value%]
+
+:: Validate results
+if not defined var_name (
+    echo     ❌ Name extraction failed
+    exit /b 1
+)
+if not defined var_value (
+    echo     ❌ Value extraction failed
+    exit /b 1
+)
+
+echo     ✅ PARSE SUCCESS: [%var_name%] = [%var_value%]
+exit /b 0
+
+:FindEqualsPosition
+:: Find position of equals sign in string
+set "search_string=%~1"
+set "equals_pos=0"
+
+:FindLoop
+if "!search_string:~%equals_pos%,1!"=="=" (
+    echo     📍 Found equals at position: %equals_pos%
+    exit /b 0
+)
+if "!search_string:~%equals_pos%,1!"=="" (
+    echo     ❌ Reached end without finding equals
+    exit /b 1
+)
+set /a "equals_pos+=1"
+goto :FindLoop
 
 :AssignConfigVariable
 set "var_name=%~1"
@@ -2277,69 +2340,66 @@ set "var_value=%~2"
 if /i "!var_name!"=="CUSTOM_PRESET" (
     set "CUSTOM_PRESET=!var_value!"
     echo     ✅ CUSTOM_PRESET=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_PSY_RD" (
     set "CUSTOM_PSY_RD=!var_value!"
     echo     ✅ CUSTOM_PSY_RD=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_GOP_SIZE" (
     set "CUSTOM_GOP_SIZE=!var_value!"
     echo     ✅ CUSTOM_GOP_SIZE=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_KEYINT_MIN" (
     set "CUSTOM_KEYINT_MIN=!var_value!"
     echo     ✅ CUSTOM_KEYINT_MIN=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="GOP_PRESET_NAME" (
     set "GOP_PRESET_NAME=!var_value!"
     echo     ✅ GOP_PRESET_NAME=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_MAX_BITRATE" (
     set "CUSTOM_MAX_BITRATE=!var_value!"
     echo     ✅ CUSTOM_MAX_BITRATE=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_BUFFER_SIZE" (
     set "CUSTOM_BUFFER_SIZE=!var_value!"
     echo     ✅ CUSTOM_BUFFER_SIZE=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="VBV_PRESET_NAME" (
     set "VBV_PRESET_NAME=!var_value!"
     echo     ✅ VBV_PRESET_NAME=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOM_COLOR_PARAMS" (
     set "CUSTOM_COLOR_PARAMS=!var_value!"
     echo     ✅ CUSTOM_COLOR_PARAMS=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="COLOR_PRESET_NAME" (
     set "COLOR_PRESET_NAME=!var_value!"
     echo     ✅ COLOR_PRESET_NAME=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="ADVANCED_MODE" (
     set "ADVANCED_MODE=!var_value!"
     echo     ✅ ADVANCED_MODE=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 if /i "!var_name!"=="CUSTOMIZATION_ACTIVE" (
     set "CUSTOMIZATION_ACTIVE=!var_value!"
     echo     ✅ CUSTOMIZATION_ACTIVE=!var_value!
-    goto :assign_done
+    exit /b 0
 )
 
-:: Variable not recognized
-echo     ⚠️ Unknown variable: !var_name!
-
-:assign_done
-exit /b 0
+echo     ⚠️ Unknown variable: !var_name!=!var_value!
+exit /b 1
 
 :ValidateAndApplyConfig
 :: Count loaded customizations and validate coherence
