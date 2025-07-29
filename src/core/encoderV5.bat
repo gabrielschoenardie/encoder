@@ -2170,7 +2170,7 @@ pause
 exit /b 1
 
 :LoadAdvancedConfig
-:: FIXED LoadAdvancedConfig - Direct line parsing instead of FOR loop
+:: SIMPLE & BULLETPROOF LoadAdvancedConfig
 echo 🔄 Loading advanced configuration...
 
 if not exist "%CONFIG_FILE%" (
@@ -2183,91 +2183,37 @@ echo   🔍 File contents:
 type "%CONFIG_FILE%"
 echo.
 
-echo   🔄 Parsing configuration with DIRECT method...
+echo   🔄 Using SIMPLE COPY method...
 
-:: DIRECT PARSING - Read specific lines without FOR loop
-:: Method: Use FINDSTR to extract each line individually
-findstr /C:"set \"CUSTOM_PRESET=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+:: Create simple temp batch to execute the set commands
+set "TEMP_LOADER=%TEMP%\simple_loader_%RANDOM%.bat"
 
-findstr /C:"set \"CUSTOM_PSY_RD=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+echo @echo off > "%TEMP_LOADER%"
+echo :: Auto-generated config loader >> "%TEMP_LOADER%"
 
-findstr /C:"set \"CUSTOM_GOP_SIZE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+:: Copy only the set commands to the temp batch
+findstr /B "set " "%CONFIG_FILE%" >> "%TEMP_LOADER%"
 
-findstr /C:"set \"CUSTOM_KEYINT_MIN=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+:: Add verification commands
+echo. >> "%TEMP_LOADER%"
+echo echo   📋 Variables verification: >> "%TEMP_LOADER%"
+echo if defined CUSTOM_PRESET echo   ✅ CUSTOM_PRESET=%%CUSTOM_PRESET%% >> "%TEMP_LOADER%"
+echo if defined CUSTOM_GOP_SIZE echo   ✅ CUSTOM_GOP_SIZE=%%CUSTOM_GOP_SIZE%% >> "%TEMP_LOADER%"
+echo if defined GOP_PRESET_NAME echo   ✅ GOP_PRESET_NAME=%%GOP_PRESET_NAME%% >> "%TEMP_LOADER%"
+echo if defined CUSTOM_MAX_BITRATE echo   ✅ CUSTOM_MAX_BITRATE=%%CUSTOM_MAX_BITRATE%% >> "%TEMP_LOADER%"
+echo if defined VBV_PRESET_NAME echo   ✅ VBV_PRESET_NAME=%%VBV_PRESET_NAME%% >> "%TEMP_LOADER%"
+echo if defined ADVANCED_MODE echo   ✅ ADVANCED_MODE=%%ADVANCED_MODE%% >> "%TEMP_LOADER%"
 
-findstr /C:"set \"GOP_PRESET_NAME=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+echo   📋 Generated temp loader: %TEMP_LOADER%
+echo   📋 Executing configuration...
 
-findstr /C:"set \"CUSTOM_MAX_BITRATE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+:: Execute the temp batch file
+call "%TEMP_LOADER%"
 
-findstr /C:"set \"CUSTOM_BUFFER_SIZE=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
+:: Clean up
+del "%TEMP_LOADER%" 2>nul
 
-findstr /C:"set \"VBV_PRESET_NAME=" "%CONFIG_FILE%" > temp_line.tmp 2>nul
-if not errorlevel 1 (
-    set /p "line_content=" < temp_line.tmp
-    if defined line_content (
-        echo   📋 Processing: !line_content!
-        call :ParseConfigLine "!line_content!"
-        if not errorlevel 1 call :AssignConfigVariable
-    )
-)
-
-echo   📊 Configuration parsing completed
+echo   📊 Simple loading method completed
 call :ValidateAndApplyConfig
 exit /b 0
 
