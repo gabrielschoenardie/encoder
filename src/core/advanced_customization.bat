@@ -1162,7 +1162,6 @@ echo   📁 Config file: %CONFIG_FILE%
         echo set "CUSTOM_PSY_RD=%CUSTOM_PSY_RD%"
         echo :: Psychovisual rate-distortion: %CUSTOM_PSY_RD%
     )
-    
     :: GOP STRUCTURE CUSTOMIZATION - ENSURE BOTH VALUES SAVED
     if defined CUSTOM_GOP_SIZE (
         echo set "CUSTOM_GOP_SIZE=%CUSTOM_GOP_SIZE%"
@@ -1184,12 +1183,10 @@ echo   📁 Config file: %CONFIG_FILE%
             echo :: GOP preset name: %GOP_PRESET_NAME%
         )
     )
-    
     :: VBV BUFFER CUSTOMIZATION - ENSURE BOTH VALUES SAVED
     if defined CUSTOM_MAX_BITRATE (
         echo set "CUSTOM_MAX_BITRATE=%CUSTOM_MAX_BITRATE%"
         echo :: Maximum bitrate override: %CUSTOM_MAX_BITRATE%
-        
         :: CRITICAL: Ensure CUSTOM_BUFFER_SIZE is always saved
         if defined CUSTOM_BUFFER_SIZE (
             echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_BUFFER_SIZE%"
@@ -1198,8 +1195,7 @@ echo   📁 Config file: %CONFIG_FILE%
             :: Use max bitrate as buffer if missing
             echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_MAX_BITRATE%"
             echo :: Auto-set buffer size: %CUSTOM_MAX_BITRATE%
-        )
-        
+        )   
         if defined VBV_PRESET_NAME (
             echo set "VBV_PRESET_NAME=%VBV_PRESET_NAME%"
             echo :: VBV preset name: %VBV_PRESET_NAME%
@@ -1223,7 +1219,31 @@ echo   📁 Config file: %CONFIG_FILE%
         echo set "AUDIO_PRESET_NAME=%AUDIO_PRESET_NAME%"
         echo :: Audio preset name: %AUDIO_PRESET_NAME%
     )
-    
+	:: AUDIO NORMALIZATION VARIABLES
+	if defined CUSTOM_LUFS_TARGET (
+		echo set "CUSTOM_LUFS_TARGET=%CUSTOM_LUFS_TARGET%"
+		echo :: LUFS target: %CUSTOM_LUFS_TARGET%
+	)
+	if defined CUSTOM_PEAK_LIMIT (
+		echo set "CUSTOM_PEAK_LIMIT=%CUSTOM_PEAK_LIMIT%"
+		echo :: Peak limit: %CUSTOM_PEAK_LIMIT%
+	)
+	if defined CUSTOM_LRA_TARGET (
+		echo set "CUSTOM_LRA_TARGET=%CUSTOM_LRA_TARGET%"
+		echo :: LRA target: %CUSTOM_LRA_TARGET%
+	)
+	if defined NORMALIZATION_PRESET_NAME (
+		echo set "NORMALIZATION_PRESET_NAME=%NORMALIZATION_PRESET_NAME%"
+		echo :: Normalization preset name: %NORMALIZATION_PRESET_NAME%
+	)
+	if defined CUSTOM_NORMALIZATION_PARAMS (
+		echo set "CUSTOM_NORMALIZATION_PARAMS=%CUSTOM_NORMALIZATION_PARAMS%"
+		echo :: Normalization parameters: %CUSTOM_NORMALIZATION_PARAMS%
+	)
+	if defined AUDIO_PROCESSING_ACTIVE (
+		echo set "AUDIO_PROCESSING_ACTIVE=%AUDIO_PROCESSING_ACTIVE%"
+		echo :: Audio processing active: %AUDIO_PROCESSING_ACTIVE%
+	)    
     :: COLOR SCIENCE CUSTOMIZATION
     if defined CUSTOM_COLOR_PARAMS (
         echo set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS%"
@@ -1259,7 +1279,6 @@ if exist "%CONFIG_FILE%" (
     exit /b 1
 )
 
-:: Additional function to handle the menu return properly
 :ReturnToMainMenu
 echo.
 echo 🔄 Loading customizations into main script...
