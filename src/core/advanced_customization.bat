@@ -61,7 +61,7 @@ if "%custom_choice%"=="6" goto :CustomizeColor
 if "%custom_choice%"=="7" goto :PreviewAllCustomizations
 if "%custom_choice%"=="8" goto :RestoreOriginalProfile
 if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
-if "%custom_choice%"=="0" goto :ReturnToMainMenu
+if "%custom_choice%"=="0" goto :ExitAdvancedModule
 
 echo ❌ Invalid choice. Please select 0-9.
 pause
@@ -1095,42 +1095,52 @@ if "%CUSTOMIZATION_ACTIVE%"=="N" (
 )
 
 echo.
-echo ✅ SAVING CUSTOMIZATIONS...
+echo ✅ Applying advanced customizations...
 
-:: Call the save function
+:: Backup original parameters if not already done
+if not defined PROFILE_BACKUP (
+    set "PROFILE_BACKUP=%X264_PARAMS%"
+    set "PRESET_BACKUP=%X264_PRESET%"
+)
+
+echo 💾 Saving customizations to config file...
 call :SaveAdvancedCustomizations
 if errorlevel 1 (
     echo ❌ Failed to save customizations
     pause
     goto :AdvancedCustomizationMain
 )
+:: NOVO: Carregar configurações do arquivo .temp (aplicar na sessão)
+echo 📥 Loading customizations from config file...
+call :LoadAdvancedConfigFromModule
+if errorlevel 1 (
+    echo ❌ Failed to load customizations
+    pause
+    goto :AdvancedCustomizationMain
+)
 
-:: Configuration saved successfully
+:: Ativar modo avançado
 set "ADVANCED_MODE=Y"
 
-:: Show applied customizations summary
-echo.
-echo 📋 APPLIED CUSTOMIZATIONS:
-if defined CUSTOM_PRESET        echo   🎭 x264 Preset: %CUSTOM_PRESET%
-if defined CUSTOM_PSY_RD        echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
-if defined GOP_PRESET_NAME      echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-if defined VBV_PRESET_NAME      echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-if defined AUDIO_PRESET_NAME    echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
-if defined COLOR_PRESET_NAME    echo   🎨 Color: %COLOR_PRESET_NAME%
-
-echo.
-echo 🏠 Returning to main menu...
-
-:: Log the successful application
+echo ✅ Customizations applied successfully!
+echo 🎬 Ready for encoding with customized parameters!
 echo [%time:~0,8%] [ADVANCED] V5.2 Advanced customizations applied successfully>>"!EXEC_LOG!"
 
-:: CRITICAL FIX: Clear any residual input and ensure clean exit
 echo.
-set /p "dummy=Press Enter to continue..."
-timeout /t 1 /nobreak >nul 2>&1
+echo 📋 CUSTOMIZATIONS SUMMARY:
+if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
+if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
+if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
+if defined COLOR_PRESET_NAME echo   🎨 Color: %COLOR_PRESET_NAME%
 
-:: DIRECT EXIT - No loops, no additional processing
-exit /b 0
+echo.
+echo 🔄 Returning to Advanced Customization menu...
+echo 💡 Use [0] to return to main menu with applied customizations
+pause
+
+goto :AdvancedCustomizationMain
 
 :SaveAdvancedCustomizations
 echo 💾 Saving advanced customizations...
@@ -1154,106 +1164,80 @@ echo   📁 Config file: %CONFIG_FILE%
     :: x264 PRESET CUSTOMIZATION
     if defined CUSTOM_PRESET (
         echo set "CUSTOM_PRESET=%CUSTOM_PRESET%"
-        echo :: x264 preset override: %CUSTOM_PRESET%
     )
-    
     :: PSYCHOVISUAL CUSTOMIZATION  
     if defined CUSTOM_PSY_RD (
         echo set "CUSTOM_PSY_RD=%CUSTOM_PSY_RD%"
-        echo :: Psychovisual rate-distortion: %CUSTOM_PSY_RD%
     )
     :: GOP STRUCTURE CUSTOMIZATION - ENSURE BOTH VALUES SAVED
     if defined CUSTOM_GOP_SIZE (
-        echo set "CUSTOM_GOP_SIZE=%CUSTOM_GOP_SIZE%"
-        echo :: GOP size override: %CUSTOM_GOP_SIZE%
-        
+        echo set "CUSTOM_GOP_SIZE=%CUSTOM_GOP_SIZE%"        
         :: CRITICAL: Ensure CUSTOM_KEYINT_MIN is always saved
         if defined CUSTOM_KEYINT_MIN (
             echo set "CUSTOM_KEYINT_MIN=%CUSTOM_KEYINT_MIN%"
-            echo :: Minimum keyint override: %CUSTOM_KEYINT_MIN%
         ) else (
             :: Auto-calculate if missing
             set /a "auto_keyint=%CUSTOM_GOP_SIZE%/2"
             echo set "CUSTOM_KEYINT_MIN=!auto_keyint!"
-            echo :: Auto-calculated minimum keyint: !auto_keyint!
         )
         
         if defined GOP_PRESET_NAME (
             echo set "GOP_PRESET_NAME=%GOP_PRESET_NAME%"
-            echo :: GOP preset name: %GOP_PRESET_NAME%
         )
     )
     :: VBV BUFFER CUSTOMIZATION - ENSURE BOTH VALUES SAVED
     if defined CUSTOM_MAX_BITRATE (
         echo set "CUSTOM_MAX_BITRATE=%CUSTOM_MAX_BITRATE%"
-        echo :: Maximum bitrate override: %CUSTOM_MAX_BITRATE%
         :: CRITICAL: Ensure CUSTOM_BUFFER_SIZE is always saved
         if defined CUSTOM_BUFFER_SIZE (
             echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_BUFFER_SIZE%"
-            echo :: Buffer size override: %CUSTOM_BUFFER_SIZE%
         ) else (
             :: Use max bitrate as buffer if missing
             echo set "CUSTOM_BUFFER_SIZE=%CUSTOM_MAX_BITRATE%"
-            echo :: Auto-set buffer size: %CUSTOM_MAX_BITRATE%
         )   
         if defined VBV_PRESET_NAME (
             echo set "VBV_PRESET_NAME=%VBV_PRESET_NAME%"
-            echo :: VBV preset name: %VBV_PRESET_NAME%
         )
     )
-    
     :: AUDIO CUSTOMIZATION
     if defined CUSTOM_AUDIO_BITRATE (
         echo set "CUSTOM_AUDIO_BITRATE=%CUSTOM_AUDIO_BITRATE%"
-        echo :: Audio bitrate override: %CUSTOM_AUDIO_BITRATE%
     )
     if defined CUSTOM_AUDIO_SAMPLERATE (
         echo set "CUSTOM_AUDIO_SAMPLERATE=%CUSTOM_AUDIO_SAMPLERATE%"
-        echo :: Audio sample rate override: %CUSTOM_AUDIO_SAMPLERATE%
     )
     if defined CUSTOM_AUDIO_CHANNELS (
         echo set "CUSTOM_AUDIO_CHANNELS=%CUSTOM_AUDIO_CHANNELS%"
-        echo :: Audio channels override: %CUSTOM_AUDIO_CHANNELS%
     )
     if defined AUDIO_PRESET_NAME (
         echo set "AUDIO_PRESET_NAME=%AUDIO_PRESET_NAME%"
-        echo :: Audio preset name: %AUDIO_PRESET_NAME%
     )
 	:: AUDIO NORMALIZATION VARIABLES
 	if defined CUSTOM_LUFS_TARGET (
 		echo set "CUSTOM_LUFS_TARGET=%CUSTOM_LUFS_TARGET%"
-		echo :: LUFS target: %CUSTOM_LUFS_TARGET%
 	)
 	if defined CUSTOM_PEAK_LIMIT (
 		echo set "CUSTOM_PEAK_LIMIT=%CUSTOM_PEAK_LIMIT%"
-		echo :: Peak limit: %CUSTOM_PEAK_LIMIT%
 	)
 	if defined CUSTOM_LRA_TARGET (
 		echo set "CUSTOM_LRA_TARGET=%CUSTOM_LRA_TARGET%"
-		echo :: LRA target: %CUSTOM_LRA_TARGET%
 	)
 	if defined NORMALIZATION_PRESET_NAME (
 		echo set "NORMALIZATION_PRESET_NAME=%NORMALIZATION_PRESET_NAME%"
-		echo :: Normalization preset name: %NORMALIZATION_PRESET_NAME%
 	)
 	if defined CUSTOM_NORMALIZATION_PARAMS (
 		echo set "CUSTOM_NORMALIZATION_PARAMS=%CUSTOM_NORMALIZATION_PARAMS%"
-		echo :: Normalization parameters: %CUSTOM_NORMALIZATION_PARAMS%
 	)
 	if defined AUDIO_PROCESSING_ACTIVE (
 		echo set "AUDIO_PROCESSING_ACTIVE=%AUDIO_PROCESSING_ACTIVE%"
-		echo :: Audio processing active: %AUDIO_PROCESSING_ACTIVE%
 	)    
     :: COLOR SCIENCE CUSTOMIZATION
     if defined CUSTOM_COLOR_PARAMS (
         echo set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS%"
-        echo :: Color parameters override: %CUSTOM_COLOR_PARAMS%
     )
     if defined COLOR_PRESET_NAME (
         echo set "COLOR_PRESET_NAME=%COLOR_PRESET_NAME%"
-        echo :: Color preset name: %COLOR_PRESET_NAME%
     )
-    
     :: CONTROL FLAGS
     echo set "ADVANCED_MODE=Y"
     echo set "CUSTOMIZATION_ACTIVE=Y"
@@ -1265,28 +1249,61 @@ echo   📁 Config file: %CONFIG_FILE%
 
 :: VERIFICATION OF SAVED CONTENT
 if exist "%CONFIG_FILE%" (
-    echo   ✅ Configuration saved successfully
-    echo   📊 Configuration saved to: %CONFIG_FILE%
-    echo   💡 Custom variables will be loaded by main script
-    
-    :: Log the save operation
-    echo [%time:~0,8%] [ADVANCED] Customizations saved to config file: %CONFIG_FILE%>>"!EXEC_LOG!"
-    
+    echo   ✅ Configuration saved: %CONFIG_FILE%
+    echo [%time:~0,8%] [ADVANCED] Config file created: %CONFIG_FILE%>>"!EXEC_LOG!"
     exit /b 0
 ) else (
-    echo   ❌ Failed to save configuration file
-    echo [%time:~0,8%] [ADVANCED] ERROR: Failed to save config file>>"!EXEC_LOG!"
+    echo   ❌ Failed to save configuration
+    echo [%time:~0,8%] [ERROR] Config file creation failed>>"!EXEC_LOG!"
     exit /b 1
 )
 
-:ReturnToMainMenu
-echo.
-echo 🔄 Loading customizations into main script...
-timeout /t 2 /nobreak >nul 2>&1
-echo ✅ GOP set to: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
-if defined VBV_PRESET_NAME echo ✅ VBV set to: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-echo.
-echo 📋 Ready for encoding with advanced customizations
-echo.
-pause
+:LoadAdvancedConfigFromModule
+if not exist "%CONFIG_FILE%" (
+    echo   ❌ Configuration file not found: %CONFIG_FILE%
+    exit /b 1
+)
+
+echo   📥 Loading advanced configuration...
+call "%CONFIG_FILE%"
+if errorlevel 1 (
+    echo   ❌ Failed to load configuration
+    exit /b 1
+)
+
+echo   ✅ Configuration loaded successfully
+echo [%time:~0,8%] [ADVANCED] Config loaded from: %CONFIG_FILE%>>"!EXEC_LOG!"
 exit /b 0
+
+:ExitAdvancedModule
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                       🏠 RETURNING TO MAIN MENU                              ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+
+if "%ADVANCED_MODE%"=="Y" (
+    echo ✅ ADVANCED CUSTOMIZATIONS ACTIVE
+    echo.
+    echo 📋 APPLIED SETTINGS:
+    if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
+    if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
+    if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
+    if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+    if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
+    if defined COLOR_PRESET_NAME echo   🎨 Color: %COLOR_PRESET_NAME%
+    echo.
+    echo 🎬 Ready for encoding with customized parameters!
+    echo 🚀 Use [3] START ENCODING in main menu
+) else (
+    echo 🛡️ Using standard Hollywood parameters
+    echo 💡 No customizations were applied
+)
+
+echo.
+echo 🔄 Returning to main menu...
+echo [%time:~0,8%] [ADVANCED] Returning to main menu with advanced mode: %ADVANCED_MODE%>>"!EXEC_LOG!"
+pause
+
+exit /b 0  
