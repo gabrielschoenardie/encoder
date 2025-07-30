@@ -127,7 +127,7 @@ if exist "%TEMP_DIR%\encoder_advanced_config_*.tmp" (
 :: STEP 2: FALLBACK TO SYSTEM CONFIG IF NO CUSTOMIZATIONS
 :config_priority_done
 if "%CONFIG_FILE_FOUND%"=="N" (
-    set "CONFIG_FILE=%PROJECT_ROOT%\src\config\encoder_config.json"
+    set "CONFIG_FILE=%PROJECT_ROOT%\config\encoder_config.json"
     echo   📋 Using system config: encoder_config.json
 ) else (
     echo   🎛️ Using customizations: %CONFIG_FILE%
@@ -959,6 +959,8 @@ if errorlevel 1 (
 exit /b 0
 
 :Execute2Pass
+:: Reset flags
+set "PASS2_CONFIG_APPLIED="
 echo.
 echo 🔄 PASS 1/2 - Analysis
 echo ═════════════════════════════════════════════
@@ -1192,18 +1194,22 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 exit /b 0
 
 :ApplyPass2Config
+:: Prevent duplicate execution
+if defined PASS2_CONFIG_APPLIED (
+    echo   ↩️  Pass 2 config already applied - skipping
+    exit /b 0
+)
 echo   🎬 Configuring Pass 2 (Final Creation)
 
 :: Bitrate settings
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-
 :: VBV settings - Same logic as Pass 1
 if defined CUSTOM_MAX_BITRATE (
 	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
 ) else (
 	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
 )
-	if defined CUSTOM_BUFFER_SIZE (
+if defined CUSTOM_BUFFER_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
 ) else (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
@@ -1211,74 +1217,102 @@ if defined CUSTOM_MAX_BITRATE (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
 
-:: BUILD AND INTEGRATE AUDIO COMMAND
+echo   🎵 Building and integrating audio settings...
 call :BuildAudioCommand
-if not errorlevel 1 (
-    if defined AUDIO_COMMAND (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
-        echo   🎵 Audio settings from module integrated
-    ) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
-        echo   🎵 Default audio settings applied
-		)
-    ) else (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
-        echo   ⚠️ Audio command build failed, using defaults
-	)
-		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
-		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
-	)
-echo   ✅ Command built successfully with module integrations
-exit /b 0
+set "AUDIO_BUILD_RESULT=!ERRORLEVEL!"
 
+if !AUDIO_BUILD_RESULT! EQU 0 (
+    if defined AUDIO_COMMAND (
+        echo     ✅ Audio customizations integrated: %AUDIO_COMMAND%
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
+        :: Display active customizations
+        if defined AUDIO_PRESET_NAME (
+            echo     🎬 Audio preset: %AUDIO_PRESET_NAME%
+        )
+        if defined NORMALIZATION_PRESET_NAME (
+            echo     🔊 Normalization: %NORMALIZATION_PRESET_NAME%
+        )
+    ) else (
+        echo     ⚠️ No audio customizations - using defaults
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+    )
+) else (
+    echo     ❌ Audio command build failed - using fallback
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+)
+    
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
+)
+set "PASS2_CONFIG_APPLIED=Y"
+exit /b 0
 :BuildAudioCommand
-echo   🎵 Building professional audio command...
+:: FIXED BuildAudioCommand - Complete integration with advanced customizations
+echo   🎵 Building professional audio command with customizations...
 
 :: Initialize audio command
 set "AUDIO_COMMAND="
 
-:: Start with base AAC codec
-set "AUDIO_COMMAND=-c:a aac"
+:: NORMALIZATION INTEGRATION (must come first in FFmpeg filter chain)
+if defined CUSTOM_NORMALIZATION_PARAMS (
+    echo     🔊 Applying normalization: %NORMALIZATION_PRESET_NAME%
+    set "AUDIO_COMMAND=-af loudnorm=I=%CUSTOM_LUFS_TARGET%:TP=%CUSTOM_PEAK_LIMIT%:LRA=%CUSTOM_LRA_TARGET%:print_format=summary"
+    echo     📋 Normalization filter: %AUDIO_COMMAND%
+)
 
-:: Apply bitrate
+:: CODEC AND BASIC PARAMETERS
+set "AUDIO_COMMAND=%AUDIO_COMMAND% -c:a aac"
+
+:: BITRATE CUSTOMIZATION
 if defined CUSTOM_AUDIO_BITRATE (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a %CUSTOM_AUDIO_BITRATE%"
+    echo     🎯 Custom bitrate applied: %CUSTOM_AUDIO_BITRATE%
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a 256k"
+    echo     🎯 Default bitrate: 256k
 )
 
-:: Apply sample rate
+:: SAMPLE RATE CUSTOMIZATION  
 if defined CUSTOM_AUDIO_SAMPLERATE (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar %CUSTOM_AUDIO_SAMPLERATE%"
+    echo     📻 Custom sample rate applied: %CUSTOM_AUDIO_SAMPLERATE%Hz
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar 48000"
+    echo     📻 Default sample rate: 48000Hz
 )
 
-:: Apply channels
+:: CHANNELS CUSTOMIZATION
 if defined CUSTOM_AUDIO_CHANNELS (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac %CUSTOM_AUDIO_CHANNELS%"
+    echo     🔊 Custom channels applied: %CUSTOM_AUDIO_CHANNELS%
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac 2"
+    echo     🔊 Default channels: 2 (Stereo)
 )
 
-:: Add professional AAC parameters
+:: PROFESSIONAL AAC PARAMETERS
 set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
 
-:: INTEGRATE AUDIO NORMALIZATION
-if defined CUSTOM_NORMALIZATION_PARAMS (
-    set "AUDIO_COMMAND=%CUSTOM_NORMALIZATION_PARAMS% %AUDIO_COMMAND%"
-    echo     🔊 Normalization integrated: %NORMALIZATION_PRESET_NAME%
-    call :LogEntry "[AUDIO] Normalization integrated"
-)
-
-:: Log preset information if available
+:: DISPLAY PRESET INFORMATION
 if defined AUDIO_PRESET_NAME (
-    echo     🎬 Audio preset: %AUDIO_PRESET_NAME%
-    echo     🔊 Applying normalization from module: %NORMALIZATION_PRESET_NAME%
-    echo     📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP
+    echo     🎬 Audio preset active: %AUDIO_PRESET_NAME%
 )
 
-echo     ✅ Complete audio command built: %AUDIO_COMMAND%
+if defined NORMALIZATION_PRESET_NAME (
+    echo     🔊 Normalization active: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
+)
+
+:: FINAL COMMAND VALIDATION
+if not defined AUDIO_COMMAND (
+    echo     ❌ Audio command build failed - using fallback
+    set "AUDIO_COMMAND=-c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+    exit /b 1
+)
+
+echo     ✅ Complete audio command built successfully
+echo     📋 Final audio command: %AUDIO_COMMAND%
+
+call :LogEntry "[AUDIO] Audio command built with customizations"
 exit /b 0
 
 :PostProcessing
@@ -2170,20 +2204,48 @@ pause
 exit /b 1
 
 :LoadAdvancedConfig
-:: SIMPLE & BULLETPROOF LoadAdvancedConfig
 echo 🔄 Loading advanced configuration...
 
+:: AUTO-DETECT CONFIG FILE - Multiple strategies
+set "CONFIG_FILE="
+
+:: STRATEGY 1: Check for temp customization files first (priority)
+for /f "tokens=*" %%i in ('dir /b /o-d "%TEMP%\encoder_advanced_config_*.tmp" 2^>nul') do (
+    set "CONFIG_FILE=%TEMP%\%%i"
+    echo   ✅ Found customization file: %%i
+    goto :config_detected
+)
+
+:: STRATEGY 2: Check for project config file (fallback)
+if exist "src\config\encoder_config.json" (
+    set "CONFIG_FILE=src\config\encoder_config.json"
+    echo   ✅ Found project config: encoder_config.json
+    goto :config_detected
+)
+
+:: STRATEGY 3: No config found (graceful handling)
+echo   💡 No configuration files found
+echo   🛡️ Using profile defaults and standard Hollywood parameters
+exit /b 0
+
+:config_detected
 if not exist "%CONFIG_FILE%" (
     echo   ❌ Config file not found: %CONFIG_FILE%
     exit /b 1
 )
 
-echo   ✅ Config file found: %CONFIG_FILE%
-echo   🔍 File contents:
-type "%CONFIG_FILE%"
-echo.
+echo   📋 Loading configuration from: %CONFIG_FILE%
 
-echo   🔄 Using SIMPLE COPY method...
+:: Determine file type and handle accordingly
+echo "%CONFIG_FILE%" | findstr /i "\.json$" >nul
+if not errorlevel 1 (
+    echo   📋 JSON config detected - basic validation only
+    echo   💡 Advanced customizations loaded from temp files take priority
+    exit /b 0
+)
+
+:: Handle .tmp files (customizations)
+echo   🔧 Processing advanced customizations...
 
 :: Create simple temp batch to execute the set commands
 set "TEMP_LOADER=%TEMP%\simple_loader_%RANDOM%.bat"
@@ -2203,6 +2265,9 @@ echo if defined GOP_PRESET_NAME echo   ✅ GOP_PRESET_NAME=%%GOP_PRESET_NAME%% >
 echo if defined CUSTOM_MAX_BITRATE echo   ✅ CUSTOM_MAX_BITRATE=%%CUSTOM_MAX_BITRATE%% >> "%TEMP_LOADER%"
 echo if defined VBV_PRESET_NAME echo   ✅ VBV_PRESET_NAME=%%VBV_PRESET_NAME%% >> "%TEMP_LOADER%"
 echo if defined ADVANCED_MODE echo   ✅ ADVANCED_MODE=%%ADVANCED_MODE%% >> "%TEMP_LOADER%"
+echo if defined CUSTOM_AUDIO_BITRATE echo   ✅ CUSTOM_AUDIO_BITRATE=%%CUSTOM_AUDIO_BITRATE%% >> "%TEMP_LOADER%"
+echo if defined AUDIO_PRESET_NAME echo   ✅ AUDIO_PRESET_NAME=%%AUDIO_PRESET_NAME%% >> "%TEMP_LOADER%"
+echo if defined NORMALIZATION_PRESET_NAME echo   ✅ NORMALIZATION_PRESET_NAME=%%NORMALIZATION_PRESET_NAME%% >> "%TEMP_LOADER%"
 
 echo   📋 Generated temp loader: %TEMP_LOADER%
 echo   📋 Executing configuration...
@@ -2438,11 +2503,61 @@ if defined COLOR_PRESET_NAME (
     )
 )
 
-:: AUDIO VALIDATION (if implemented)
+:: ENHANCED AUDIO VALIDATION - V5.2 Audio Integration
+set "audio_customizations=0"
+set "audio_components=0"
+
+:: Audio Enhancement Preset
 if defined AUDIO_PRESET_NAME (
-    set /a "custom_count+=1"
-    echo     ✅ Audio Enhancement: !AUDIO_PRESET_NAME!
+    set /a "audio_components+=1"
+    echo     ✅ Audio Preset: !AUDIO_PRESET_NAME!
 )
+
+:: Audio Technical Settings
+if defined CUSTOM_AUDIO_BITRATE (
+    set /a "audio_components+=1"
+    echo     ✅ Audio Bitrate: !CUSTOM_AUDIO_BITRATE!
+)
+
+if defined CUSTOM_AUDIO_SAMPLERATE (
+    set /a "audio_components+=1"
+    echo     ✅ Sample Rate: !CUSTOM_AUDIO_SAMPLERATE!Hz
+)
+
+if defined CUSTOM_AUDIO_CHANNELS (
+    set /a "audio_components+=1"
+    echo     ✅ Channels: !CUSTOM_AUDIO_CHANNELS!
+)
+
+:: Audio Normalization
+if defined NORMALIZATION_PRESET_NAME (
+    set /a "audio_components+=1"
+    echo     ✅ Normalization: !NORMALIZATION_PRESET_NAME!
+    
+    if defined CUSTOM_LUFS_TARGET (
+        echo     ✅ LUFS Target: !CUSTOM_LUFS_TARGET!
+    )
+    if defined CUSTOM_PEAK_LIMIT (
+        echo     ✅ Peak Limit: !CUSTOM_PEAK_LIMIT! TP
+    )
+)
+
+if defined AUDIO_PROCESSING_ACTIVE (
+    if "!AUDIO_PROCESSING_ACTIVE!"=="Y" (
+        echo     ✅ Audio Processing: ACTIVE
+    )
+)
+
+:: COUNT AUDIO AS ONE CUSTOMIZATION GROUP if any audio setting present
+if !audio_components! GTR 0 (
+    set /a "custom_count+=1"
+    if !audio_components! GEQ 3 (
+        echo     🎵 Audio Enhancement: Complete (!audio_components! components)
+    ) else (
+        echo     🎵 Audio Enhancement: Partial (!audio_components! components)
+    )
+)
+
 :: FINAL VALIDATION AND ACTIVATION - FIXED LOGIC
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
