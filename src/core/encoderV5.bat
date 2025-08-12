@@ -69,6 +69,14 @@ set "NORMALIZATION_PRESET_NAME="
 set "CUSTOM_NORMALIZATION_PARAMS="
 set "AUDIO_PROCESSING_ACTIVE=N"
 
+:: VBV Buffer Initialization Variables
+set "CUSTOM_VBV_INIT="
+set "ENABLE_VBV_INIT=N"
+set "VBV_INIT_PRESET_NAME="
+set "VBV_INIT_DESCRIPTION="
+set "VBV_INIT_SOURCE=System Default"
+set "CUSTOM_VBV_INIT_PERCENT="
+
 :: Professional Menu System Variables
 set "WORKFLOW_STEP=0"
 set "SESSION_START_TIME="
@@ -106,16 +114,11 @@ set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 set "PROFILES_DIR=%PROJECT_ROOT%\src\profiles\presets"
 
-:: ========================================
-:: CRITICAL FIX: CONFIG_FILE PRIORITY LOGIC
-:: ========================================
-
 :: STEP 1: CHECK FOR TEMP CUSTOMIZATIONS FILE (PRIORITY)
 set "TEMP_DIR=%TEMP%"
 set "CONFIG_FILE_FOUND=N"
 
 if exist "%TEMP_DIR%\encoder_advanced_config_*.tmp" (
-    echo   🎯 Checking for customizations...
     for %%F in ("%TEMP_DIR%\encoder_advanced_config_*.tmp") do (
         set "CONFIG_FILE=%%F"
         set "CONFIG_FILE_FOUND=Y"
@@ -136,7 +139,9 @@ if "%CONFIG_FILE_FOUND%"=="N" (
 :: SINGLE VALIDATION CHECK (PRESERVE EXISTING LOGIC)
 if exist "%PROFILES_DIR%" (
     set "MODULAR_PROFILE_COUNT=0"
-    for %%F in ("%PROFILES_DIR%\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+    for %%F in ("%PROFILES_DIR%\*.prof") do (
+	set /a "MODULAR_PROFILE_COUNT+=1"
+	)
     
     if !MODULAR_PROFILE_COUNT! GTR 0 (
         echo ✅ Modular system: !MODULAR_PROFILE_COUNT! profiles active
@@ -154,7 +159,9 @@ if exist "%PROFILES_DIR%" (
         :: PRESERVE CONFIG_FILE LOGIC - DON'T OVERRIDE HERE
         set "MODULAR_PROFILES_AVAILABLE=Y"
         set "MODULAR_PROFILE_COUNT=0"
-        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do set /a "MODULAR_PROFILE_COUNT+=1"
+        for %%F in ("!ALT_PROFILES_DIR!\*.prof") do (
+			set /a "MODULAR_PROFILE_COUNT+=1"
+		)
     ) else (
         echo ❌ Profiles directory not found
         set "MODULAR_PROFILES_AVAILABLE=N"
@@ -190,6 +197,13 @@ set "X264_PRESET="
 set "X264_TUNE="
 set "X264_PARAMS="
 set "COLOR_PARAMS="
+:: VBV-INIT VARIABLES RESET (CRITICAL ADDITION)
+set "CUSTOM_VBV_INIT="
+set "ENABLE_VBV_INIT=N"
+set "VBV_INIT_PRESET_NAME="
+set "VBV_INIT_DESCRIPTION="
+set "VBV_INIT_SOURCE=System Default"
+set "CUSTOM_VBV_INIT_PERCENT="
 
 :: OPTIMIZED PARSING (preserve logic, reduce debug)
 for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
@@ -212,6 +226,11 @@ for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
         if "!param_name!"=="X264_TUNE" set "X264_TUNE=!param_value!"
         if "!param_name!"=="X264_PARAMS" set "X264_PARAMS=!param_value!"
         if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
+		if "!param_name!"=="CUSTOM_VBV_INIT" set "CUSTOM_VBV_INIT=!param_value!"
+        if "!param_name!"=="ENABLE_VBV_INIT" set "ENABLE_VBV_INIT=!param_value!"
+        if "!param_name!"=="VBV_INIT_PRESET_NAME" set "VBV_INIT_PRESET_NAME=!param_value!"
+        if "!param_name!"=="VBV_INIT_DESCRIPTION" set "VBV_INIT_DESCRIPTION=!param_value!"
+        if "!param_name!"=="VBV_INIT_SOURCE" set "VBV_INIT_SOURCE=!param_value!"
     )
 )
 
@@ -220,6 +239,18 @@ if not defined PROFILE_NAME exit /b 1
 if not defined VIDEO_WIDTH exit /b 1
 if not defined VIDEO_HEIGHT exit /b 1
 if not defined TARGET_BITRATE exit /b 1
+
+if defined CUSTOM_VBV_INIT (
+    if defined ENABLE_VBV_INIT (
+        if "!ENABLE_VBV_INIT!"=="Y" (
+            echo   🔧 VBV-init loaded: !CUSTOM_VBV_INIT! (!VBV_INIT_PRESET_NAME!)
+            call :LogEntry "[VBV] Loaded from profile: vbv_init=!CUSTOM_VBV_INIT!, preset=!VBV_INIT_PRESET_NAME!"
+        ) else (
+            echo   ℹ️ VBV-init disabled in profile (!ENABLE_VBV_INIT!)
+            call :LogEntry "[VBV] Profile contains VBV settings but ENABLE_VBV_INIT=!ENABLE_VBV_INIT!"
+        )
+    )
+)
 
 echo ✅ Profile loaded: !PROFILE_NAME! (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
 
@@ -1040,9 +1071,12 @@ set "PASS_TYPE=%~1"
 
 echo 🔍 Building FFmpeg command for %PASS_TYPE%...
 
+set "FFMPEG_COMMAND="
+
 :: Base command
-set "FFMPEG_COMMAND="!FFMPEG_CMD!" -y -hide_banner -i "!INPUT_FILE!""
+set "FFMPEG_COMMAND=!FFMPEG_CMD! -y -hide_banner -i "!INPUT_FILE!""
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:v:0"
+
 if "!PASS_TYPE!"=="PASS2" (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -map 0:a:0"
 )
@@ -1050,52 +1084,33 @@ if "!PASS_TYPE!"=="PASS2" (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:v libx264"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -profile:v high -level:v 4.1"
 
-:: HOLLYWOOD PARAMETERS - FFMPEG FLAGS METHOD
-if defined X264_PARAMS (
-echo   🎭 Applying Hollywood parameters via FFmpeg flags...
-:: Use custom preset if available from advanced customization module
-if defined CUSTOM_PRESET (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
-    echo   🎛️ Using custom preset from module: !CUSTOM_PRESET!
-) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
-    echo   🎬 Using profile default preset: veryslow
-)
-:: TUNE PARAMETER
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
-    
-:: Apply Hollywood parameters via FFmpeg flags
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 6"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
+:: ========================================
+:: HOLLYWOOD PARAMETERS - UNIFIED APPROACH ONLY
+:: ========================================
 
-echo   🧠 Applying psychovisual settings...
-if defined CUSTOM_PSY_RD (
-	:: Parse custom psy_rd (format: X.X,X.XX)
-	for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
-		set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd %%A:%%B"
-		echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
-	)
+if defined X264_PARAMS (
+    set "USE_UNIFIED_APPROACH=YES"
 ) else (
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
-	echo   🧠 Default psychovisual: 1.0:0.15
+    set "USE_UNIFIED_APPROACH=NO"  
 )
-:: ADVANCED QUANTIZATION
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -coder 1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
+
+:: EXPLICIT PATH BLOCKING WITH FAIL-SAFES
+set "UNIFIED_EXECUTED=NO"
+set "INDIVIDUAL_EXECUTED=NO"
+
+if "!USE_UNIFIED_APPROACH!"=="YES" (
+    set "EXECUTE_INDIVIDUAL=NO"
+    echo   🏆 Applying Hollywood parameters via UNIFIED x264-params approach...
+	
+    call :ApplyUnifiedHollywoodParameters
+    set "UNIFIED_EXECUTED=YES"
+) else (
+    set "EXECUTE_UNIFIED=NO"
+	echo   🎭 Applying Hollywood parameters via INDIVIDUAL FFmpeg flags...
+
+    call :ApplyIndividualHollywoodParameters
+    set "INDIVIDUAL_EXECUTED=YES"
+)
 
 :: VIDEO PROCESSING
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flags=lanczos,format=yuv420p"
@@ -1104,27 +1119,22 @@ set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -vf scale=!VIDEO_WIDTH!:!VIDEO_HEIGHT!:flag
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -r 30"
 
 :: Apply custom GOP settings if available, otherwise use profile defaults
-echo   🎬 Applying GOP structure...
 if defined CUSTOM_GOP_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !CUSTOM_GOP_SIZE!"
-    echo   🎬 Using custom GOP: !CUSTOM_GOP_SIZE! frames
-    if defined CUSTOM_KEYINT_MIN (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !CUSTOM_KEYINT_MIN!"
-        echo     🎬 Custom min keyint: !CUSTOM_KEYINT_MIN! frames
-    )
-    if defined GOP_PRESET_NAME (
-        echo     🎯 GOP preset: !GOP_PRESET_NAME!
-    )
-) else (
-	if defined GOP_SIZE (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
-        echo     📊 Profile GOP size: !GOP_SIZE! frames
-    )
-    if defined KEYINT_MIN (
-        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
-        echo     📊 Profile min keyint: !KEYINT_MIN! frames
-    )
+    echo   🎬 Using custom GOP: !CUSTOM_GOP_SIZE! frames (!GOP_PRESET_NAME!)
+) else if defined GOP_SIZE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -g !GOP_SIZE!"
+    echo   📊 Using profile GOP: !GOP_SIZE! frames
 )
+
+if defined CUSTOM_KEYINT_MIN (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !CUSTOM_KEYINT_MIN!"
+    echo   ⚡ Using custom Min Keyint: !CUSTOM_KEYINT_MIN! frames
+) else if defined KEYINT_MIN (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -keyint_min !KEYINT_MIN!"
+    echo   📊 Using profile Min Keyint: !KEYINT_MIN! frames
+)
+
 :: Advanced GOP structure parameters for Hollywood-level control
 if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
     :: Calculate optimal b-frame pyramid for custom GOP
@@ -1136,6 +1146,7 @@ if defined CUSTOM_GOP_SIZE if defined CUSTOM_KEYINT_MIN (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf !gop_bframes!"
     echo   🎭 GOP-optimized B-frames: !gop_bframes!
 )
+
 :: COLOR SCIENCE (BT.709 TV Range)
 echo   🎨 Applying color science...
 if defined CUSTOM_COLOR_PARAMS (
@@ -1154,111 +1165,232 @@ if defined CUSTOM_COLOR_PARAMS (
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pix_fmt yuv420p"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -max_muxing_queue_size 9999"
 
-:: PASS-SPECIFIC CONFIGURATIONS - FIXED LOGIC
-if "!PASS_TYPE!"=="PASS1" (
-    call :ApplyPass1Config
-) else if "!PASS_TYPE!"=="PASS2" (
-    call :ApplyPass2Config
-) else (
-    echo   ❌ Unknown pass type: !PASS_TYPE!
-    exit /b 1
-)
+:: Use GOTO structure for absolute pass separation
+if /i "!PASS_TYPE!"=="PASS1" goto :ConfigurePass1
+if /i "!PASS_TYPE!"=="PASS2" goto :ConfigurePass2
 
-echo   ✅ FFmpeg command built successfully
-exit /b 0
+:: Invalid pass type handling
+echo   ❌ CRITICAL ERROR: Invalid pass type received: "!PASS_TYPE!"
+echo   💡 Expected: PASS1 or PASS2 (case-insensitive)
+echo   📋 Received parameter: "%~1"
+call :LogEntry "[ERROR] Invalid PASS_TYPE in BuildFFmpegCommand: !PASS_TYPE!"
+exit /b 1
 
-:ApplyPass1Config
-echo   🔄 Configuring Pass 1 (Analysis)
+:ConfigurePass1
+echo   🔄 Configuring Pass 1 (Analysis phase)...
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!k"
 
-:: Bitrate settings
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
 if defined CUSTOM_MAX_BITRATE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
-	echo   📊 Using custom maxrate from module: !CUSTOM_MAX_BITRATE! (!VBV_PRESET_NAME!)
+    echo   📊 Using custom maxrate from module: !CUSTOM_MAX_BITRATE! (!VBV_PRESET_NAME!)
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
-	echo   📊 Using profile maxrate: !MAX_BITRATE!
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!k"
+    echo   📊 Using profile maxrate: !MAX_BITRATE!
 )
+
 if defined CUSTOM_BUFFER_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
-	echo   🔧 Using custom buffer from module: !CUSTOM_BUFFER_SIZE!
+    echo   🔧 Using custom buffer from module: !CUSTOM_BUFFER_SIZE! (!VBV_PRESET_NAME!)
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
-    echo   🔧 Using profile buffer: !BUFFER_SIZE!		
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!k"
+    echo   🔧 Using profile buffer: !BUFFER_SIZE!
 )
-:: Pass 1 specific settings
+
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 1"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -an -f null NUL"
 
-exit /b 0
+echo   ✅ Pass 1 analysis configuration complete
+goto :PassConfigurationComplete
 
-:ApplyPass2Config
-:: Prevent duplicate execution
-if defined PASS2_CONFIG_APPLIED (
-    echo   ↩️  Pass 2 config already applied - skipping
-    exit /b 0
-)
-echo   🎬 Configuring Pass 2 (Final Creation)
+:ConfigurePass2
+echo   🎬 Configuring Pass 2 (Final encoding phase)...
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!k"
 
-:: Bitrate settings
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -b:v !TARGET_BITRATE!"
-:: VBV settings - Same logic as Pass 1
 if defined CUSTOM_MAX_BITRATE (
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !CUSTOM_MAX_BITRATE!"
 ) else (
-	set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -maxrate !MAX_BITRATE!k"
 )
+
 if defined CUSTOM_BUFFER_SIZE (
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !CUSTOM_BUFFER_SIZE!"
 ) else (
-    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!"
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bufsize !BUFFER_SIZE!k"
 )
+
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -pass 2"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -passlogfile !LOG_FILE_PASS!"
 
-echo   🎵 Building and integrating audio settings...
+:: BUILD AND INTEGRATE AUDIO COMMAND
 call :BuildAudioCommand
-set "AUDIO_BUILD_RESULT=!ERRORLEVEL!"
-
-if !AUDIO_BUILD_RESULT! EQU 0 (
+if not errorlevel 1 (
     if defined AUDIO_COMMAND (
-        echo     ✅ Audio customizations integrated: %AUDIO_COMMAND%
         set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !AUDIO_COMMAND!"
-        :: Display active customizations
-        if defined AUDIO_PRESET_NAME (
-            echo     🎬 Audio preset: %AUDIO_PRESET_NAME%
-        )
-        if defined NORMALIZATION_PRESET_NAME (
-            echo     🔊 Normalization: %NORMALIZATION_PRESET_NAME%
-        )
+        echo   🎵 Audio settings from module integrated
     ) else (
-        echo     ⚠️ No audio customizations - using defaults
         set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+        echo   🎵 Default audio settings applied
     )
 ) else (
-    echo     ❌ Audio command build failed - using fallback
     set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -c:a aac -b:a 256k -ar 48000 -ac 2 -aac_coder twoloop"
+    echo   ⚠️ Audio command build failed, using defaults
 )
-    
+
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -movflags +faststart"
 set "FFMPEG_COMMAND=!FFMPEG_COMMAND! !OUTPUT_FILE!"
+
+echo   ✅ Pass 2 complete encoding configuration applied
+goto :PassConfigurationComplete
+
+:PassConfigurationComplete
+echo   📋 Command type: !PASS_TYPE! configuration complete
+
+:: Debug output for validation (can be disabled in production)
+if defined DEBUG_COMMAND_BUILD (
+    echo   🔍 DEBUG: FULL COMMAND = !FFMPEG_COMMAND!
 )
-set "PASS2_CONFIG_APPLIED=Y"
+
 exit /b 0
+
+:: ========================================
+:: HOLLYWOOD PARAMETER FUNCTIONS
+:: ========================================
+:ApplyUnifiedHollywoodParameters
+if "!EXECUTE_UNIFIED!"=="NO" (
+    exit /b 0
+)
+
+:: CRITICAL VALIDATION: Ensure X264_PARAMS is populated
+if not defined X264_PARAMS (
+    echo   ❌ CRITICAL ERROR: X264_PARAMS not loaded from profile
+    call :LogEntry "[ERROR] X264_PARAMS undefined in ApplyUnifiedHollywoodParameters"
+    exit /b 1
+)
+
+:: Apply custom preset if available
+if defined CUSTOM_PRESET (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+    echo   🎛️ Using custom preset: !CUSTOM_PRESET!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !X264_PRESET!"
+    echo   🎬 Profile preset: !X264_PRESET!
+)
+
+:: Apply tune setting
+if defined X264_TUNE (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+    echo   🎵 Tune setting: !X264_TUNE!
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune film"
+    echo   🎵 Using default tune: film
+)
+
+echo   🎭 Processing Hollywood parameters with robust cleaning...
+
+:: Direct copy with aggressive space removal
+set "CLEAN_PARAMS=!X264_PARAMS!"
+    :: PSYCHOVISUAL CUSTOMIZATION INTEGRATION
+    if defined CUSTOM_PSY_RD (
+        :: Remove existing psy settings from profile params and add custom
+        set "CLEAN_PARAMS=!CLEAN_PARAMS:psy_rd=!"
+        set "CLEAN_PARAMS=!CLEAN_PARAMS!:psy_rd=!CUSTOM_PSY_RD!"
+        echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
+    ) else (
+        echo   🧠 Profile psychovisual settings
+    )
+if "%ENABLE_VBV_INIT%"=="Y" (
+    if defined CUSTOM_VBV_INIT (
+        set "CLEAN_PARAMS=!CLEAN_PARAMS!:vbv_init=%CUSTOM_VBV_INIT%"
+        
+		if defined VBV_INIT_PRESET_NAME (
+            echo   ⚡ VBV Init: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)
+        ) else (
+            echo   ⚡ VBV Init: %CUSTOM_VBV_INIT% (Custom value)
+        )
+        call :LogEntry "[VBV_INIT] Applied custom: %CUSTOM_VBV_INIT%"
+		exit /b 0
+    )
+)
+
+:: Default VBV Init application
+set "CLEAN_PARAMS=!CLEAN_PARAMS:vbv_init=!"
+set "CLEAN_PARAMS=!CLEAN_PARAMS!:vbv_init=0.9"
+echo   📊 VBV Init default: 0.9 (90%% pre-fill, Instagram optimized)
+call :LogEntry "[VBV_INIT] Applied default: 0.9"
+
+set "CLEAN_PARAMS=!CLEAN_PARAMS: ==!"
+set "CLEAN_PARAMS=!CLEAN_PARAMS: ==!"
+
+:: Remove spaces around colons
+set "CLEAN_PARAMS=!CLEAN_PARAMS: :=:!"
+set "CLEAN_PARAMS=!CLEAN_PARAMS:: =:!"
+
+:: Clean up any leading/trailing colons from our additions
+set "CLEAN_PARAMS=!CLEAN_PARAMS:::=:!"
+if "!CLEAN_PARAMS:~0,1!"==":" set "CLEAN_PARAMS=!CLEAN_PARAMS:~1!"
+if "!CLEAN_PARAMS:~-1!"==":" set "CLEAN_PARAMS=!CLEAN_PARAMS:~0,-1!"
+
+:: APPLY AS SINGLE -x264-params STRING (CORRECT APPROACH)
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params !CLEAN_PARAMS!"
+echo   ✅ Applied Hollywood x264 parameters: !CLEAN_PARAMS:~0,60!...
+
+call :LogEntry "[HOLLYWOOD] Applied x264-params: !CLEAN_PARAMS:~0,60!..."
+exit /b 0
+
+:ApplyIndividualHollywoodParameters
+if "!EXECUTE_INDIVIDUAL!"=="NO" (
+    exit /b 0
+)
+
+:: Apply custom preset if available
+if defined CUSTOM_PRESET (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset !CUSTOM_PRESET!"
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -preset veryslow"
+)
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -tune !X264_TUNE!"
+
+:: Individual Hollywood parameters
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -refs 4"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -bf 4" 
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -subq 10"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_method umh"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -me_range 24"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -trellis 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -deblock -1,-1"
+
+:: Psychovisual parameters
+if defined CUSTOM_PSY_RD (
+    for /f "tokens=1,2 delims=," %%A in ("!CUSTOM_PSY_RD!") do (
+        set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd %%A:%%B"
+    )
+) else (
+    set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -psy-rd 1.0:0.15"
+)
+
+:: Additional individual parameters
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-mode 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -aq-strength 1.0"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -rc-lookahead 60"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -qcomp 0.6"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mbtree 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -coder 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -8x8dct 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -mixed-refs 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightb 1"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -weightp 2"
+set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -threads !THREAD_COUNT!"
+
+echo     ✅ Individual Hollywood flags applied
+
+
 :BuildAudioCommand
 :: FIXED BuildAudioCommand - Complete integration with advanced customizations
 echo   🎵 Building professional audio command with customizations...
 
 :: Initialize audio command
 set "AUDIO_COMMAND="
-
-:: NORMALIZATION INTEGRATION (must come first in FFmpeg filter chain)
-if defined CUSTOM_NORMALIZATION_PARAMS (
-    echo     🔊 Applying normalization: %NORMALIZATION_PRESET_NAME%
-    set "AUDIO_COMMAND=-af loudnorm=I=%CUSTOM_LUFS_TARGET%:TP=%CUSTOM_PEAK_LIMIT%:LRA=%CUSTOM_LRA_TARGET%:print_format=summary"
-    echo     📋 Normalization filter: %AUDIO_COMMAND%
-)
 
 :: CODEC AND BASIC PARAMETERS
 set "AUDIO_COMMAND=%AUDIO_COMMAND% -c:a aac"
@@ -1269,7 +1401,6 @@ if defined CUSTOM_AUDIO_BITRATE (
     echo     🎯 Custom bitrate applied: %CUSTOM_AUDIO_BITRATE%
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -b:a 256k"
-    echo     🎯 Default bitrate: 256k
 )
 
 :: SAMPLE RATE CUSTOMIZATION  
@@ -1278,7 +1409,6 @@ if defined CUSTOM_AUDIO_SAMPLERATE (
     echo     📻 Custom sample rate applied: %CUSTOM_AUDIO_SAMPLERATE%Hz
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ar 48000"
-    echo     📻 Default sample rate: 48000Hz
 )
 
 :: CHANNELS CUSTOMIZATION
@@ -1287,19 +1417,26 @@ if defined CUSTOM_AUDIO_CHANNELS (
     echo     🔊 Custom channels applied: %CUSTOM_AUDIO_CHANNELS%
 ) else (
     set "AUDIO_COMMAND=%AUDIO_COMMAND% -ac 2"
-    echo     🔊 Default channels: 2 (Stereo)
 )
 
 :: PROFESSIONAL AAC PARAMETERS
 set "AUDIO_COMMAND=%AUDIO_COMMAND% -aac_coder twoloop"
 
+:: NORMALIZATION INTEGRATION (must come first in FFmpeg filter chain)
+if defined CUSTOM_NORMALIZATION_PARAMS (
+    set "AUDIO_COMMAND=%CUSTOM_NORMALIZATION_PARAMS% %AUDIO_COMMAND%"
+    echo     🔊 Applying normalization: %NORMALIZATION_PRESET_NAME%
+)
+
 :: DISPLAY PRESET INFORMATION
 if defined AUDIO_PRESET_NAME (
     echo     🎬 Audio preset active: %AUDIO_PRESET_NAME%
 )
-
 if defined NORMALIZATION_PRESET_NAME (
     echo     🔊 Normalization active: %NORMALIZATION_PRESET_NAME% (%CUSTOM_LUFS_TARGET% LUFS)
+)
+if defined CUSTOM_LUFS_TARGET (
+	echo   📊 Target: %CUSTOM_LUFS_TARGET% LUFS, %CUSTOM_PEAK_LIMIT% TP
 )
 
 :: FINAL COMMAND VALIDATION
@@ -1654,10 +1791,14 @@ if defined TOTAL_RAM_KB (
 
 echo   ✅ Architecture: !CPU_ARCH!
 echo   ✅ CPU: !CPU_CORES! cores (!CPU_FAMILY!)
-echo   💻 Type: !IS_LAPTOP:Y=Laptop!!IS_LAPTOP:N=Desktop!
+if "!IS_LAPTOP!"=="Y" (
+    echo   💻 Type: Laptop
+) else (
+    echo   💻 Type: Desktop
+)
 echo   🧠 RAM: !TOTAL_RAM_GB!GB
 
-call :LogEntry "[SYSTEM] CPU: !CPU_CORES! cores, RAM: !TOTAL_RAM_GB!GB"
+call :LogEntry "[SYSTEM] CPU: !CPU_CORES! cores, RAM: !TOTAL_RAM_GB!GB, Type: !IS_LAPTOP!"
 exit /b 0
 
 :DetectCPUFromDatabase
@@ -2268,6 +2409,9 @@ echo if defined ADVANCED_MODE echo   ✅ ADVANCED_MODE=%%ADVANCED_MODE%% >> "%TE
 echo if defined CUSTOM_AUDIO_BITRATE echo   ✅ CUSTOM_AUDIO_BITRATE=%%CUSTOM_AUDIO_BITRATE%% >> "%TEMP_LOADER%"
 echo if defined AUDIO_PRESET_NAME echo   ✅ AUDIO_PRESET_NAME=%%AUDIO_PRESET_NAME%% >> "%TEMP_LOADER%"
 echo if defined NORMALIZATION_PRESET_NAME echo   ✅ NORMALIZATION_PRESET_NAME=%%NORMALIZATION_PRESET_NAME%% >> "%TEMP_LOADER%"
+echo if defined CUSTOM_VBV_INIT echo   ✅ CUSTOM_VBV_INIT=%%CUSTOM_VBV_INIT%% >> "%TEMP_LOADER%"
+echo if defined VBV_INIT_PRESET_NAME echo   ✅ VBV_INIT_PRESET_NAME=%%VBV_INIT_PRESET_NAME%% >> "%TEMP_LOADER%"
+echo if defined ENABLE_VBV_INIT echo   ✅ ENABLE_VBV_INIT=%%ENABLE_VBV_INIT%% >> "%TEMP_LOADER%"
 
 echo   📋 Generated temp loader: %TEMP_LOADER%
 echo   📋 Executing configuration...
@@ -2414,6 +2558,26 @@ if /i "!var_name!"=="COLOR_PRESET_NAME" (
     echo     ✅ COLOR_PRESET_NAME=!var_value!
     exit /b 0
 )
+if /i "!var_name!"=="CUSTOM_VBV_INIT" (
+    set "CUSTOM_VBV_INIT=!var_value!"
+    echo     ✅ CUSTOM_VBV_INIT=!var_value!
+    exit /b 0
+)
+if /i "!var_name!"=="VBV_INIT_PRESET_NAME" (
+    set "VBV_INIT_PRESET_NAME=!var_value!"
+    echo     ✅ VBV_INIT_PRESET_NAME=!var_value!
+    exit /b 0
+)
+if /i "!var_name!"=="VBV_INIT_DESCRIPTION" (
+    set "VBV_INIT_DESCRIPTION=!var_value!"
+    echo     ✅ VBV_INIT_DESCRIPTION=!var_value!
+    exit /b 0
+)
+if /i "!var_name!"=="ENABLE_VBV_INIT" (
+    set "ENABLE_VBV_INIT=!var_value!"
+    echo     ✅ ENABLE_VBV_INIT=!var_value!
+    exit /b 0
+)
 if /i "!var_name!"=="ADVANCED_MODE" (
     set "ADVANCED_MODE=!var_value!"
     echo     ✅ ADVANCED_MODE=!var_value!
@@ -2557,6 +2721,29 @@ if !audio_components! GTR 0 (
         echo     🎵 Audio Enhancement: Partial (!audio_components! components)
     )
 )
+:: VBV-INIT VALIDATION AND SOURCE DETERMINATION
+if defined CUSTOM_VBV_INIT (
+    if "%ENABLE_VBV_INIT%"=="Y" (
+        echo   ✅ VBV-INIT validated: %CUSTOM_VBV_INIT%
+        if defined VBV_INIT_PRESET_NAME (
+            set "VBV_INIT_SOURCE=%VBV_INIT_PRESET_NAME%"
+        ) else (
+            set "VBV_INIT_SOURCE=Custom Value"
+        )
+        echo   🎯 VBV-INIT source: %VBV_INIT_SOURCE%
+    ) else (
+        echo   ⚠️ VBV-INIT defined but disabled - using system default
+        set "ENABLE_VBV_INIT=N"
+        set "VBV_INIT_SOURCE=System Default"
+    )
+) else (
+    echo   📊 VBV-INIT: No customization - using system default (0.9)
+    set "ENABLE_VBV_INIT=N"
+    set "VBV_INIT_SOURCE=System Default"
+)
+
+:: Log VBV-INIT configuration
+call :LogEntry "[VBV-INIT] Config validation: ENABLE=%ENABLE_VBV_INIT%, Value=%CUSTOM_VBV_INIT%, Source=%VBV_INIT_SOURCE%"
 
 :: FINAL VALIDATION AND ACTIVATION - FIXED LOGIC
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2582,5 +2769,4 @@ if !custom_count! GTR 0 (
 
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ✅ Customizations integrated successfully
-
 exit /b 0
