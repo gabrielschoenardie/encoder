@@ -46,7 +46,7 @@ echo  [4] 📊 VBV Buffer Settings (Streaming Optimization)
 echo  [5] 🎵 Audio Enhancement Options
 echo  [6] 🌈 Color Science Adjustments
 echo  [7] 📋 Preview All Settings
-echo  [8] 🔄 Restore Original Profile
+echo  [8] 🎯 VBV Buffer Initialization (Streaming Optimization)
 echo  [9] ✅ Apply Customizations ⭐ SAVE AND EXIT
 echo  [0] 🔙 Back to Main Menu
 echo.
@@ -59,7 +59,7 @@ if "%custom_choice%"=="4" goto :CustomizeVBV
 if "%custom_choice%"=="5" goto :CustomizeAudio
 if "%custom_choice%"=="6" goto :CustomizeColor
 if "%custom_choice%"=="7" goto :PreviewAllCustomizations
-if "%custom_choice%"=="8" goto :RestoreOriginalProfile
+if "%custom_choice%"=="8" goto :CustomizeVBVInit
 if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
 if "%custom_choice%"=="0" goto :ExitAdvancedModule
 
@@ -162,8 +162,7 @@ echo ╔════════════════════════
 echo ║                       🎬 GOP STRUCTURE CUSTOMIZATION                         ║
 echo ╚══════════════════════════════════════════════════════════════════════════════╝
 echo.
-echo  📊 Current GOP Settings:
-echo   GOP Size: %GOP_SIZE%, Min=%KEYINT_MIN% (keyframe every %GOP_SIZE% frames)
+echo  📊 Current GOP: %GOP_SIZE%, Min=%KEYINT_MIN% (keyframe every %GOP_SIZE% frames)
 if defined CUSTOM_GOP_SIZE echo  🎛️ Active: %GOP_PRESET_NAME% (GOP=%CUSTOM_GOP_SIZE%, Min=%CUSTOM_KEYINT_MIN%)
 echo.
 echo  🎬 GOP (Group of Pictures):
@@ -246,8 +245,7 @@ echo  📱 All presets optimized for Instagram zero-recompression
 echo  🎬 Lower GOP = More keyframes = Better seeking + Larger files
 echo  🚀 Higher GOP = Fewer keyframes = Smaller files + Less seeking precision
 echo.
-echo Press any key to return...
-pause >nul
+pause
 goto :CustomizeGOP
 
 :CustomizeVBV
@@ -264,12 +262,12 @@ echo  ┌───────────────────────�
 echo  │ 📊 PROFESSIONAL VBV PRESETS                                     │
 echo  └─────────────────────────────────────────────────────────────────┘
 echo.
-echo  [1] 🚗 High Motion (1.7x buffer) - Cars, viral, speedramp
-echo  [2] 📱 Social Media (1.5x buffer) - Instagram optimized ⭐
-echo  [3] 📺 Streaming (1.8x buffer) - Adaptive bitrate, web delivery
-echo  [4] 🎬 Cinematic (2.2x buffer) - Film quality, smooth encoding
-echo  [5] 🌐 Universal (1.3x buffer) - Maximum compatibility
-echo  [6] ⚡ Fast Network (2.5x buffer) - High bandwidth, premium quality
+echo  [1] 🚗 High Motion (1.7x) - Cars, viral, speedramp
+echo  [2] 📱 Social Media (1.5x) - Instagram optimized ⭐
+echo  [3] 📺 Streaming (1.8x) - Adaptive bitrate, web delivery
+echo  [4] 🎬 Cinematic (2.2x) - Film quality, smooth encoding
+echo  [5] 🌐 Universal (1.3x) - Maximum compatibility
+echo  [6] ⚡ Fast Network (2.5x) - High bandwidth, premium quality
 echo  [B] 🔙 Back to Advanced Menu
 echo.
 set /p "vbv_choice=Select VBV preset [1-6, B]: "
@@ -289,33 +287,40 @@ goto :AdvancedCustomizationMain
 :SetVBVValues
 set "vbv_multiplier=%~1"
 set "VBV_PRESET_NAME=%~2"
-set "target_numeric=%TARGET_BITRATE:M=%"
+
+echo   🔧 Applying %VBV_PRESET_NAME% preset...
+
+set "target_numeric=%TARGET_BITRATE%"
 
 :: Calculate custom maxrate and buffer based on multiplier
 if "%vbv_multiplier%"=="1.7" (
-    set /a "custom_maxrate=%target_numeric%*21/10"
-    set /a "custom_buffer=%target_numeric%*17/10"
+    set /a "custom_maxrate=%target_numeric%*17/10"
+    set /a "custom_buffer=%target_numeric%*10/10"
 ) else if "%vbv_multiplier%"=="1.5" (
-    set /a "custom_maxrate=%target_numeric%*20/10" 
-    set /a "custom_buffer=%target_numeric%*15/10"
+    set /a "custom_maxrate=%target_numeric%*15/10" 
+    set /a "custom_buffer=%target_numeric%*10/10"
 ) else if "%vbv_multiplier%"=="1.8" (
-    set /a "custom_maxrate=%target_numeric%*22/10"
-    set /a "custom_buffer=%target_numeric%*18/10"
-) else if "%vbv_multiplier%"=="2.2" (
-    set /a "custom_maxrate=%target_numeric%*25/10"
-    set /a "custom_buffer=%target_numeric%*22/10"
-) else if "%vbv_multiplier%"=="1.3" (
     set /a "custom_maxrate=%target_numeric%*18/10"
-    set /a "custom_buffer=%target_numeric%*13/10"
+    set /a "custom_buffer=%target_numeric%*10/10"
+) else if "%vbv_multiplier%"=="2.2" (
+    set /a "custom_maxrate=%target_numeric%*22/10"
+    set /a "custom_buffer=%target_numeric%*10/10"
+) else if "%vbv_multiplier%"=="1.3" (
+    set /a "custom_maxrate=%target_numeric%*13/10"
+    set /a "custom_buffer=%target_numeric%*10/10"
 ) else if "%vbv_multiplier%"=="2.5" (
-    set /a "custom_maxrate=%target_numeric%*28/10"
-    set /a "custom_buffer=%target_numeric%*25/10"
+    set /a "custom_maxrate=%target_numeric%*25/10"
+    set /a "custom_buffer=%target_numeric%*10/10"
+) else (
+    :: Fallback to target values
+    set /a "custom_maxrate=%target_numeric%"
+    set /a "custom_buffer=%target_numeric%"
 )
-
-set "CUSTOM_MAX_BITRATE=%custom_maxrate%M"
-set "CUSTOM_BUFFER_SIZE=%custom_buffer%M"
+:: CORRECTED SUFFIX - Use 'k' for kilobits (FFmpeg standard)
+set "CUSTOM_MAX_BITRATE=%custom_maxrate%k"
+set "CUSTOM_BUFFER_SIZE=%custom_buffer%k"
 echo.
-echo ✅ %VBV_PRESET_NAME% applied: Max=%CUSTOM_MAX_BITRATE%, Buffer=%CUSTOM_BUFFER_SIZE% (%vbv_multiplier%x ratio)
+echo ✅ %VBV_PRESET_NAME% applied: Max=%CUSTOM_MAX_BITRATE%, Buf=%CUSTOM_BUFFER_SIZE% (%vbv_multiplier%x ratio)
 
 set "CUSTOMIZATION_ACTIVE=Y"
 echo [%time:~0,8%] [ADVANCED] VBV set: %VBV_PRESET_NAME% (Max:%CUSTOM_MAX_BITRATE%, Buf:%CUSTOM_BUFFER_SIZE%)>>"!EXEC_LOG!"
@@ -406,7 +411,7 @@ set "CUSTOM_AUDIO_SAMPLERATE=%~2"
 set "CUSTOM_AUDIO_CHANNELS=%~3"
 set "AUDIO_PRESET_NAME=%~4"
 echo.
-echo ✅ Audio preset applied: %AUDIO_PRESET_NAME%
+echo   ✅ Audio preset applied: %AUDIO_PRESET_NAME%
 echo   🎯 Bitrate: %CUSTOM_AUDIO_BITRATE%
 echo   📻 Sample Rate: %CUSTOM_AUDIO_SAMPLERATE%Hz
 echo   🔊 Channels: %CUSTOM_AUDIO_CHANNELS%
@@ -886,7 +891,10 @@ if not defined CUSTOM_COLOR_PRIMARIES exit /b 1
 if not defined CUSTOM_COLOR_TRC exit /b 1
 if not defined CUSTOM_COLOR_SPACE exit /b 1
 
-set "CUSTOM_COLOR_PARAMS=-color_range %CUSTOM_COLOR_RANGE% -color_primaries %CUSTOM_COLOR_PRIMARIES% -color_trc %CUSTOM_COLOR_TRC% -colorspace %CUSTOM_COLOR_SPACE%"
+set "CUSTOM_COLOR_PARAMS=-color_range %CUSTOM_COLOR_RANGE%"
+set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS% -color_primaries %CUSTOM_COLOR_PRIMARIES%"
+set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS% -color_trc %CUSTOM_COLOR_TRC%"
+set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS% -colorspace %CUSTOM_COLOR_SPACE%"
 
 echo     ✅ Color command built successfully
 echo     📋 Parameters: %CUSTOM_COLOR_PARAMS%
@@ -974,8 +982,16 @@ if defined CUSTOM_MAX_BITRATE (
         )
     )
 ) else (
-    echo     Current: MaxRate=%MAX_BITRATE%, Buffer=%BUFFER_SIZE% (unchanged)
+    echo     Current: MaxRate=%MAX_BITRATE%k, Buffer=%BUFFER_SIZE%k (profile default)
 )
+:: VBV Init display (corrected)
+if "%ENABLE_VBV_INIT%"=="Y" if defined CUSTOM_VBV_INIT (
+    echo     🎯 VBV Init: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
+    echo       📋 Technical: vbv_init=%CUSTOM_VBV_INIT% (FFmpeg parameter)
+) else (
+    echo     🎯 VBV Init: System default (90%% pre-fill, Instagram optimized)
+)
+exit /b 0
 echo.
 echo 🎵 Audio Enhancement:
 if defined AUDIO_PRESET_NAME (
@@ -1049,6 +1065,67 @@ echo [%time:~0,8%] [ADVANCED] Profile restored to original settings>>"!EXEC_LOG!
 pause
 goto :AdvancedCustomizationMain
 
+:CustomizeVBVInit
+cls
+echo.
+echo ╔══════════════════════════════════════════════════════════════════════════════╗
+echo ║                    🎯 VBV BUFFER INITIALIZATION SYSTEM                       ║
+echo ╚══════════════════════════════════════════════════════════════════════════════╝
+echo.
+if defined CUSTOM_VBV_INIT (
+    if defined VBV_INIT_PRESET_NAME (
+        echo  🎛️ Active: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT% = %CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
+    ) else (
+        echo  🎛️ Active: Custom value (%CUSTOM_VBV_INIT% = Custom%% pre-fill)
+    )
+) else (
+    echo  📊 Status: Using system default (0.9 = 90%% pre-fill)
+)
+echo.
+echo  🧠 VBV-INIT TECHNICAL EXPLANATION:
+echo   • VBV Buffer starts pre-filled with data (0.1 = 10%%, 1.0 = 100%%)
+echo   • Instagram optimized: 90% provides perfect balance for zero-recompression
+echo   • Higher values = Smoother streaming, consistent quality
+echo   • Lower values: More variable bitrate, smaller files, potential quality drops
+echo.
+echo  ┌─────────────────────────────────────────────────────────────────────────────┐
+echo  │ 🎬 CONTENT-SPECIFIC VBV-INIT PRESETS                                        │
+echo  └─────────────────────────────────────────────────────────────────────────────┘
+echo.
+echo  [1] 🚗 High Motion Content (80%%) - Sports/cars/action scenes
+echo  [2] 📺 Broadcast Quality (90%%) - TV/streaming balance
+echo  [3] 📱 Social Media (90%%) - Instagram/TikTok optimized ⭐
+echo  [4] 🎬 Cinema Premium (95%%) - Maximum quality smoothness
+echo  [B] 🔙 Back to Advanced Menu
+echo.
+set /p "vbv_choice=Select VBV-INIT optimization [1-6, B]: "
+
+if "%vbv_choice%"=="1" call :SetVBVInitPreset "0.8" "80" "High Motion Content"
+if "%vbv_choice%"=="2" call :SetVBVInitPreset "0.90" "90" "Broadcast Standard"
+if "%vbv_choice%"=="3" call :SetVBVInitPreset "0.9" "90" "Social Media"
+if "%vbv_choice%"=="4" call :SetVBVInitPreset "0.95" "95" "Cinema Premium"
+if /i "%vbv_choice%"=="B" goto :AdvancedCustomizationMain
+
+echo ❌ Invalid choice. Please select 1-4 or B.
+pause
+goto :CustomizeVBVInit
+
+:SetVBVInitPreset
+set "CUSTOM_VBV_INIT=%~1"
+set "CUSTOM_VBV_INIT_PERCENT=%~2"
+set "VBV_INIT_PRESET_NAME=%~3"
+
+echo.
+echo   ✅ VBV Init applied: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
+echo   🎯 Technical: vbv_init=%CUSTOM_VBV_INIT% (FFmpeg parameter)
+echo   📊 Buffer behavior: %CUSTOM_VBV_INIT_PERCENT%%% of buffer filled before encoding starts
+
+set "ENABLE_VBV_INIT=Y"
+set "CUSTOMIZATION_ACTIVE=Y"
+echo [%time:~0,8%] [ADVANCED] VBV Init: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT%)>>"!EXEC_LOG!"
+pause
+goto :AdvancedCustomizationMain
+
 :: ========================================
 :: PROFILE MANAGEMENT STUB
 :: ========================================
@@ -1096,6 +1173,8 @@ if "%CUSTOMIZATION_ACTIVE%"=="N" (
 
 echo.
 echo ✅ Applying advanced customizations...
+:: Ativar modo avançado
+set "ADVANCED_MODE=Y"
 
 :: Backup original parameters if not already done
 if not defined PROFILE_BACKUP (
@@ -1110,6 +1189,7 @@ if errorlevel 1 (
     pause
     goto :AdvancedCustomizationMain
 )
+
 :: NOVO: Carregar configurações do arquivo .temp (aplicar na sessão)
 echo 📥 Loading customizations from config file...
 call :LoadAdvancedConfigFromModule
@@ -1118,9 +1198,6 @@ if errorlevel 1 (
     pause
     goto :AdvancedCustomizationMain
 )
-
-:: Ativar modo avançado
-set "ADVANCED_MODE=Y"
 
 echo ✅ Customizations applied successfully!
 echo 🎬 Ready for encoding with customized parameters!
@@ -1132,6 +1209,24 @@ if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
 if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
 if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
 if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
+
+:: FIXED: VBV-INIT CONDITIONAL LOGIC - ONLY ONE CONDITION EXECUTES
+if defined CUSTOM_VBV_INIT (
+    if defined VBV_INIT_PRESET_NAME (
+        echo   🎯 VBV-INIT: !VBV_INIT_PRESET_NAME! ^(!CUSTOM_VBV_INIT!^) - VBV optimization enabled
+    ) else (
+        echo   🎯 VBV-INIT: Custom value ^(!CUSTOM_VBV_INIT!^) - VBV optimization enabled
+    )
+    goto :vbv_init_summary_done
+)
+if "%ENABLE_VBV_INIT%"=="Y" (
+    echo   🎯 VBV-INIT: System default ^(0.9^) - Standard VBV optimization
+    goto :vbv_init_summary_done
+)
+
+echo   📊 VBV-INIT: Not customized - Using profile defaults
+
+:vbv_init_summary_done
 if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
 if defined COLOR_PRESET_NAME echo   🎨 Color: %COLOR_PRESET_NAME%
 
@@ -1143,8 +1238,6 @@ pause
 goto :AdvancedCustomizationMain
 
 :SaveAdvancedCustomizations
-echo 💾 Saving advanced customizations...
-
 :: Generate unique config file name with timestamp
 for /f "tokens=1-3 delims=:." %%A in ('echo %time%') do (
     set "timestamp=%%A%%B%%C"
@@ -1199,6 +1292,24 @@ echo   📁 Config file: %CONFIG_FILE%
             echo set "VBV_PRESET_NAME=%VBV_PRESET_NAME%"
         )
     )
+    
+    :: VBV-INIT CUSTOMIZATION - CRITICAL SECTION
+    if defined CUSTOM_VBV_INIT (
+        echo set "CUSTOM_VBV_INIT=%CUSTOM_VBV_INIT%"
+        echo set "ENABLE_VBV_INIT=Y"
+        :: Save preset name if available
+        if defined VBV_INIT_PRESET_NAME (
+            echo set "VBV_INIT_PRESET_NAME=%VBV_INIT_PRESET_NAME%"
+        )
+        :: Save description if available
+        if defined VBV_INIT_DESCRIPTION (
+            echo set "VBV_INIT_DESCRIPTION=%VBV_INIT_DESCRIPTION%"
+        )
+    ) else (
+        :: Ensure VBV-INIT is disabled if not customized
+        echo set "ENABLE_VBV_INIT=N"
+    )
+    
     :: AUDIO CUSTOMIZATION
     if defined CUSTOM_AUDIO_BITRATE (
         echo set "CUSTOM_AUDIO_BITRATE=%CUSTOM_AUDIO_BITRATE%"
@@ -1212,25 +1323,27 @@ echo   📁 Config file: %CONFIG_FILE%
     if defined AUDIO_PRESET_NAME (
         echo set "AUDIO_PRESET_NAME=%AUDIO_PRESET_NAME%"
     )
-	:: AUDIO NORMALIZATION VARIABLES
-	if defined CUSTOM_LUFS_TARGET (
-		echo set "CUSTOM_LUFS_TARGET=%CUSTOM_LUFS_TARGET%"
-	)
-	if defined CUSTOM_PEAK_LIMIT (
-		echo set "CUSTOM_PEAK_LIMIT=%CUSTOM_PEAK_LIMIT%"
-	)
-	if defined CUSTOM_LRA_TARGET (
-		echo set "CUSTOM_LRA_TARGET=%CUSTOM_LRA_TARGET%"
-	)
-	if defined NORMALIZATION_PRESET_NAME (
-		echo set "NORMALIZATION_PRESET_NAME=%NORMALIZATION_PRESET_NAME%"
-	)
-	if defined CUSTOM_NORMALIZATION_PARAMS (
-		echo set "CUSTOM_NORMALIZATION_PARAMS=%CUSTOM_NORMALIZATION_PARAMS%"
-	)
-	if defined AUDIO_PROCESSING_ACTIVE (
-		echo set "AUDIO_PROCESSING_ACTIVE=%AUDIO_PROCESSING_ACTIVE%"
-	)    
+    
+    :: AUDIO NORMALIZATION VARIABLES
+    if defined CUSTOM_LUFS_TARGET (
+        echo set "CUSTOM_LUFS_TARGET=%CUSTOM_LUFS_TARGET%"
+    )
+    if defined CUSTOM_PEAK_LIMIT (
+        echo set "CUSTOM_PEAK_LIMIT=%CUSTOM_PEAK_LIMIT%"
+    )
+    if defined CUSTOM_LRA_TARGET (
+        echo set "CUSTOM_LRA_TARGET=%CUSTOM_LRA_TARGET%"
+    )
+    if defined NORMALIZATION_PRESET_NAME (
+        echo set "NORMALIZATION_PRESET_NAME=%NORMALIZATION_PRESET_NAME%"
+    )
+    if defined CUSTOM_NORMALIZATION_PARAMS (
+        echo set "CUSTOM_NORMALIZATION_PARAMS=%CUSTOM_NORMALIZATION_PARAMS%"
+    )
+    if defined AUDIO_PROCESSING_ACTIVE (
+        echo set "AUDIO_PROCESSING_ACTIVE=%AUDIO_PROCESSING_ACTIVE%"
+    )
+    
     :: COLOR SCIENCE CUSTOMIZATION
     if defined CUSTOM_COLOR_PARAMS (
         echo set "CUSTOM_COLOR_PARAMS=%CUSTOM_COLOR_PARAMS%"
@@ -1238,6 +1351,7 @@ echo   📁 Config file: %CONFIG_FILE%
     if defined COLOR_PRESET_NAME (
         echo set "COLOR_PRESET_NAME=%COLOR_PRESET_NAME%"
     )
+    
     :: CONTROL FLAGS
     echo set "ADVANCED_MODE=Y"
     echo set "CUSTOMIZATION_ACTIVE=Y"
@@ -1249,26 +1363,63 @@ echo   📁 Config file: %CONFIG_FILE%
 
 :: VERIFICATION OF SAVED CONTENT
 if exist "%CONFIG_FILE%" (
-    echo   ✅ Configuration saved: %CONFIG_FILE%
+    if defined CUSTOM_VBV_INIT (
+        echo   🎯 VBV_INIT: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)
+    ) else (
+        echo   📊 VBV_INIT: System default (0.9)
+    )
     echo [%time:~0,8%] [ADVANCED] Config file created: %CONFIG_FILE%>>"!EXEC_LOG!"
+    :: Log VBV-INIT specifically
+    if defined CUSTOM_VBV_INIT (
+        echo [%time:~0,8%] [VBV_INIT] Saved: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)>>"!EXEC_LOG!"
+    )
     exit /b 0
 ) else (
-    echo   ❌ Failed to save configuration
-    echo [%time:~0,8%] [ERROR] Config file creation failed>>"!EXEC_LOG!"
+    echo   ❌ Failed to create config file
     exit /b 1
 )
 
+:: ========================================
+:: SEPARATE FUNCTION - CRITICAL FIX
+:: ========================================
 :LoadAdvancedConfigFromModule
+if not defined CONFIG_FILE (
+    echo   ❌ No config file path available
+    exit /b 1
+)
+
 if not exist "%CONFIG_FILE%" (
     echo   ❌ Configuration file not found: %CONFIG_FILE%
     exit /b 1
 )
 
-echo   📥 Loading advanced configuration...
+echo   📥 Loading advanced configuration from: %CONFIG_FILE%
+
+:: Load configuration by calling the temp file
 call "%CONFIG_FILE%"
 if errorlevel 1 (
-    echo   ❌ Failed to load configuration
+    echo   ❌ Failed to load configuration from file
     exit /b 1
+)
+
+:: Verify critical variables were loaded
+if defined CUSTOM_VBV_INIT (
+    echo   ✅ VBV-INIT loaded: %CUSTOM_VBV_INIT%
+    if defined VBV_INIT_PRESET_NAME (
+        echo   📋 Preset: %VBV_INIT_PRESET_NAME%
+    )
+)
+
+if defined CUSTOM_PRESET (
+    echo   ✅ x264 Preset loaded: %CUSTOM_PRESET%
+)
+
+if defined GOP_PRESET_NAME (
+    echo   ✅ GOP Structure loaded: %GOP_PRESET_NAME%
+)
+
+if defined VBV_PRESET_NAME (
+    echo   ✅ VBV Buffer loaded: %VBV_PRESET_NAME%
 )
 
 echo   ✅ Configuration loaded successfully
