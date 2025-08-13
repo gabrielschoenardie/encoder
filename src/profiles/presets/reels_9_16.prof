@@ -1,23 +1,26 @@
+# Instagram Encoder Framework V5.2 Profile
+# FEED/IGTV Horizontal Broadcast Standard
+
 [PROFILE_INFO]
-PROFILE_NAME=REELS Vertical Zero-Recompression
+PROFILE_NAME=FEED/IGTV Horizontal Broadcast
 PROFILE_VERSION=5.2
-PROFILE_DESCRIPTION=Optimized for Instagram Reels 9:16 content - Level 4.1 compliant
+PROFILE_DESCRIPTION=Optimized for Instagram Feed 16:9 content
 PROFILE_AUTHOR=Gabriel Schoenardie
 
 [VIDEO_SETTINGS]
-VIDEO_WIDTH=1080
-VIDEO_HEIGHT=1920
-VIDEO_ASPECT=9:16
-TARGET_BITRATE=13000
-MAX_BITRATE=20000
-BUFFER_SIZE=15000
+VIDEO_WIDTH=1920
+VIDEO_HEIGHT=1080
+VIDEO_ASPECT=16:9
+TARGET_BITRATE=15000
+MAX_BITRATE=25000
+BUFFER_SIZE=30000
 GOP_SIZE=60
-KEYINT_MIN=30
+KEYINT_MIN=25
 
 [X264_SETTINGS]
 X264_PRESET=veryslow
 X264_TUNE=film
-X264_PARAMS=cabac=1:ref=4:deblock=-1,-1:analyse=0x3,0x133:me=umh:subme=9:psy=1:psy_rd=1.0,0.15:mixed_ref=1:me_range=24:chroma_me=1:trellis=2:8x8dct=1:bframes=4:b_pyramid=2:b_adapt=2:weightb=1:weightp=2:rc_lookahead=60:mbtree=1:qcomp=0.6:aq_mode=1:aq_strength=1.0
+X264_PARAMS=cabac=1:ref=8:deblock=-1,-1:analyse=0x3,0x133:me=umh:subme=9:psy=1:psy_rd=1.0,0.20:mixed_ref=1:me_range=32:chroma_me=1:trellis=2:8x8dct=1:bframes=6:b_pyramid=2:b_adapt=2:weightb=1:weightp=2:rc_lookahead=80:mbtree=1:qcomp=0.65:aq_mode=1:aq_strength=1.2
 
 [COLOR_SETTINGS]
 COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
