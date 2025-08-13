@@ -46,8 +46,7 @@ echo  [4] 📊 VBV Buffer Settings (Streaming Optimization)
 echo  [5] 🎵 Audio Enhancement Options
 echo  [6] 🌈 Color Science Adjustments
 echo  [7] 📋 Preview All Settings
-echo  [8] 🎯 VBV Buffer Initialization (Streaming Optimization)
-echo  [9] ✅ Apply Customizations ⭐ SAVE AND EXIT
+echo  [8] ✅ Apply Customizations ⭐ SAVE AND EXIT
 echo  [0] 🔙 Back to Main Menu
 echo.
 set /p "custom_choice=Select customization option [0-9]: "
@@ -59,11 +58,10 @@ if "%custom_choice%"=="4" goto :CustomizeVBV
 if "%custom_choice%"=="5" goto :CustomizeAudio
 if "%custom_choice%"=="6" goto :CustomizeColor
 if "%custom_choice%"=="7" goto :PreviewAllCustomizations
-if "%custom_choice%"=="8" goto :CustomizeVBVInit
-if "%custom_choice%"=="9" goto :ApplyAdvancedCustomizations
+if "%custom_choice%"=="8" goto :ApplyAdvancedCustomizations
 if "%custom_choice%"=="0" goto :ExitAdvancedModule
 
-echo ❌ Invalid choice. Please select 0-9.
+echo ❌ Invalid choice. Please select 0-8.
 pause
 goto :AdvancedCustomizationMain
 
@@ -984,14 +982,6 @@ if defined CUSTOM_MAX_BITRATE (
 ) else (
     echo     Current: MaxRate=%MAX_BITRATE%k, Buffer=%BUFFER_SIZE%k (profile default)
 )
-:: VBV Init display (corrected)
-if "%ENABLE_VBV_INIT%"=="Y" if defined CUSTOM_VBV_INIT (
-    echo     🎯 VBV Init: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
-    echo       📋 Technical: vbv_init=%CUSTOM_VBV_INIT% (FFmpeg parameter)
-) else (
-    echo     🎯 VBV Init: System default (90%% pre-fill, Instagram optimized)
-)
-exit /b 0
 echo.
 echo 🎵 Audio Enhancement:
 if defined AUDIO_PRESET_NAME (
@@ -1062,67 +1052,6 @@ set "CUSTOMIZATION_ACTIVE=N"
 set "ADVANCED_MODE=N"
 echo ✅ Profile restored to standard Hollywood settings
 echo [%time:~0,8%] [ADVANCED] Profile restored to original settings>>"!EXEC_LOG!"
-pause
-goto :AdvancedCustomizationMain
-
-:CustomizeVBVInit
-cls
-echo.
-echo ╔══════════════════════════════════════════════════════════════════════════════╗
-echo ║                    🎯 VBV BUFFER INITIALIZATION SYSTEM                       ║
-echo ╚══════════════════════════════════════════════════════════════════════════════╝
-echo.
-if defined CUSTOM_VBV_INIT (
-    if defined VBV_INIT_PRESET_NAME (
-        echo  🎛️ Active: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT% = %CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
-    ) else (
-        echo  🎛️ Active: Custom value (%CUSTOM_VBV_INIT% = Custom%% pre-fill)
-    )
-) else (
-    echo  📊 Status: Using system default (0.9 = 90%% pre-fill)
-)
-echo.
-echo  🧠 VBV-INIT TECHNICAL EXPLANATION:
-echo   • VBV Buffer starts pre-filled with data (0.1 = 10%%, 1.0 = 100%%)
-echo   • Instagram optimized: 90% provides perfect balance for zero-recompression
-echo   • Higher values = Smoother streaming, consistent quality
-echo   • Lower values: More variable bitrate, smaller files, potential quality drops
-echo.
-echo  ┌─────────────────────────────────────────────────────────────────────────────┐
-echo  │ 🎬 CONTENT-SPECIFIC VBV-INIT PRESETS                                        │
-echo  └─────────────────────────────────────────────────────────────────────────────┘
-echo.
-echo  [1] 🚗 High Motion Content (80%%) - Sports/cars/action scenes
-echo  [2] 📺 Broadcast Quality (90%%) - TV/streaming balance
-echo  [3] 📱 Social Media (90%%) - Instagram/TikTok optimized ⭐
-echo  [4] 🎬 Cinema Premium (95%%) - Maximum quality smoothness
-echo  [B] 🔙 Back to Advanced Menu
-echo.
-set /p "vbv_choice=Select VBV-INIT optimization [1-6, B]: "
-
-if "%vbv_choice%"=="1" call :SetVBVInitPreset "0.8" "80" "High Motion Content"
-if "%vbv_choice%"=="2" call :SetVBVInitPreset "0.90" "90" "Broadcast Standard"
-if "%vbv_choice%"=="3" call :SetVBVInitPreset "0.9" "90" "Social Media"
-if "%vbv_choice%"=="4" call :SetVBVInitPreset "0.95" "95" "Cinema Premium"
-if /i "%vbv_choice%"=="B" goto :AdvancedCustomizationMain
-
-echo ❌ Invalid choice. Please select 1-4 or B.
-pause
-goto :CustomizeVBVInit
-
-:SetVBVInitPreset
-set "CUSTOM_VBV_INIT=%~1"
-set "CUSTOM_VBV_INIT_PERCENT=%~2"
-set "VBV_INIT_PRESET_NAME=%~3"
-
-echo.
-echo   ✅ VBV Init applied: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT_PERCENT%%% pre-fill)
-echo   🎯 Technical: vbv_init=%CUSTOM_VBV_INIT% (FFmpeg parameter)
-echo   📊 Buffer behavior: %CUSTOM_VBV_INIT_PERCENT%%% of buffer filled before encoding starts
-
-set "ENABLE_VBV_INIT=Y"
-set "CUSTOMIZATION_ACTIVE=Y"
-echo [%time:~0,8%] [ADVANCED] VBV Init: %VBV_INIT_PRESET_NAME% (%CUSTOM_VBV_INIT%)>>"!EXEC_LOG!"
 pause
 goto :AdvancedCustomizationMain
 
@@ -1209,24 +1138,6 @@ if defined CUSTOM_PRESET echo   🎭 x264 Preset: %CUSTOM_PRESET%
 if defined CUSTOM_PSY_RD echo   🧠 Psychovisual: %CUSTOM_PSY_RD%
 if defined GOP_PRESET_NAME echo   🎬 GOP: %GOP_PRESET_NAME% (%CUSTOM_GOP_SIZE%/%CUSTOM_KEYINT_MIN%)
 if defined VBV_PRESET_NAME echo   📊 VBV: %VBV_PRESET_NAME% (%CUSTOM_MAX_BITRATE%/%CUSTOM_BUFFER_SIZE%)
-
-:: FIXED: VBV-INIT CONDITIONAL LOGIC - ONLY ONE CONDITION EXECUTES
-if defined CUSTOM_VBV_INIT (
-    if defined VBV_INIT_PRESET_NAME (
-        echo   🎯 VBV-INIT: !VBV_INIT_PRESET_NAME! ^(!CUSTOM_VBV_INIT!^) - VBV optimization enabled
-    ) else (
-        echo   🎯 VBV-INIT: Custom value ^(!CUSTOM_VBV_INIT!^) - VBV optimization enabled
-    )
-    goto :vbv_init_summary_done
-)
-if "%ENABLE_VBV_INIT%"=="Y" (
-    echo   🎯 VBV-INIT: System default ^(0.9^) - Standard VBV optimization
-    goto :vbv_init_summary_done
-)
-
-echo   📊 VBV-INIT: Not customized - Using profile defaults
-
-:vbv_init_summary_done
 if defined AUDIO_PRESET_NAME echo   🎵 Audio: %AUDIO_PRESET_NAME% (%CUSTOM_AUDIO_BITRATE%)
 if defined COLOR_PRESET_NAME echo   🎨 Color: %COLOR_PRESET_NAME%
 
@@ -1293,23 +1204,6 @@ echo   📁 Config file: %CONFIG_FILE%
         )
     )
     
-    :: VBV-INIT CUSTOMIZATION - CRITICAL SECTION
-    if defined CUSTOM_VBV_INIT (
-        echo set "CUSTOM_VBV_INIT=%CUSTOM_VBV_INIT%"
-        echo set "ENABLE_VBV_INIT=Y"
-        :: Save preset name if available
-        if defined VBV_INIT_PRESET_NAME (
-            echo set "VBV_INIT_PRESET_NAME=%VBV_INIT_PRESET_NAME%"
-        )
-        :: Save description if available
-        if defined VBV_INIT_DESCRIPTION (
-            echo set "VBV_INIT_DESCRIPTION=%VBV_INIT_DESCRIPTION%"
-        )
-    ) else (
-        :: Ensure VBV-INIT is disabled if not customized
-        echo set "ENABLE_VBV_INIT=N"
-    )
-    
     :: AUDIO CUSTOMIZATION
     if defined CUSTOM_AUDIO_BITRATE (
         echo set "CUSTOM_AUDIO_BITRATE=%CUSTOM_AUDIO_BITRATE%"
@@ -1363,16 +1257,10 @@ echo   📁 Config file: %CONFIG_FILE%
 
 :: VERIFICATION OF SAVED CONTENT
 if exist "%CONFIG_FILE%" (
-    if defined CUSTOM_VBV_INIT (
-        echo   🎯 VBV_INIT: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)
-    ) else (
-        echo   📊 VBV_INIT: System default (0.9)
-    )
+    echo   ✅ Configuration saved successfully
+    echo   🏆 Instagram optimization: ACTIVE automatically
     echo [%time:~0,8%] [ADVANCED] Config file created: %CONFIG_FILE%>>"!EXEC_LOG!"
-    :: Log VBV-INIT specifically
-    if defined CUSTOM_VBV_INIT (
-        echo [%time:~0,8%] [VBV_INIT] Saved: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)>>"!EXEC_LOG!"
-    )
+    echo [%time:~0,8%] [VBV] Auto-optimized by x264 (no manual config saved)>>"!EXEC_LOG!"
     exit /b 0
 ) else (
     echo   ❌ Failed to create config file
@@ -1403,13 +1291,6 @@ if errorlevel 1 (
 )
 
 :: Verify critical variables were loaded
-if defined CUSTOM_VBV_INIT (
-    echo   ✅ VBV-INIT loaded: %CUSTOM_VBV_INIT%
-    if defined VBV_INIT_PRESET_NAME (
-        echo   📋 Preset: %VBV_INIT_PRESET_NAME%
-    )
-)
-
 if defined CUSTOM_PRESET (
     echo   ✅ x264 Preset loaded: %CUSTOM_PRESET%
 )
