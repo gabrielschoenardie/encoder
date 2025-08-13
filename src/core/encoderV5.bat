@@ -69,14 +69,6 @@ set "NORMALIZATION_PRESET_NAME="
 set "CUSTOM_NORMALIZATION_PARAMS="
 set "AUDIO_PROCESSING_ACTIVE=N"
 
-:: VBV Buffer Initialization Variables
-set "CUSTOM_VBV_INIT="
-set "ENABLE_VBV_INIT=N"
-set "VBV_INIT_PRESET_NAME="
-set "VBV_INIT_DESCRIPTION="
-set "VBV_INIT_SOURCE=System Default"
-set "CUSTOM_VBV_INIT_PERCENT="
-
 :: Professional Menu System Variables
 set "WORKFLOW_STEP=0"
 set "SESSION_START_TIME="
@@ -197,13 +189,6 @@ set "X264_PRESET="
 set "X264_TUNE="
 set "X264_PARAMS="
 set "COLOR_PARAMS="
-:: VBV-INIT VARIABLES RESET (CRITICAL ADDITION)
-set "CUSTOM_VBV_INIT="
-set "ENABLE_VBV_INIT=N"
-set "VBV_INIT_PRESET_NAME="
-set "VBV_INIT_DESCRIPTION="
-set "VBV_INIT_SOURCE=System Default"
-set "CUSTOM_VBV_INIT_PERCENT="
 
 :: OPTIMIZED PARSING (preserve logic, reduce debug)
 for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
@@ -226,11 +211,6 @@ for /f "usebackq eol=# tokens=1* delims==" %%A in ("%profile_file%") do (
         if "!param_name!"=="X264_TUNE" set "X264_TUNE=!param_value!"
         if "!param_name!"=="X264_PARAMS" set "X264_PARAMS=!param_value!"
         if "!param_name!"=="COLOR_PARAMS" set "COLOR_PARAMS=!param_value!"
-		if "!param_name!"=="CUSTOM_VBV_INIT" set "CUSTOM_VBV_INIT=!param_value!"
-        if "!param_name!"=="ENABLE_VBV_INIT" set "ENABLE_VBV_INIT=!param_value!"
-        if "!param_name!"=="VBV_INIT_PRESET_NAME" set "VBV_INIT_PRESET_NAME=!param_value!"
-        if "!param_name!"=="VBV_INIT_DESCRIPTION" set "VBV_INIT_DESCRIPTION=!param_value!"
-        if "!param_name!"=="VBV_INIT_SOURCE" set "VBV_INIT_SOURCE=!param_value!"
     )
 )
 
@@ -239,18 +219,6 @@ if not defined PROFILE_NAME exit /b 1
 if not defined VIDEO_WIDTH exit /b 1
 if not defined VIDEO_HEIGHT exit /b 1
 if not defined TARGET_BITRATE exit /b 1
-
-if defined CUSTOM_VBV_INIT (
-    if defined ENABLE_VBV_INIT (
-        if "!ENABLE_VBV_INIT!"=="Y" (
-            echo   🔧 VBV-init loaded: !CUSTOM_VBV_INIT! (!VBV_INIT_PRESET_NAME!)
-            call :LogEntry "[VBV] Loaded from profile: vbv_init=!CUSTOM_VBV_INIT!, preset=!VBV_INIT_PRESET_NAME!"
-        ) else (
-            echo   ℹ️ VBV-init disabled in profile (!ENABLE_VBV_INIT!)
-            call :LogEntry "[VBV] Profile contains VBV settings but ENABLE_VBV_INIT=!ENABLE_VBV_INIT!"
-        )
-    )
-)
 
 echo ✅ Profile loaded: !PROFILE_NAME! (!VIDEO_WIDTH!x!VIDEO_HEIGHT!)
 
@@ -1290,51 +1258,36 @@ echo   🎭 Processing Hollywood parameters with robust cleaning...
 
 :: Direct copy with aggressive space removal
 set "CLEAN_PARAMS=!X264_PARAMS!"
-    :: PSYCHOVISUAL CUSTOMIZATION INTEGRATION
-    if defined CUSTOM_PSY_RD (
-        :: Remove existing psy settings from profile params and add custom
-        set "CLEAN_PARAMS=!CLEAN_PARAMS:psy_rd=!"
-        set "CLEAN_PARAMS=!CLEAN_PARAMS!:psy_rd=!CUSTOM_PSY_RD!"
-        echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
-    ) else (
-        echo   🧠 Profile psychovisual settings
-    )
-if "%ENABLE_VBV_INIT%"=="Y" (
-    if defined CUSTOM_VBV_INIT (
-        set "CLEAN_PARAMS=!CLEAN_PARAMS!:vbv_init=%CUSTOM_VBV_INIT%"
-        
-		if defined VBV_INIT_PRESET_NAME (
-            echo   ⚡ VBV Init: %CUSTOM_VBV_INIT% (%VBV_INIT_PRESET_NAME%)
-        ) else (
-            echo   ⚡ VBV Init: %CUSTOM_VBV_INIT% (Custom value)
-        )
-        call :LogEntry "[VBV_INIT] Applied custom: %CUSTOM_VBV_INIT%"
-		exit /b 0
-    )
+    
+:: PSYCHOVISUAL CUSTOMIZATION INTEGRATION
+if defined CUSTOM_PSY_RD (
+    echo   🧠 Custom psychovisual: !CUSTOM_PSY_RD!
+    :: Safer replacement preserving hexadecimal format
+    for /f "tokens=1* delims=" %%A in ("!CLEAN_PARAMS!") do set "CLEAN_PARAMS=%%A"
+    set "CLEAN_PARAMS=!CLEAN_PARAMS:psy_rd=1.0,0.15=psy_rd=!CUSTOM_PSY_RD!!"
+) else (
+    echo   🧠 Profile psychovisual settings
 )
 
-:: Default VBV Init application
-set "CLEAN_PARAMS=!CLEAN_PARAMS:vbv_init=!"
-set "CLEAN_PARAMS=!CLEAN_PARAMS!:vbv_init=0.9"
-echo   📊 VBV Init default: 0.9 (90%% pre-fill, Instagram optimized)
-call :LogEntry "[VBV_INIT] Applied default: 0.9"
+echo   🧹 Applying minimal safe cleaning...
+:: Remove ONLY obvious double spaces (safest possible)
+:remove_double_spaces
+if not "!CLEAN_PARAMS!"=="!CLEAN_PARAMS:  = !" (
+    set "CLEAN_PARAMS=!CLEAN_PARAMS:  = !"
+    goto :remove_double_spaces
+)
 
-set "CLEAN_PARAMS=!CLEAN_PARAMS: ==!"
-set "CLEAN_PARAMS=!CLEAN_PARAMS: ==!"
-
-:: Remove spaces around colons
-set "CLEAN_PARAMS=!CLEAN_PARAMS: :=:!"
-set "CLEAN_PARAMS=!CLEAN_PARAMS:: =:!"
-
-:: Clean up any leading/trailing colons from our additions
+:: Clean up multiple colons created by removal
 set "CLEAN_PARAMS=!CLEAN_PARAMS:::=:!"
+set "CLEAN_PARAMS=!CLEAN_PARAMS:::=:!"
+
+:: Clean up leading/trailing colons
 if "!CLEAN_PARAMS:~0,1!"==":" set "CLEAN_PARAMS=!CLEAN_PARAMS:~1!"
 if "!CLEAN_PARAMS:~-1!"==":" set "CLEAN_PARAMS=!CLEAN_PARAMS:~0,-1!"
 
-:: APPLY AS SINGLE -x264-params STRING (CORRECT APPROACH)
-set "FFMPEG_COMMAND=!FFMPEG_COMMAND! -x264-params !CLEAN_PARAMS!"
-echo   ✅ Applied Hollywood x264 parameters: !CLEAN_PARAMS:~0,60!...
-
+:: NO OTHER CLEANING - Keep original format
+echo   ✅ Safe cleaning complete - original parameter structure preserved
+echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 call :LogEntry "[HOLLYWOOD] Applied x264-params: !CLEAN_PARAMS:~0,60!..."
 exit /b 0
 
@@ -2409,9 +2362,6 @@ echo if defined ADVANCED_MODE echo   ✅ ADVANCED_MODE=%%ADVANCED_MODE%% >> "%TE
 echo if defined CUSTOM_AUDIO_BITRATE echo   ✅ CUSTOM_AUDIO_BITRATE=%%CUSTOM_AUDIO_BITRATE%% >> "%TEMP_LOADER%"
 echo if defined AUDIO_PRESET_NAME echo   ✅ AUDIO_PRESET_NAME=%%AUDIO_PRESET_NAME%% >> "%TEMP_LOADER%"
 echo if defined NORMALIZATION_PRESET_NAME echo   ✅ NORMALIZATION_PRESET_NAME=%%NORMALIZATION_PRESET_NAME%% >> "%TEMP_LOADER%"
-echo if defined CUSTOM_VBV_INIT echo   ✅ CUSTOM_VBV_INIT=%%CUSTOM_VBV_INIT%% >> "%TEMP_LOADER%"
-echo if defined VBV_INIT_PRESET_NAME echo   ✅ VBV_INIT_PRESET_NAME=%%VBV_INIT_PRESET_NAME%% >> "%TEMP_LOADER%"
-echo if defined ENABLE_VBV_INIT echo   ✅ ENABLE_VBV_INIT=%%ENABLE_VBV_INIT%% >> "%TEMP_LOADER%"
 
 echo   📋 Generated temp loader: %TEMP_LOADER%
 echo   📋 Executing configuration...
@@ -2558,26 +2508,6 @@ if /i "!var_name!"=="COLOR_PRESET_NAME" (
     echo     ✅ COLOR_PRESET_NAME=!var_value!
     exit /b 0
 )
-if /i "!var_name!"=="CUSTOM_VBV_INIT" (
-    set "CUSTOM_VBV_INIT=!var_value!"
-    echo     ✅ CUSTOM_VBV_INIT=!var_value!
-    exit /b 0
-)
-if /i "!var_name!"=="VBV_INIT_PRESET_NAME" (
-    set "VBV_INIT_PRESET_NAME=!var_value!"
-    echo     ✅ VBV_INIT_PRESET_NAME=!var_value!
-    exit /b 0
-)
-if /i "!var_name!"=="VBV_INIT_DESCRIPTION" (
-    set "VBV_INIT_DESCRIPTION=!var_value!"
-    echo     ✅ VBV_INIT_DESCRIPTION=!var_value!
-    exit /b 0
-)
-if /i "!var_name!"=="ENABLE_VBV_INIT" (
-    set "ENABLE_VBV_INIT=!var_value!"
-    echo     ✅ ENABLE_VBV_INIT=!var_value!
-    exit /b 0
-)
 if /i "!var_name!"=="ADVANCED_MODE" (
     set "ADVANCED_MODE=!var_value!"
     echo     ✅ ADVANCED_MODE=!var_value!
@@ -2721,29 +2651,6 @@ if !audio_components! GTR 0 (
         echo     🎵 Audio Enhancement: Partial (!audio_components! components)
     )
 )
-:: VBV-INIT VALIDATION AND SOURCE DETERMINATION
-if defined CUSTOM_VBV_INIT (
-    if "%ENABLE_VBV_INIT%"=="Y" (
-        echo   ✅ VBV-INIT validated: %CUSTOM_VBV_INIT%
-        if defined VBV_INIT_PRESET_NAME (
-            set "VBV_INIT_SOURCE=%VBV_INIT_PRESET_NAME%"
-        ) else (
-            set "VBV_INIT_SOURCE=Custom Value"
-        )
-        echo   🎯 VBV-INIT source: %VBV_INIT_SOURCE%
-    ) else (
-        echo   ⚠️ VBV-INIT defined but disabled - using system default
-        set "ENABLE_VBV_INIT=N"
-        set "VBV_INIT_SOURCE=System Default"
-    )
-) else (
-    echo   📊 VBV-INIT: No customization - using system default (0.9)
-    set "ENABLE_VBV_INIT=N"
-    set "VBV_INIT_SOURCE=System Default"
-)
-
-:: Log VBV-INIT configuration
-call :LogEntry "[VBV-INIT] Config validation: ENABLE=%ENABLE_VBV_INIT%, Value=%CUSTOM_VBV_INIT%, Source=%VBV_INIT_SOURCE%"
 
 :: FINAL VALIDATION AND ACTIVATION - FIXED LOGIC
 echo   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
