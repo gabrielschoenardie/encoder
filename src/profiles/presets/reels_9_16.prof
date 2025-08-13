@@ -21,9 +21,3 @@ X264_PARAMS=cabac=1:ref=4:deblock=-1,-1:analyse=0x3,0x133:me=umh:subme=9:psy=1:p
 
 [COLOR_SETTINGS]
 COLOR_PARAMS=-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709
-
-[VBV_SETTINGS]
-CUSTOM_VBV_INIT=0.9
-VBV_INIT_PRESET_NAME=Broadcast Quality
-VBV_INIT_DESCRIPTION=TV/streaming balance optimization
-ENABLE_VBV_INIT=Y
